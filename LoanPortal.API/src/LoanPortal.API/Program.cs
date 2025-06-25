@@ -1,0 +1,197 @@
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
+using Newtonsoft.Json;
+using LoanPortal.API.Middleware;
+using LoanPortal.API.Models;
+using LoanPortal.Core.Helper;
+using LoanPortal.Core.Interfaces;
+using LoanPortal.Core.Repositories;
+using LoanPortal.Core.Services;
+using LoanPortal.Infrastructure;
+using LoanPortal.Infrastructure.Repositories;
+using LoanPortal.Infrastructure.Models;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Bson.Serialization;
+using LoanPortal.Shared;
+using LoanPortal.Infrastructure.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+var CORS_POLICY = "CorsPolicy";
+
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://securetoken.google.com/notification-test-f7410";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = "https://securetoken.google.com/notification-test-f7410",
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidAudience = "notification-test-f7410",
+            ValidateLifetime = true,
+        };
+    });
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpClient();
+builder.Services.AddSwaggerGen();
+
+// Register HttpClientService
+builder.Services.AddScoped<IHttpClientService, HttpClientService>();
+
+BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+    return new MongoClient(settings.ConnectionString);
+});
+builder.Services.AddSingleton<MongoDbContext>();
+
+builder.Services.AddSingleton<DataContext>();
+builder.Services.AddSingleton<IUnitOfWork, UnitOfWork>();
+builder.Services.AddSingleton<ILoginUserDetails, LoginUserDetails>();
+
+builder.Services.AddSingleton<IPreApprovalService, PreApprovalService>();
+builder.Services.AddSingleton<IPreApprovalRepository, PreApprovalRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<IUserHelper, UserHelper>();
+builder.Services.AddSingleton<IBlobStorageHelper,BlobStorageHelper>();
+builder.Services.AddSingleton<IFirebaseAuthService, FirebaseAuthService>();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc(
+        "v1",
+        new OpenApiInfo
+        {
+            Title = "LoanPortal API ",
+            Version = "v1",
+            Description = string.Format(
+                "Build Number:{0}",
+                builder.Configuration.GetSection("BuildId").Value ?? string.Empty
+            ),
+        }
+    );
+
+    c.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Description =
+                @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
+                          Enter 'Bearer' [space] and then your token in the text input below.
+                          \r\n\r\nExample: 'Bearer 12345abcdef'",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+            BearerFormat = "JWT",
+            Scheme = "Bearer",
+        }
+    );
+
+    c.AddSecurityRequirement(
+        new OpenApiSecurityRequirement()
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer",
+                    },
+                    Scheme = "oauth2",
+                    Name = "Bearer",
+                    In = ParameterLocation.Header,
+                },
+                new List<string>()
+            },
+        }
+    );
+});
+
+FirebaseModel firebaseModel = new FirebaseModel();
+var firebaseSection = builder.Configuration.GetSection("FireBaseSettings");
+firebaseModel.type = firebaseSection["type"];
+firebaseModel.project_id = firebaseSection["project_id"];
+firebaseModel.private_key_id = firebaseSection["private_key_id"];
+firebaseModel.private_key = firebaseSection["private_key"];
+firebaseModel.client_email = firebaseSection["client_email"];
+firebaseModel.client_id = firebaseSection["client_id"];
+firebaseModel.auth_uri = firebaseSection["auth_uri"];
+firebaseModel.token_uri = firebaseSection["token_uri"];
+firebaseModel.auth_provider_x509_cert_url = firebaseSection["auth_provider_x509_cert_url"];
+firebaseModel.client_x509_cert_url = firebaseSection["client_x509_cert_url"];
+
+
+FirebaseApp.Create(
+    new AppOptions
+    {
+        Credential = GoogleCredential.FromJson(JsonConvert.SerializeObject(firebaseModel)),
+    }
+);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        name: CORS_POLICY,
+        cbuilder =>
+        {
+            cbuilder
+                .WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Value.Split(","))
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+            //builder.AllowAnyOrigin();
+            //builder.AllowAnyMethod();
+            //builder.AllowAnyHeader();
+        }
+    );
+});
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors(CORS_POLICY);
+app.UseMiddleware<ErrorHandlerMiddleware>();
+app.UseMiddleware<JwtMiddleware>();
+
+app.Use(
+    async (context, next) =>
+    {
+        context.Response.Headers.Add(
+            "Content-Security-Policy",
+            "default-src 'self'; script-src 'self'; style-src 'self';"
+        );
+        context.Response.Headers.Add("X-Frame-Options", "DENY");
+        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+        context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+        context.Response.Headers.Add(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains; preload"
+        );
+
+        await next();
+    }
+);
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();

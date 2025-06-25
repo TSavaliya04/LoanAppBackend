@@ -1,0 +1,232 @@
+﻿using FirebaseAdmin.Auth;
+using Microsoft.Extensions.Configuration;
+using LoanPortal.Core.Entities;
+using LoanPortal.Core.Helper;
+using LoanPortal.Core.Interfaces;
+using LoanPortal.Core.Repositories;
+using LoanPortal.Shared;
+using LoanPortal.Shared.Constants;
+using System.ComponentModel.DataAnnotations;
+using System.Text;
+using System.Text.Json;
+
+namespace LoanPortal.Core.Services
+{
+    public class UserService : IUserService
+    {
+        private readonly IUserHelper _userHelper;
+        private readonly IConfiguration _config;
+        private readonly IHttpClientService _httpClientService;
+        private readonly IUserRepository _userRepository;
+        private readonly IBlobStorageHelper _blobStorageHelper;
+        private readonly IFirebaseAuthService _firebaseAuthService;
+
+        public UserService(
+            IUserHelper userHelper, 
+            IConfiguration config, 
+            IHttpClientService httpClientService, 
+            IUserRepository userRepository, 
+            IBlobStorageHelper blobStorageHelper,
+            IFirebaseAuthService firebaseAuthService)
+        {
+            _userHelper = userHelper;
+            _config = config;
+            _httpClientService = httpClientService;
+            _userRepository = userRepository;
+            _blobStorageHelper = blobStorageHelper;
+            _firebaseAuthService = firebaseAuthService;
+        }
+
+        public async Task<UserDTO> SignUp(CreateUserRequest user)
+        {
+            try
+            {
+                string error = await _userHelper.ValidateUser(user);
+                if (!string.IsNullOrEmpty(error))
+                {
+                    throw new ValidationException(error);
+                }
+
+                user.Phone = user.Phone.Replace("+", "").Replace(" ", "");
+                UserRecordArgs args = new UserRecordArgs()
+                {
+                    Email = user.Email,
+                    EmailVerified = true,
+                    PhoneNumber = "+" + user.Phone,
+                    Password = user.Password,
+                    DisplayName = user.FirstName + " " + user.LastName,
+                    Disabled = false,
+                };
+
+                // Create Firebase user
+                string newUserId = await _firebaseAuthService.CreateUserAsync(args);
+
+                // Create user
+                UserEntity userEntity = new UserEntity
+                {
+                    Id = Guid.NewGuid(),
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email,
+                    Phone = user.Phone,
+                    IsActive = true,
+                    FirebaseId = newUserId,
+                    CreatedAt = DateTime.UtcNow,
+                };
+                await _userRepository.CreateUser(userEntity);
+
+                var entity = await _userRepository.GetUserByEmail(user.Email);
+                return UserHelper.MaptoUserDTO(entity);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserService.SignUp -> " + ex.Message);
+                throw new Exception("Exception in UserService.SignUp -> " + ex.Message);
+            }
+        }
+
+        public async Task<LoginResponse> Login(LoginRequest request)
+        {
+            try
+            {
+                UserEntity user = await _userRepository.GetUserByEmail(request.Email);
+                if (user == null)
+                {
+                    throw new Exception("Account not found with given email.");
+                }
+                else if (!user.IsActive)
+                {
+                    throw new Exception("Account is not active.");
+                }
+
+                var requestBody = new
+                {
+                    email = request.Email,
+                    password = request.Password,
+                    returnSecureToken = true
+                };
+                var firebaseKey = _config["FirebaseKey"];
+                var url = $"{IConstants.FirebaseLoginURL}{firebaseKey}";
+                var json = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+
+                var response = await _httpClientService.PostAsync(url, json);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"Login failed: {errorContent}");
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var loginResponse = JsonSerializer.Deserialize<FirebaseLoginResponse>(responseContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                //Setting Custom Claims
+                string uid = await _firebaseAuthService.VerifyIdTokenAsync(loginResponse.IdToken);
+                var claims = new Dictionary<string, object>()
+                {
+                    { "UserId", user.Id },
+                    { "Phone", user.Phone },
+                    { "Email", user.Email },
+                    { "UserName", user.FirstName + " " + user.LastName },
+                };
+                await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
+
+                return new LoginResponse
+                {
+                    Email = user.Email,
+                    Token = loginResponse.IdToken
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Login failed: {ex.Message}");
+            }
+        }
+
+        public async Task<UserDTO> UpdateProfile(UpdateProfileRequest request)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request), "Update profile request cannot be null");
+            }
+
+            if (request.UserId == Guid.Empty)
+            {
+                throw new ValidationException("User ID cannot be empty");
+            }
+
+            try
+            {
+                // Get existing user data
+                var existingUser = await _userRepository.GetUserById(request.UserId);
+                if (existingUser == null)
+                {
+                    throw new ValidationException($"User with ID {request.UserId} does not exist");
+                }
+
+                string url = "";
+                if (request.Profile != null && BlobStorageHelper.isValidFile(request.Profile.FileName))
+                {
+                    string filename = $"{request.Profile.FileName.Split(".")[0]}_{DateTime.UtcNow:yyMMddHHmmss}.{request.Profile.FileName.Split(".")[1]}";
+                    Uri fileURI = await _blobStorageHelper.UploadFileBlobAsyncUsingSAS(request.Profile.OpenReadStream(), filename, "user-profile");
+                    url = fileURI.ToString();
+                }
+
+                // Create a new UserEntity with update data
+                var updateEntity = new UserEntity
+                {
+                    Id = existingUser.Id,
+                    FirstName = existingUser.FirstName,
+                    LastName = existingUser.LastName,
+                    Email = existingUser.Email,
+                    Phone = existingUser.Phone,
+                    IsActive = existingUser.IsActive,
+                    FirebaseId = existingUser.FirebaseId,
+                    CreatedAt = existingUser.CreatedAt,
+                    Address = request.Address,
+                    Profile = url.Split("?")[0],
+                    JobTitle = request.JobTitle,
+                    CompanyName = request.CompanyName,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                //// Use UpdateHelper to update only the provided fields
+                //UpdateHelper.UpdateEntity(existingUser, updateEntity);
+
+                // Update the user document
+                await _userRepository.UpdateUserProfileAsync(request.UserId, updateEntity);
+
+                // Return updated user data
+                return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(request.UserId));
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in UserService.UpdateProfile for user {request.UserId}: {ex.Message}");
+                throw new Exception($"Failed to update user profile: {ex.Message}");
+            }
+        }
+
+        public async Task<UserDTO> GetUserProfile(Guid userId)
+        {
+            try
+            {
+                var user = await _userRepository.GetUserById(userId);
+                if (user == null)
+                {
+                    throw new Exception($"User with ID {userId} not found.");
+                }
+                return UserHelper.MaptoUserDTO(user);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+    }
+}

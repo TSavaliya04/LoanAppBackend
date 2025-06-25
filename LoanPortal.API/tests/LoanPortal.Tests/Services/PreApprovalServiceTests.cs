@@ -1,0 +1,686 @@
+using Moq;
+using LoanPortal.Core.Entities;
+using LoanPortal.Core.Exceptions;
+using LoanPortal.Core.Helper;
+using LoanPortal.Core.Interfaces;
+using LoanPortal.Core.Repositories;
+using LoanPortal.Core.Services;
+using LoanPortal.Shared.Enum;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace LoanPortal.Tests.Services
+{
+    public class PreApprovalServiceTests
+    {
+        private readonly Mock<ILoginUserDetails> _mockLoginUserDetails;
+        private readonly Mock<IPreApprovalRepository> _mockPreApprovalRepository;
+        private readonly Mock<IUserRepository> _mockUserRepository;
+        private readonly PreApprovalService _service;
+
+        public PreApprovalServiceTests()
+        {
+            _mockLoginUserDetails = new Mock<ILoginUserDetails>();
+            _mockPreApprovalRepository = new Mock<IPreApprovalRepository>();
+            _mockUserRepository = new Mock<IUserRepository>();
+            _service = new PreApprovalService(
+                _mockLoginUserDetails.Object,
+                _mockPreApprovalRepository.Object,
+                _mockUserRepository.Object
+            );
+        }
+
+        [Fact]
+        public async Task GetPreApproval_ValidId_ReturnsDocument()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var expectedDocument = new PreApprovalDocument
+            {
+                Id = id,
+                BorrowerInfo = new BorrowerInfoDTO()
+            };
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(id))
+                .ReturnsAsync(expectedDocument);
+
+            // Act
+            var result = await _service.GetPreApproval(id);
+
+            // Assert
+            Assert.Equal(expectedDocument, result);
+        }
+
+        [Fact]
+        public async Task GetPreApproval_InvalidId_ThrowsNotFoundException()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(id))
+                .ReturnsAsync((PreApprovalDocument)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<NotFoundException>(() => _service.GetPreApproval(id));
+        }
+
+        [Fact]
+        public async Task GetTopOpportunities_ReturnsOpportunities()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var documents = new List<PreApprovalDocument>
+            {
+                new PreApprovalDocument
+                {
+                    Id = Guid.NewGuid(),
+                    BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Doe" },
+                    LoanProgram = new LoanProgramDTO { LoanProgram = (int?)LoanProgram.Conventional },
+                    LenderFees = new LenderFeesDTO { AgentName = "Agent 1" }
+                }
+            };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockPreApprovalRepository.Setup(x => x.GetAllAsync(userId))
+                .ReturnsAsync(documents);
+
+            // Act
+            var result = await _service.GetTopOpportunities();
+
+            // Assert
+            Assert.Single(result);
+            Assert.Equal(documents[0].Id, result[0].PreApprovalId);
+            Assert.Equal(documents[0].BorrowerInfo.BorrowerName, result[0].BorrowerName);
+            Assert.Equal(documents[0].LoanProgram.LoanProgram, result[0].LoanProgram);
+            Assert.Equal(documents[0].LenderFees.AgentName, result[0].AgentName);
+        }
+
+        [Fact]
+        public async Task GetPreApprovalReport_ValidId_ReturnsReport()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                BorrowerInfo = new BorrowerInfoDTO 
+                { 
+                    BorrowerName = "John Doe",
+                    PropertyType = (int?)PropertyType.TwoUnit
+                },
+                PurchaseInfo = new PurchaseInfoDTO
+                {
+                    PurchasePrice = 300000,
+                    DownPayment = 20
+                },
+                LoanProgram = new LoanProgramDTO
+                {
+                    LoanProgram = (int?)LoanProgram.Conventional
+                },
+                BorrowerIncomes = new List<BorrowerIncomeDTO>
+                {
+                    new BorrowerIncomeDTO { BorrowerName = "John Doe" }
+                }
+            };
+
+            var user = new UserEntity
+            {
+                Id = userId,
+                CompanyName = "Test Company"
+            };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+            _mockUserRepository.Setup(x => x.GetUserById(userId))
+                .ReturnsAsync(user);
+
+            // Act
+            var result = await _service.GetPreApprovalReport(preApprovalId);
+
+            // Assert
+            Assert.Equal(preApprovalId, result.PreApprovalId);
+            Assert.Equal("John Doe", result.BorrowerName);
+            Assert.Equal(240000, result.FirstMortgageAmount); // 300000 - (300000 * 0.20)
+            Assert.Equal(20, result.DownPaymentPercentage);
+            Assert.Equal(60000, result.DownPaymentAmount); // 300000 * 0.20
+            Assert.Equal(300000, result.PurchasePrice);
+            Assert.Equal((double)LoanProgram.Conventional, result.LoanProgram);
+            Assert.Equal((double)PropertyType.TwoUnit, result.PropertyType);
+            Assert.Single(result.Borrowers);
+            Assert.Equal("Test Company", result.LendingCompany);
+        }
+
+        [Fact]
+        public async Task GetFHAReport_ValidId_ReturnsReport()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Doe" },
+                PurchaseInfo = new PurchaseInfoDTO
+                {
+                    PurchasePrice = 300000,
+                    DownPayment = 3.5m,
+                    MipFundingFee = 1.75m
+                },
+                LoanProgram = new LoanProgramDTO
+                {
+                    InterestRate = 3.5m,
+                    Term = 30,
+                    MMI = 0.85m
+                },
+                PrepaidItems = new PrepaidItemsDTO
+                {
+                    PropertyTaxAmount = 3000,
+                    HazardInsurance = 1200
+                }
+            };
+
+            var user = new UserEntity { Id = userId };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+            _mockUserRepository.Setup(x => x.GetUserById(userId))
+                .ReturnsAsync(user);
+
+            // Act
+            var result = await _service.GetFHAReport(preApprovalId);
+
+            // Assert
+            Assert.Equal(preApprovalId, result.PreApprovalId);
+            Assert.Equal("John Doe", result.BorrowerName);
+            Assert.Equal(10500, result.DownPaymentAmount); // 300000 * 0.035
+            Assert.Equal(300000, result.SalePrice);
+            Assert.Equal(1.75m, result.UpfrontMipPercent);
+            Assert.Equal(5250, result.UpfrontMipAmount); // 300000 * 0.0175
+            Assert.Equal(294750, result.TotalLoanAmount); // (300000 - 10500) + 5250
+            Assert.Equal(3.5m, result.InterestRate);
+            Assert.Equal(30, result.LoanTerm);
+            Assert.Equal(3000, result.PropertyTax);
+            Assert.Equal(1200, result.HazardInsurancePremium);
+            Assert.Equal(0.85m, result.CoverageRate);
+        }
+
+        [Fact]
+        public async Task CreateBorrowerInfo_NewDocument_CreatesSuccessfully()
+        {
+            // Arrange
+            var borrowerInfo = new BorrowerInfoDTO
+            {
+                BorrowerName = "John Doe"
+            };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(Guid.NewGuid());
+
+            // Act
+            var result = await _service.CreateBorrowerInfo(borrowerInfo);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal("John Doe", result.BorrowerName);
+            _mockPreApprovalRepository.Verify(x => x.InsertAsync(It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateBorrowerIncome_NewIncome_AddsSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var borrowerIncome = new BorrowerIncomeDTO
+            {
+                PreApprovalId = preApprovalId,
+                BorrowerName = "John Doe"
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                BorrowerIncomes = new List<BorrowerIncomeDTO>()
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreateBorrowerIncome(borrowerIncome);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal("John Doe", result.BorrowerName);
+            Assert.Equal(preApprovalId, result.PreApprovalId);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateBorrowerIncome_ExistingIncome_UpdatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var incomeId = Guid.NewGuid();
+            var borrowerIncome = new BorrowerIncomeDTO
+            {
+                Id = incomeId,
+                PreApprovalId = preApprovalId,
+                BorrowerName = "John Doe Updated"
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                BorrowerIncomes = new List<BorrowerIncomeDTO>
+                {
+                    new BorrowerIncomeDTO
+                    {
+                        Id = incomeId,
+                        BorrowerName = "John Doe"
+                    }
+                }
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreateBorrowerIncome(borrowerIncome);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(incomeId, result.Id);
+            Assert.Equal("John Doe Updated", result.BorrowerName);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateBorrowerIncome_NonExistentIncome_ThrowsNotFoundException()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var incomeId = Guid.NewGuid();
+            var borrowerIncome = new BorrowerIncomeDTO
+            {
+                Id = incomeId,
+                PreApprovalId = preApprovalId
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                BorrowerIncomes = new List<BorrowerIncomeDTO>()
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateBorrowerIncome(borrowerIncome));
+        }
+
+        [Fact]
+        public async Task CreatePurchaseInfo_NewDocument_CreatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var purchaseInfo = new PurchaseInfoDTO
+            {
+                PreApprovalId = preApprovalId,
+                PurchasePrice = 300000,
+                DownPayment = 20,
+                MipFundingFee = 1.75m
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreatePurchaseInfo(purchaseInfo);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal(300000, result.PurchasePrice);
+            Assert.Equal(20, result.DownPayment);
+            Assert.Equal(1.75m, result.MipFundingFee);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreatePurchaseInfo_ExistingDocument_UpdatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var purchaseInfo = new PurchaseInfoDTO
+            {
+                Id = Guid.NewGuid(),
+                PreApprovalId = preApprovalId,
+                PurchasePrice = 350000,
+                DownPayment = 25,
+                MipFundingFee = 2.0m
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                PurchaseInfo = new PurchaseInfoDTO
+                {
+                    Id = purchaseInfo.Id,
+                    PurchasePrice = 300000,
+                    DownPayment = 20,
+                    MipFundingFee = 1.75m
+                }
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreatePurchaseInfo(purchaseInfo);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(purchaseInfo.Id, result.Id);
+            Assert.Equal(350000, result.PurchasePrice);
+            Assert.Equal(25, result.DownPayment);
+            Assert.Equal(2.0m, result.MipFundingFee);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateLenderFees_NewDocument_CreatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var lenderFees = new LenderFeesDTO
+            {
+                PreApprovalId = preApprovalId,
+                AgentName = "John Agent",
+                LoanOriginationFee = 1000,
+                AppraisalFee = 800
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreateLenderFees(lenderFees);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal("John Agent", result.AgentName);
+            Assert.Equal(1000, result.LoanOriginationFee);
+            Assert.Equal(800, result.AppraisalFee);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreatePrepaidItems_NewDocument_CreatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var prepaidItems = new PrepaidItemsDTO
+            {
+                PreApprovalId = preApprovalId,
+                PropertyTaxAmount = 3000,
+                HazardInsurance = 1200,
+                PrepaidInterestAmount = 500
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreatePrepaidItems(prepaidItems);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal(3000, result.PropertyTaxAmount);
+            Assert.Equal(1200, result.HazardInsurance);
+            Assert.Equal(500, result.PrepaidInterestAmount);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateMiscFees_NewDocument_CreatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var miscFees = new MiscFeesDTO
+            {
+                PreApprovalId = preApprovalId,
+                MiscFee1 = 1000,
+                MiscFee2 = 200,
+                MiscFee3 = 50
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreateMiscFees(miscFees);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal(1000, result.MiscFee1);
+            Assert.Equal(200, result.MiscFee2);
+            Assert.Equal(50, result.MiscFee3);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateDebtBreakdown_NewDebt_AddsSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var debtBreakdown = new DebtBreakdownDTO
+            {
+                PreApprovalId = preApprovalId,
+                DebtType = 1,
+                Balance = 10000,
+                HighCredit = 12000,
+                MonthlyPayment = 500
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                DebtBreakdowns = new List<DebtBreakdownDTO>()
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreateDebtBreakdown(debtBreakdown);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal(1, result.DebtType);
+            Assert.Equal(10000, result.Balance);
+            Assert.Equal(12000, result.HighCredit);
+            Assert.Equal(500, result.MonthlyPayment);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateDebtBreakdown_ExistingDebt_UpdatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var debtId = Guid.NewGuid();
+            var debtBreakdown = new DebtBreakdownDTO
+            {
+                Id = debtId,
+                PreApprovalId = preApprovalId,
+                DebtType = 1,
+                Balance = 12000,
+                HighCredit = 14000,
+                MonthlyPayment = 600
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                DebtBreakdowns = new List<DebtBreakdownDTO>
+                {
+                    new DebtBreakdownDTO
+                    {
+                        Id = debtId,
+                        DebtType = 1,
+                        Balance = 10000,
+                        HighCredit = 12000,
+                        MonthlyPayment = 500
+                    }
+                }
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreateDebtBreakdown(debtBreakdown);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(debtId, result.Id);
+            Assert.Equal(1, result.DebtType);
+            Assert.Equal(12000, result.Balance);
+            Assert.Equal(14000, result.HighCredit);
+            Assert.Equal(600, result.MonthlyPayment);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateDebtBreakdown_NonExistentDebt_ThrowsNotFoundException()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var debtId = Guid.NewGuid();
+            var debtBreakdown = new DebtBreakdownDTO
+            {
+                Id = debtId,
+                PreApprovalId = preApprovalId
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                DebtBreakdowns = new List<DebtBreakdownDTO>()
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateDebtBreakdown(debtBreakdown));
+        }
+
+        [Fact]
+        public async Task CreateLoanProgram_NewDocument_CreatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var loanProgram = new LoanProgramDTO
+            {
+                PreApprovalId = preApprovalId,
+                LoanProgram = (int?)LoanProgram.Conventional,
+                InterestRate = 3.5m,
+                Term = 30,
+                MMI = 0.85m
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreateLoanProgram(loanProgram);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal((int?)LoanProgram.Conventional, result.LoanProgram);
+            Assert.Equal(3.5m, result.InterestRate);
+            Assert.Equal(30, result.Term);
+            Assert.Equal(0.85m, result.MMI);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateLoanProgram_ExistingDocument_UpdatesSuccessfully()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var loanProgram = new LoanProgramDTO
+            {
+                Id = Guid.NewGuid(),
+                PreApprovalId = preApprovalId,
+                LoanProgram = (int?)LoanProgram.FHA,
+                InterestRate = 4.0m,
+                Term = 30,
+                MMI = 0.85m
+            };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                LoanProgram = new LoanProgramDTO
+                {
+                    Id = loanProgram.Id,
+                    LoanProgram = (int?)LoanProgram.Conventional,
+                    InterestRate = 3.5m,
+                    Term = 30,
+                    MMI = 0.85m
+                }
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Act
+            var result = await _service.CreateLoanProgram(loanProgram);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(loanProgram.Id, result.Id);
+            Assert.Equal((int?)LoanProgram.FHA, result.LoanProgram);
+            Assert.Equal(4.0m, result.InterestRate);
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+    }
+} 

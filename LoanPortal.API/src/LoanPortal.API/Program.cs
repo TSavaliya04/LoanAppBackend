@@ -123,16 +123,16 @@ builder.Services.AddSwaggerGen(c =>
 
 FirebaseModel firebaseModel = new FirebaseModel();
 var firebaseSection = builder.Configuration.GetSection("FireBaseSettings");
-firebaseModel.type = firebaseSection["type"];
-firebaseModel.project_id = firebaseSection["project_id"];
-firebaseModel.private_key_id = firebaseSection["private_key_id"];
-firebaseModel.private_key = firebaseSection["private_key"];
-firebaseModel.client_email = firebaseSection["client_email"];
-firebaseModel.client_id = firebaseSection["client_id"];
-firebaseModel.auth_uri = firebaseSection["auth_uri"];
-firebaseModel.token_uri = firebaseSection["token_uri"];
-firebaseModel.auth_provider_x509_cert_url = firebaseSection["auth_provider_x509_cert_url"];
-firebaseModel.client_x509_cert_url = firebaseSection["client_x509_cert_url"];
+firebaseModel.type = firebaseSection["type"] ?? Environment.GetEnvironmentVariable("FIREBASE_TYPE");
+firebaseModel.project_id = firebaseSection["project_id"] ?? Environment.GetEnvironmentVariable("FIREBASE_PROJECT_ID");
+firebaseModel.private_key_id = firebaseSection["private_key_id"] ?? Environment.GetEnvironmentVariable("FIREBASE_PRIVATE_KEY_ID");
+firebaseModel.private_key = firebaseSection["private_key"] ?? Environment.GetEnvironmentVariable("FIREBASE_PRIVATE_KEY");
+firebaseModel.client_email = firebaseSection["client_email"] ?? Environment.GetEnvironmentVariable("FIREBASE_CLIENT_EMAIL");
+firebaseModel.client_id = firebaseSection["client_id"] ?? Environment.GetEnvironmentVariable("FIREBASE_CLIENT_ID");
+firebaseModel.auth_uri = firebaseSection["auth_uri"] ?? Environment.GetEnvironmentVariable("FIREBASE_AUTH_URI");
+firebaseModel.token_uri = firebaseSection["token_uri"] ?? Environment.GetEnvironmentVariable("FIREBASE_TOKEN_URI");
+firebaseModel.auth_provider_x509_cert_url = firebaseSection["auth_provider_x509_cert_url"] ?? Environment.GetEnvironmentVariable("FIREBASE_AUTH_PROVIDER_CERT_URL");
+firebaseModel.client_x509_cert_url = firebaseSection["client_x509_cert_url"] ?? Environment.GetEnvironmentVariable("FIREBASE_CLIENT_CERT_URL");
 
 
 FirebaseApp.Create(
@@ -162,11 +162,11 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseCors(CORS_POLICY);
 app.UseMiddleware<ErrorHandlerMiddleware>();

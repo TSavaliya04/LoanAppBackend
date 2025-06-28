@@ -24,6 +24,7 @@ using LoanPortal.Infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 var CORS_POLICY = "CorsPolicy";
 
+
 builder
     .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -45,11 +46,24 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient();
 builder.Services.AddSwaggerGen();
 
+//for use environment variables 
+builder.Configuration.AddEnvironmentVariables();
+
+
 // Register HttpClientService
 builder.Services.AddScoped<IHttpClientService, HttpClientService>();
 
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
-builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+//builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+builder.Services.Configure<MongoDbSettings>(options =>
+{
+    options.ConnectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING") ?? "";
+    options.DatabaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? "";
+    options.PreApprovalCollectionName = Environment.GetEnvironmentVariable("MONGODB_PRE_APPROVAL_COLLECTION_NAME") ?? "";
+    options.UserCollectionName = Environment.GetEnvironmentVariable("MONGODB_USER_COLLECTION_NAME") ?? "";
+});
+
+
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
     var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
@@ -126,7 +140,10 @@ var firebaseSection = builder.Configuration.GetSection("FireBaseSettings");
 firebaseModel.type = firebaseSection["type"] ?? Environment.GetEnvironmentVariable("FIREBASE_TYPE");
 firebaseModel.project_id = firebaseSection["project_id"] ?? Environment.GetEnvironmentVariable("FIREBASE_PROJECT_ID");
 firebaseModel.private_key_id = firebaseSection["private_key_id"] ?? Environment.GetEnvironmentVariable("FIREBASE_PRIVATE_KEY_ID");
-firebaseModel.private_key = firebaseSection["private_key"] ?? Environment.GetEnvironmentVariable("FIREBASE_PRIVATE_KEY");
+firebaseModel.private_key = firebaseSection["private_key"] ??
+    Environment.GetEnvironmentVariable("FIREBASE_PRIVATE_KEY")?.Replace("\\n", "\n");
+
+//firebaseModel.private_key = firebaseSection["private_key"] ?? Environment.GetEnvironmentVariable("FIREBASE_PRIVATE_KEY");
 firebaseModel.client_email = firebaseSection["client_email"] ?? Environment.GetEnvironmentVariable("FIREBASE_CLIENT_EMAIL");
 firebaseModel.client_id = firebaseSection["client_id"] ?? Environment.GetEnvironmentVariable("FIREBASE_CLIENT_ID");
 firebaseModel.auth_uri = firebaseSection["auth_uri"] ?? Environment.GetEnvironmentVariable("FIREBASE_AUTH_URI");

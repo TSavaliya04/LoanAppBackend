@@ -7,6 +7,8 @@
 # or wget:
 # wget --no-check-certificate http://gist.githubusercontent.com/kmorcinek/2710267/raw/.gitignore
 
+.env
+docker-compose.yml
 # User-specific files
 *.suo
 *.sln.docstates

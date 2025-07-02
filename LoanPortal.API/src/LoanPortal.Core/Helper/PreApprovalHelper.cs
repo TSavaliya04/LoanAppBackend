@@ -1,4 +1,5 @@
 ﻿using LoanPortal.Core.Entities;
+using MongoDB.Bson.Serialization.Conventions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,6 +47,23 @@ namespace LoanPortal.Core.Helper
             double numerator = monthlyRate * loanAmount;
             double denominator = 1.0 - Math.Pow(1.0 + monthlyRate, -termInMonths);
             return numerator / denominator;
+        }
+
+        public static decimal CalculateTitleInsurance(decimal loanAmount)
+        {
+            decimal premium = 0;
+            if (loanAmount > 500000)
+            {
+                premium += (loanAmount - 500000) * 4.00m / 1000;
+                loanAmount = 500000;
+            }
+            if (loanAmount > 100000)
+            {
+                premium += (loanAmount - 100000) * 5.00m / 1000;
+                loanAmount = 100000;
+            }
+            premium += loanAmount * 5.75m / 1000;
+            return Math.Round(premium, 2);
         }
     }
 }

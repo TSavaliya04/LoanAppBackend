@@ -1,25 +1,26 @@
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using MongoDB.Driver;
-using Newtonsoft.Json;
 using LoanPortal.API.Middleware;
 using LoanPortal.API.Models;
+using LoanPortal.Core.Entities;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
 using LoanPortal.Core.Services;
 using LoanPortal.Infrastructure;
-using LoanPortal.Infrastructure.Repositories;
 using LoanPortal.Infrastructure.Models;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Bson.Serialization;
-using LoanPortal.Shared;
+using LoanPortal.Infrastructure.Repositories;
 using LoanPortal.Infrastructure.Services;
+using LoanPortal.Shared;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Driver;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 var CORS_POLICY = "CorsPolicy";
@@ -55,13 +56,15 @@ builder.Services.AddScoped<IHttpClientService, HttpClientService>();
 
 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 //builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+var mongoSettings = builder.Configuration.GetSection("MongoDbSettings");
 builder.Services.Configure<MongoDbSettings>(options =>
 {
-    options.ConnectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING") ?? "";
-    options.DatabaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? "";
-    options.PreApprovalCollectionName = Environment.GetEnvironmentVariable("MONGODB_PRE_APPROVAL_COLLECTION_NAME") ?? "";
-    options.UserCollectionName = Environment.GetEnvironmentVariable("MONGODB_USER_COLLECTION_NAME") ?? "";
+    options.ConnectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING") ?? (mongoSettings != null ? mongoSettings["ConnectionString"] : "");
+    options.DatabaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? (mongoSettings != null ? mongoSettings["DatabaseName"] : "");
+    options.PreApprovalCollectionName = Environment.GetEnvironmentVariable("MONGODB_PRE_APPROVAL_COLLECTION_NAME") ?? (mongoSettings != null ? mongoSettings["PreApprovalCollectionName"] : "");
+    options.UserCollectionName = Environment.GetEnvironmentVariable("MONGODB_USER_COLLECTION_NAME") ?? (mongoSettings != null ? mongoSettings["UserCollectionName"] : "");
 });
+builder.Services.Configure<SMTPConfigModel>(builder.Configuration.GetSection("SMTPConfig"));
 
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
@@ -80,7 +83,7 @@ builder.Services.AddSingleton<IPreApprovalRepository, PreApprovalRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<IUserHelper, UserHelper>();
-builder.Services.AddSingleton<IBlobStorageHelper,BlobStorageHelper>();
+builder.Services.AddSingleton<IBlobStorageHelper, BlobStorageHelper>();
 builder.Services.AddSingleton<IFirebaseAuthService, FirebaseAuthService>();
 
 builder.Services.AddSwaggerGen(c =>
@@ -181,8 +184,8 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 //}
 
 app.UseCors(CORS_POLICY);

@@ -230,6 +230,42 @@ namespace LoanPortal.Core.Entities
         public decimal CoverageRate { get; set; }
         public decimal HOADues { get; set; }
         public decimal TotalMonthlyPayment { get; set; }
+        public EstimatedClosingCostDTO estimatedClosingCost { get; set; }
+    }
+
+    public class EstimatedClosingCostDTO
+    {
+        public decimal LoanOriginationFees { get; set; }
+        public decimal AppraisalFee { get; set; }
+        public decimal UnderWritingFee { get; set; }
+        public decimal LoanProcessingFee { get; set; }
+        public decimal WireFee { get; set; }
+        public decimal PrepaidInterest { get; set; }
+        public decimal MtgInsPremium { get; set; }
+        public decimal HazInsPremium { get; set; }
+        public decimal PpdPropTaxes { get; set; }
+        public decimal HazInsReserve { get; set; }
+        public decimal MtgInsReserve { get; set; }
+        public decimal PropertyTaxReserves { get; set; }
+        public decimal SettlementFee { get; set; }
+        public decimal WIREFee { get; set; }
+        public decimal NotaryFee { get; set; }
+        public decimal AttorneyFee { get; set; }
+        public decimal TitleInsurance { get; set; }
+        public decimal AddTitleCharges { get; set; }
+        public decimal AddEscrowCharges { get; set; }
+        public decimal RecordingFee { get; set; }
+        public decimal RecordingFeeOtherOne { get; set; }
+        public decimal RecordingFeeOtherTwo { get; set; }
+        public decimal RecordingFeeUPMIP { get; set; }
+        public decimal RecordingFeePadding { get; set; }
+        public decimal EstClosingCost { get; set; }
+        public decimal EstPrepaidItemReserves { get; set; }
+        public decimal TotalEstSettlementCharges { get; set; }
+        public decimal DownPayment { get; set; }
+        public decimal SellerCredit { get; set; }
+        public decimal EscrowDepositEMD { get; set; }
+        public decimal TotalEstFundToClose { get; set; }
     }
 
     public class PreApprovalDocument

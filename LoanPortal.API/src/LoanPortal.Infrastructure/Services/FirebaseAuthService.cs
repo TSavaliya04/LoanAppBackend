@@ -23,5 +23,11 @@ namespace LoanPortal.Infrastructure.Services
         {
             await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(uid, claims);
         }
+
+        public async Task<UserRecord> GetUserAsync(string uid)
+        {
+            return await FirebaseAuth.DefaultInstance.GetUserAsync(uid);
+        }
+
     }
 } 

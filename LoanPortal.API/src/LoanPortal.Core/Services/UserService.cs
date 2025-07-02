@@ -22,10 +22,10 @@ namespace LoanPortal.Core.Services
         private readonly IFirebaseAuthService _firebaseAuthService;
 
         public UserService(
-            IUserHelper userHelper, 
-            IConfiguration config, 
-            IHttpClientService httpClientService, 
-            IUserRepository userRepository, 
+            IUserHelper userHelper,
+            IConfiguration config,
+            IHttpClientService httpClientService,
+            IUserRepository userRepository,
             IBlobStorageHelper blobStorageHelper,
             IFirebaseAuthService firebaseAuthService)
         {
@@ -76,6 +76,7 @@ namespace LoanPortal.Core.Services
                 await _userRepository.CreateUser(userEntity);
 
                 var entity = await _userRepository.GetUserByEmail(user.Email);
+                //_userHelper.SendWelcomeMail(userEntity.Email, user.FirstName + " " + user.LastName);
                 return UserHelper.MaptoUserDTO(entity);
             }
             catch (Exception ex)
@@ -221,6 +222,46 @@ namespace LoanPortal.Core.Services
                 {
                     throw new Exception($"User with ID {userId} not found.");
                 }
+                return UserHelper.MaptoUserDTO(user);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<UserDTO> ValidateUserToken(string token)
+        {
+            try
+            {
+                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token);
+                UserRecord userRecord = await _firebaseAuthService.GetUserAsync(uid);
+
+                var user = new UserEntity();
+                if (userRecord.ProviderData != null && userRecord.ProviderData.ToList().Count > 0 && userRecord.ProviderData[0].ProviderId == "phone")
+                {
+                    var phone = userRecord.PhoneNumber.Substring(1);
+                    user = await _userRepository.GetUserByPhone(phone);
+                }
+                else if (userRecord.ProviderData != null && userRecord.ProviderData.ToList().Count > 0 && userRecord.ProviderData[0].ProviderId == "password")
+                {
+                    user = await _userRepository.GetUserByEmail(userRecord.ProviderData[0].Email);
+                }
+
+                if (user == null || user.Id == Guid.Empty)
+                {
+                    throw new ValidationException($"User with email {user.Email} not found.");
+                }
+
+                var claims = new Dictionary<string, object>()
+                {
+                    { "UserId", user.Id },
+                    { "Phone", user.Phone },
+                    { "Email", user.Email },
+                    { "UserName", user.FirstName + " " + user.LastName },
+                };
+
+                await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
                 return UserHelper.MaptoUserDTO(user);
             }
             catch (Exception ex)

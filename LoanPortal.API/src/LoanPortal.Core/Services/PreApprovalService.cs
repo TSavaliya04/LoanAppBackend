@@ -251,6 +251,7 @@ public class PreApprovalService : IPreApprovalService
 
     public async Task<FHAReport> GetFHAReport(Guid preApprovalId)
     {
+        FHAReport report = new FHAReport();
         try
         {
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
@@ -269,34 +270,54 @@ public class PreApprovalService : IPreApprovalService
             decimal realEstateTaxes = preApproval.PrepaidItems.PropertyTaxAmount.Value;
             decimal MMI = preApproval.LoanProgram.MMI.Value;
             decimal hazInsurancePremium = preApproval.PrepaidItems.HazardInsurance.Value;
-            decimal monthlyMortgageInsurance = ((totalLoanAmount * MMI) / 100) / 12; 
+            decimal monthlyMortgageInsurance = ((totalLoanAmount * MMI) / 100) / 12;
 
-            return new FHAReport
-            {
-                PreApprovalId = preApproval.Id,
-                BorrowerName = preApproval.BorrowerInfo.BorrowerName,
-                DownPaymentAmount = downAmount,
-                SalePrice = purchasePrice,
-                UpfrontMipPercent = upFront,
-                UpfrontMipAmount = upFrontAmount,
-                TotalLoanAmount = totalLoanAmount,
-                InterestRate = interestRate,
-                LoanTerm = loanTerm,
-                PILoanAmount = (decimal)MonthlyPILoanAmount,
-                PropertyTax = preApproval.PrepaidItems.PropertyTaxAmount.Value,
-                HazardInsurancePremium = preApproval.PrepaidItems.HazardInsurance.Value,
-                CoverageRate = preApproval.LoanProgram.MMI.Value,
-                MortgageInsurance = monthlyMortgageInsurance,
-            };
+            report.PreApprovalId = preApproval.Id;
+            report.BorrowerName = preApproval.BorrowerInfo.BorrowerName;
+            report.DownPaymentAmount = downAmount;
+            report.SalePrice = purchasePrice;
+            report.UpfrontMipPercent = upFront;
+            report.UpfrontMipAmount = upFrontAmount;
+            report.TotalLoanAmount = totalLoanAmount;
+            report.InterestRate = interestRate;
+            report.LoanTerm = loanTerm;
+            report.PILoanAmount = (decimal)MonthlyPILoanAmount;
+            report.PropertyTax = preApproval.PrepaidItems.PropertyTaxAmount.Value;
+            report.HazardInsurancePremium = preApproval.PrepaidItems.HazardInsurance.Value;
+            report.CoverageRate = preApproval.LoanProgram.MMI.Value;
+            report.MortgageInsurance = monthlyMortgageInsurance;
+            
+            EstimatedClosingCostDTO costDto = GetEstClosingCost(preApproval, report);
+            report.estimatedClosingCost = costDto;
+            return report;
         }             
         catch (Exception ex)
         {
             Console.WriteLine($"Exception in PreApprovalService.GetFHAReport: {ex.Message}");
-            throw new Exception("F" +
-                "ailed to retrieve top GetFHAReport.", ex);
+            throw new Exception("Failed to retrieve top GetFHAReport.", ex);
         }
     }
 
+    private EstimatedClosingCostDTO GetEstClosingCost(PreApprovalDocument preApproval, FHAReport report) 
+    {
+        LenderFeesDTO lenderFees = preApproval.LenderFees;
+        LoanProgramDTO loanProgram = preApproval.LoanProgram;
+        PrepaidItemsDTO prepaidItems = preApproval.PrepaidItems;
+
+        EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO
+        {
+            LoanOriginationFees = (preApproval.LoanProgram.BaseLoanAmount.Value * lenderFees.LoanOriginationFee.Value) / 100,
+            AppraisalFee = lenderFees.AppraisalFee.Value,
+            MtgInsPremium = loanProgram.MortgageInsurance.Value,
+            HazInsPremium = prepaidItems.HazardInsurance.Value,
+            PrepaidInterest = prepaidItems.PrepaidInterestDays.Value * prepaidItems.PrepaidInterestAmount.Value,
+            PpdPropTaxes = prepaidItems.PropertyTaxMonths.Value * prepaidItems.PropertyTaxAmount.Value,
+            HazInsReserve = prepaidItems.HazardInsuranceMonths.Value * prepaidItems.HazardInsuranceReserves.Value,
+            TitleInsurance = PreApprovalHelper.CalculateTitleInsurance(report.TotalLoanAmount)
+        };
+        return estClosingCost;
+    }
+    
     private async Task<T> CreateOrUpdateEntity<T>(
         T entity,
         Guid? id,

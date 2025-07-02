@@ -1,8 +1,11 @@
 ﻿using LoanPortal.Core.Entities;
 using LoanPortal.Core.Repositories;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,16 +15,18 @@ namespace LoanPortal.Core.Helper
     public interface IUserHelper
     {
         Task<string> ValidateUser(CreateUserRequest request);
+        void SendWelcomeMail(string email, string displayName);
+        }
 
-    }
-
-    public class UserHelper : IUserHelper
+        public class UserHelper : IUserHelper
     {
         private readonly IUserRepository _userRepository;
+        private readonly SMTPConfigModel _smtpConfig;
 
-        public UserHelper(IUserRepository userRepository)
+        public UserHelper(IUserRepository userRepository, IOptions<SMTPConfigModel> smtpConfig)
         {
             _userRepository = userRepository;
+            _smtpConfig = smtpConfig.Value;
         }
 
         public async Task<string> ValidateUser(CreateUserRequest request)
@@ -85,6 +90,77 @@ namespace LoanPortal.Core.Helper
                 Profile = entity.Profile,
                 CompanyName = entity.CompanyName
             };
+        }
+
+        public async void SendWelcomeMail(string email, string displayName)
+        {
+            UserEmailOptions options = new UserEmailOptions
+            {
+                ToEmails = new List<string>() { email },
+                PlaceHolders = new List<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("{{app_name}}","Loans N Stuff"),
+                    new KeyValuePair<string, string>("{{diplay_name}}",displayName),
+                },
+            };
+            options.Subject = UpdatePlaceHolders("Complete User Registration For {{app_name}}", options.PlaceHolders);
+            var body = "<p>Hello {{diplay_name}},</p>\r\n<p>Welcome aboard! We're excited to have you with us!</p>";
+            options.Body = UpdatePlaceHolders(body, options.PlaceHolders);
+
+            await SendEmail(options);
+        }
+
+        public static string UpdatePlaceHolders(string text, List<KeyValuePair<string, string>> keyValuePairs)
+        {
+            if (!string.IsNullOrEmpty(text) && keyValuePairs != null)
+            {
+                foreach (var placeholder in keyValuePairs)
+                {
+                    if (text.Contains(placeholder.Key))
+                    {
+                        text = text.Replace(placeholder.Key, placeholder.Value);
+                    }
+                }
+            }
+
+            return text;
+        }
+
+        private async Task SendEmail(UserEmailOptions userEmailOptions)
+        {
+            MailMessage mail = new MailMessage
+            {
+                Subject = userEmailOptions.Subject,
+                Body = userEmailOptions.Body,
+                From = new MailAddress(_smtpConfig.SenderAddress, _smtpConfig.SenderDisplayName),
+                IsBodyHtml = _smtpConfig.IsBodyHTML
+            };
+
+            foreach (var toEmail in userEmailOptions.ToEmails)
+            {
+                mail.To.Add(toEmail);
+            }
+
+            NetworkCredential networkCredential = new NetworkCredential(_smtpConfig.UserName, _smtpConfig.Password);
+
+            SmtpClient smtpClient = new SmtpClient
+            {
+                Host = _smtpConfig.Host,
+                Port = _smtpConfig.Port,
+                EnableSsl = _smtpConfig.EnableSSL,
+                UseDefaultCredentials = false,
+                Credentials = networkCredential
+            };
+
+            mail.BodyEncoding = Encoding.Default;
+            try
+            {
+                await smtpClient.SendMailAsync(mail);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
     }
 }

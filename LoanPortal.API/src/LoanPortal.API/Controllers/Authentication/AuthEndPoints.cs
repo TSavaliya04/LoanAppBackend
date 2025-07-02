@@ -114,5 +114,30 @@ namespace LoanPortal.API.Controllers.Authentication
                 throw new Exception("Exception in UserController.GetUserProfile -> " + ex.Message);
             }
         }
+
+        [AllowAnonymous]
+        [HttpPost("user/ValidateUserToken")]
+        public async Task<IActionResult> ValidateUserToken(string token)
+        {
+            try
+            {
+                var result = await _userService.ValidateUserToken(token);
+                return Ok(new ApiResponse<UserDTO>
+                {
+                    Data = result,
+                    IsSuccess = true
+                });
+            }
+            catch (ValidationException ex)
+            {
+                Console.WriteLine("Exception in UserController.ValidateUserToken -> " + ex.Message);
+                throw new Exception("Exception in UserController.ValidateUserToken -> " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserController.ValidateUserToken -> " + ex.Message);
+                throw new Exception("Exception in UserController.ValidateUserToken -> " + ex.Message);
+            }
+        }
     }
 }

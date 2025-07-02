@@ -106,7 +106,7 @@ namespace LoanPortal.Core.Services
                     password = request.Password,
                     returnSecureToken = true
                 };
-                var firebaseKey = _config["FirebaseKey"];
+                var firebaseKey = Environment.GetEnvironmentVariable("FirebaseKey") ?? _config["FirebaseKey"];
                 var url = $"{IConstants.FirebaseLoginURL}{firebaseKey}";
                 var json = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 

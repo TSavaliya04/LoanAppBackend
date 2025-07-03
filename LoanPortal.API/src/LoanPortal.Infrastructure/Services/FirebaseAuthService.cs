@@ -29,5 +29,9 @@ namespace LoanPortal.Infrastructure.Services
             return await FirebaseAuth.DefaultInstance.GetUserAsync(uid);
         }
 
+        public async Task<string> GeneratePasswordResetLinkAsync(string email)
+        {
+            return await FirebaseAuth.DefaultInstance.GeneratePasswordResetLinkAsync(email);
+        }
     }
 } 

@@ -139,5 +139,30 @@ namespace LoanPortal.API.Controllers.Authentication
                 throw new Exception("Exception in UserController.ValidateUserToken -> " + ex.Message);
             }
         }
+
+        [AllowAnonymous]
+        [HttpPost("user/ResetPassword")]
+        public async Task<IActionResult> ResetPassword(string email)
+        {
+            try
+            {
+                var result = await _userService.ResetPassword(email);
+                return Ok(new ApiResponse<bool>
+                {
+                    Data = result,
+                    IsSuccess = true
+                });
+            }
+            catch (ValidationException ex)
+            {
+                Console.WriteLine("Exception in UserController.ResetPassword -> " + ex.Message);
+                throw new Exception("Exception in UserController.ResetPassword -> " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserController.ResetPassword -> " + ex.Message);
+                throw new Exception("Exception in UserController.ResetPassword -> " + ex.Message);
+            }
+        }
     }
 }

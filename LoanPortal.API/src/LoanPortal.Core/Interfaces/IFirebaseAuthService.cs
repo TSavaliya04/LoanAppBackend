@@ -9,5 +9,6 @@ namespace LoanPortal.Core.Interfaces
         Task<UserRecord> GetUserAsync(string uid);
         Task<string> VerifyIdTokenAsync(string idToken);
         Task SetCustomUserClaimsAsync(string uid, Dictionary<string, object> claims);
+        Task<string> GeneratePasswordResetLinkAsync(string email);
     }
 } 

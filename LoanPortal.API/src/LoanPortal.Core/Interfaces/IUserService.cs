@@ -14,5 +14,6 @@ namespace LoanPortal.Core.Interfaces
         Task<UserDTO> UpdateProfile(UpdateProfileRequest request);
         Task<UserDTO> GetUserProfile(Guid id);
         Task<UserDTO> ValidateUserToken(string token);
+        Task<bool> ResetPassword(string email);
     }
 }

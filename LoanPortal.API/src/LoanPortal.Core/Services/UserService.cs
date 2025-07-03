@@ -1,11 +1,12 @@
 ﻿using FirebaseAdmin.Auth;
-using Microsoft.Extensions.Configuration;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
 using LoanPortal.Shared;
 using LoanPortal.Shared.Constants;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json;
@@ -263,6 +264,20 @@ namespace LoanPortal.Core.Services
 
                 await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
                 return UserHelper.MaptoUserDTO(user);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<bool> ResetPassword(string email)
+        {
+            try
+            {
+                string link = await _firebaseAuthService.GeneratePasswordResetLinkAsync(email);
+                _userHelper.ResetPassword(email,link);
+                return true;
             }
             catch (Exception ex)
             {

@@ -168,10 +168,7 @@ builder.Services.AddCors(options =>
         name: CORS_POLICY,
         cbuilder =>
         {
-            cbuilder
-                .WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Value.Split(","))
-                .AllowAnyHeader()
-                .AllowAnyMethod();
+            cbuilder.AllowAnyHeader().AllowAnyMethod();
             //builder.AllowAnyOrigin();
             //builder.AllowAnyMethod();
             //builder.AllowAnyHeader();

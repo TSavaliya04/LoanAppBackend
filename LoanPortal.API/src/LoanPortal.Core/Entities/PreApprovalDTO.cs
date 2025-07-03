@@ -67,6 +67,9 @@ namespace LoanPortal.Core.Entities
         public decimal? EscrowFees { get; set; }
         public decimal? TitleFees { get; set; }
         public decimal? ThirdPartyLenderFee { get; set; }
+        public decimal? NotaryFee { get; set; }
+        public decimal? UnderWriter { get; set; }
+        public decimal? ProcessFee { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -236,22 +239,26 @@ namespace LoanPortal.Core.Entities
     public class EstimatedClosingCostDTO
     {
         public decimal LoanOriginationFees { get; set; }
+        public decimal DiscountFee { get; set; }
+        public decimal UpFrontMIP { get; set; }
+        public decimal UnderWriter { get; set; }
+        public decimal ProcessFee { get; set; }
+        public decimal PrepaidInterest { get; set; }
+        public decimal HazInsPremium { get; set; }
+        public decimal HazInsReserve { get; set; }
+        public decimal PpdPropTaxes { get; set; }
+        public decimal EscrowFee { get; set; }
+        public decimal NotaryFee { get; set; }
+        public decimal TitleInsurance { get; set; }
         public decimal AppraisalFee { get; set; }
         public decimal UnderWritingFee { get; set; }
-        public decimal LoanProcessingFee { get; set; }
         public decimal WireFee { get; set; }
-        public decimal PrepaidInterest { get; set; }
         public decimal MtgInsPremium { get; set; }
-        public decimal HazInsPremium { get; set; }
-        public decimal PpdPropTaxes { get; set; }
-        public decimal HazInsReserve { get; set; }
         public decimal MtgInsReserve { get; set; }
         public decimal PropertyTaxReserves { get; set; }
         public decimal SettlementFee { get; set; }
         public decimal WIREFee { get; set; }
-        public decimal NotaryFee { get; set; }
         public decimal AttorneyFee { get; set; }
-        public decimal TitleInsurance { get; set; }
         public decimal AddTitleCharges { get; set; }
         public decimal AddEscrowCharges { get; set; }
         public decimal RecordingFee { get; set; }

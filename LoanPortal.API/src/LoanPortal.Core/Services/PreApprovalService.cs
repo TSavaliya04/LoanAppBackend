@@ -304,17 +304,34 @@ public class PreApprovalService : IPreApprovalService
         LoanProgramDTO loanProgram = preApproval.LoanProgram;
         PrepaidItemsDTO prepaidItems = preApproval.PrepaidItems;
 
-        EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO
+        EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO();
+        estClosingCost.LoanOriginationFees = (preApproval.LoanProgram.BaseLoanAmount.Value * lenderFees.LoanOriginationFee.Value) / 100;
+        estClosingCost.HazInsPremium = prepaidItems.HazardInsurance.Value;
+        estClosingCost.PrepaidInterest = prepaidItems.PrepaidInterestDays.Value * prepaidItems.PrepaidInterestAmount.Value;
+        estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxMonths.Value * prepaidItems.PropertyTaxAmount.Value;
+        estClosingCost.HazInsReserve = prepaidItems.HazardInsuranceMonths.Value * prepaidItems.HazardInsuranceReserves.Value;
+        estClosingCost.TitleInsurance = PreApprovalHelper.CalculateTitleInsurance(report.TotalLoanAmount);
+        estClosingCost.EscrowFee = lenderFees.EscrowFees.Value;
+        estClosingCost.NotaryFee = lenderFees.NotaryFee.Value;
+        estClosingCost.DiscountFee = lenderFees.DiscountFee.Value;
+        estClosingCost.UpFrontMIP = lenderFees.UpfrontMip.Value;
+        estClosingCost.UnderWriter = lenderFees.UnderWriter.Value;
+        estClosingCost.ProcessFee = lenderFees.ProcessFee.Value;
+        estClosingCost.EstClosingCost = new[]
         {
-            LoanOriginationFees = (preApproval.LoanProgram.BaseLoanAmount.Value * lenderFees.LoanOriginationFee.Value) / 100,
-            AppraisalFee = lenderFees.AppraisalFee.Value,
-            MtgInsPremium = loanProgram.MortgageInsurance.Value,
-            HazInsPremium = prepaidItems.HazardInsurance.Value,
-            PrepaidInterest = prepaidItems.PrepaidInterestDays.Value * prepaidItems.PrepaidInterestAmount.Value,
-            PpdPropTaxes = prepaidItems.PropertyTaxMonths.Value * prepaidItems.PropertyTaxAmount.Value,
-            HazInsReserve = prepaidItems.HazardInsuranceMonths.Value * prepaidItems.HazardInsuranceReserves.Value,
-            TitleInsurance = PreApprovalHelper.CalculateTitleInsurance(report.TotalLoanAmount)
-        };
+            estClosingCost.LoanOriginationFees,
+            estClosingCost.HazInsPremium,
+            estClosingCost.PrepaidInterest,
+            estClosingCost.PpdPropTaxes,
+            estClosingCost.HazInsReserve,
+            estClosingCost.TitleInsurance,
+            estClosingCost.EscrowFee,
+            estClosingCost.NotaryFee,
+            estClosingCost.DiscountFee,
+            estClosingCost.UpFrontMIP,
+            estClosingCost.UnderWriter,
+            estClosingCost.ProcessFee
+        }.Sum();
         return estClosingCost;
     }
     

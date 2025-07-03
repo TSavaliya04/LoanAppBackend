@@ -168,7 +168,7 @@ builder.Services.AddCors(options =>
         name: CORS_POLICY,
         cbuilder =>
         {
-            cbuilder.AllowAnyHeader().AllowAnyMethod();
+            cbuilder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
             //builder.AllowAnyOrigin();
             //builder.AllowAnyMethod();
             //builder.AllowAnyHeader();

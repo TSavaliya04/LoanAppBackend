@@ -303,6 +303,7 @@ public class PreApprovalService : IPreApprovalService
         LenderFeesDTO lenderFees = preApproval.LenderFees;
         LoanProgramDTO loanProgram = preApproval.LoanProgram;
         PrepaidItemsDTO prepaidItems = preApproval.PrepaidItems;
+        PurchaseInfoDTO purchaseInfo = preApproval.PurchaseInfo;
 
         EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO();
         estClosingCost.LoanOriginationFees = (preApproval.LoanProgram.BaseLoanAmount.Value * lenderFees.LoanOriginationFee.Value) / 100;
@@ -332,6 +333,12 @@ public class PreApprovalService : IPreApprovalService
             estClosingCost.UnderWriter,
             estClosingCost.ProcessFee
         }.Sum();
+        DateTime lastDayOfMonth = new DateTime(report.Date.Year, report.Date.Month,
+            DateTime.DaysInMonth(report.Date.Year, report.Date.Month));
+        int daysDifference = (lastDayOfMonth - report.Date).Days;
+        estClosingCost.EstPrepaidItemReserves = ((report.TotalLoanAmount * report.InterestRate) / 365) * daysDifference;
+        estClosingCost.TotalEstSettlementCharges = estClosingCost.EstClosingCost + report.DownPaymentAmount;
+        estClosingCost.TotalEstFundToClose = estClosingCost.EstClosingCost + report.DownPaymentAmount;
         return estClosingCost;
     }
     

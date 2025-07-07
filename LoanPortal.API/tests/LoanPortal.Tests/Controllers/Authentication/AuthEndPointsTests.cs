@@ -359,5 +359,248 @@ namespace LoanPortal.Tests.Controllers.Authentication
             await Assert.ThrowsAsync<Exception>(() => _controller.GetUserProfile(userId));
         }
         #endregion
+
+        #region ResetPassword Tests
+        [Fact]
+        public async Task ResetPassword_ValidEmail_ReturnsOkWithSuccessResponse()
+        {
+            // Arrange
+            var email = "test@example.com";
+            _mockUserService.Setup(x => x.ResetPassword(email))
+                           .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.ResetPassword(email);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<bool>>(okResult.Value);
+            Assert.True(response.Data);
+            Assert.True(response.IsSuccess);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ValidationException_ThrowsException()
+        {
+            // Arrange
+            var email = "invalid-email";
+            var validationMessage = "Invalid email format";
+            _mockUserService.Setup(x => x.ResetPassword(email))
+                           .ThrowsAsync(new ValidationException(validationMessage));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() =>
+                _controller.ResetPassword(email));
+
+            Assert.Contains("Exception in UserController.ResetPassword ->", exception.Message);
+            Assert.Contains(validationMessage, exception.Message);
+        }
+
+        [Fact]
+        public async Task ResetPassword_ServiceCalled_VerifyMethodInvocation()
+        {
+            // Arrange
+            var email = "test@example.com";
+            _mockUserService.Setup(x => x.ResetPassword(email))
+                           .ReturnsAsync(true);
+
+            // Act
+            await _controller.ResetPassword(email);
+
+            // Assert
+            _mockUserService.Verify(x => x.ResetPassword(email), Times.Once);
+        }
+        #endregion
+
+        #region ValidateUserToken Tests
+        [Fact]
+        public async Task ValidateUserToken_ValidToken_ReturnsOkWithUserData()
+        {
+            // Arrange
+            var token = "valid-jwt-token";
+            var expectedUser = new UserDTO
+            {
+                Email = "test@example.com",
+                UserName = "Test User"
+            };
+            _mockUserService.Setup(x => x.ValidateUserToken(token))
+                           .ReturnsAsync(expectedUser);
+
+            // Act
+            var result = await _controller.ValidateUserToken(token);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.NotNull(response.Data);
+            Assert.Equal(expectedUser.Id, response.Data.Id);
+            Assert.Equal(expectedUser.Email, response.Data.Email);
+            Assert.Equal(expectedUser.UserName, response.Data.UserName);
+            Assert.True(response.IsSuccess);
+        }
+
+        [Fact]
+        public async Task ValidateUserToken_ValidationException_ThrowsException()
+        {
+            // Arrange
+            var token = "invalid-format-token";
+            var validationMessage = "Token format is invalid";
+            _mockUserService.Setup(x => x.ValidateUserToken(token))
+                           .ThrowsAsync(new ValidationException(validationMessage));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() =>
+                _controller.ValidateUserToken(token));
+
+            Assert.Contains("Exception in UserController.ValidateUserToken ->", exception.Message);
+            Assert.Contains(validationMessage, exception.Message);
+        }
+
+        [Fact]
+        public async Task ValidateUserToken_GenericException_ThrowsException()
+        {
+            // Arrange
+            var token = "valid-token";
+            var errorMessage = "Database connection timeout";
+            _mockUserService.Setup(x => x.ValidateUserToken(token))
+                           .ThrowsAsync(new Exception(errorMessage));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() =>
+                _controller.ValidateUserToken(token));
+
+            Assert.Contains("Exception in UserController.ValidateUserToken ->", exception.Message);
+            Assert.Contains(errorMessage, exception.Message);
+        }
+
+        [Fact]
+        public async Task ValidateUserToken_ServiceCalled_VerifyMethodInvocation()
+        {
+            // Arrange
+            var token = "test-token";
+            var user = new UserDTO { Email = "test@example.com" };
+            _mockUserService.Setup(x => x.ValidateUserToken(token))
+                           .ReturnsAsync(user);
+
+            // Act
+            await _controller.ValidateUserToken(token);
+
+            // Assert
+            _mockUserService.Verify(x => x.ValidateUserToken(token), Times.Once);
+        }
+
+        [Fact]
+        public async Task ValidateUserToken_ComplexUserDTO_ReturnsAllProperties()
+        {
+            // Arrange
+            var token = "valid-token";
+            var expectedUser = new UserDTO
+            {
+                Email = "complex@example.com",
+                UserName = "Complex User",
+            };
+            _mockUserService.Setup(x => x.ValidateUserToken(token))
+                           .ReturnsAsync(expectedUser);
+
+            // Act
+            var result = await _controller.ValidateUserToken(token);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.NotNull(response.Data);
+            Assert.Equal(expectedUser.Id, response.Data.Id);
+            Assert.Equal(expectedUser.Email, response.Data.Email);
+            Assert.Equal(expectedUser.UserName, response.Data.UserName);
+            Assert.True(response.IsSuccess);
+        }
+        #endregion
+
+        [Fact]
+        public async Task GetUserByUserName_ValidUserName_ReturnsOkWithUserData()
+        {
+            // Arrange
+            var userName = "testuser";
+            var expectedUser = new UserDTO
+            {
+                Email = "testuser@example.com",
+                UserName = "testuser"
+            };
+            _mockUserService.Setup(x => x.GetUserProfileByUserName(userName))
+                           .ReturnsAsync(expectedUser);
+
+            // Act
+            var result = await _controller.GetUserByUserName(userName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.NotNull(response.Data);
+            Assert.Equal(expectedUser.Email, response.Data.Email);
+            Assert.Equal(expectedUser.UserName, response.Data.UserName);
+            Assert.True(response.IsSuccess);
+        }
+
+        [Fact]
+        public async Task GetUserByUserName_ValidationException_ThrowsException()
+        {
+            // Arrange
+            var userName = "invalid@username";
+            var validationMessage = "Username contains invalid characters";
+            _mockUserService.Setup(x => x.GetUserProfileByUserName(userName))
+                           .ThrowsAsync(new ValidationException(validationMessage));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() =>
+                _controller.GetUserByUserName(userName));
+
+            Assert.Contains("Exception in UserController.GetUserProfile ->", exception.Message);
+            Assert.Contains(validationMessage, exception.Message);
+        }
+
+        [Fact]
+        public async Task GetUserByUserName_GenericException_ThrowsException()
+        {
+            // Arrange
+            var userName = "testuser";
+            var errorMessage = "Database connection failed";
+            _mockUserService.Setup(x => x.GetUserProfileByUserName(userName))
+                           .ThrowsAsync(new Exception(errorMessage));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() =>
+                _controller.GetUserByUserName(userName));
+
+            Assert.Contains("Exception in UserController.GetUserProfile ->", exception.Message);
+            Assert.Contains(errorMessage, exception.Message);
+        }
+
+        [Theory]
+        [InlineData("user123")]
+        [InlineData("test_user")]
+        [InlineData("user.name")]
+        [InlineData("user-name")]
+        [InlineData("123user")]
+        public async Task GetUserByUserName_ValidUserNameFormats_ReturnsUserData(string userName)
+        {
+            // Arrange
+            var expectedUser = new UserDTO
+            {
+                Email = $"{userName}@example.com",
+                UserName = userName
+            };
+            _mockUserService.Setup(x => x.GetUserProfileByUserName(userName))
+                           .ReturnsAsync(expectedUser);
+
+            // Act
+            var result = await _controller.GetUserByUserName(userName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.NotNull(response.Data);
+            Assert.Equal(expectedUser.UserName, response.Data.UserName);
+            Assert.True(response.IsSuccess);
+        }
     }
 } 

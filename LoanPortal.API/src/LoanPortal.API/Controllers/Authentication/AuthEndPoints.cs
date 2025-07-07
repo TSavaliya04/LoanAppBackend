@@ -142,7 +142,7 @@ namespace LoanPortal.API.Controllers.Authentication
 
         [AllowAnonymous]
         [HttpPost("user/ResetPassword")]
-        public async Task<IActionResult> ResetPassword(string email)
+        public async Task<IActionResult> ResetPassword([FromBody] string email)
         {
             try
             {
@@ -162,6 +162,31 @@ namespace LoanPortal.API.Controllers.Authentication
             {
                 Console.WriteLine("Exception in UserController.ResetPassword -> " + ex.Message);
                 throw new Exception("Exception in UserController.ResetPassword -> " + ex.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("user/GetUserByUserName")]
+        public async Task<IActionResult> GetUserByUserName(string userName)
+        {
+            try
+            {
+                var result = await _userService.GetUserProfileByUserName(userName);
+                return Ok(new ApiResponse<UserDTO>
+                {
+                    Data = result,
+                    IsSuccess = true
+                });
+            }
+            catch (ValidationException ex)
+            {
+                Console.WriteLine("Exception in UserController.GetUserProfile -> " + ex.Message);
+                throw new Exception("Exception in UserController.GetUserProfile -> " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserController.GetUserProfile -> " + ex.Message);
+                throw new Exception("Exception in UserController.GetUserProfile -> " + ex.Message);
             }
         }
     }

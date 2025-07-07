@@ -11,6 +11,7 @@ namespace LoanPortal.Core.Entities
 {
     public class CreateUserRequest
     {
+        public string UserName { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
@@ -21,6 +22,7 @@ namespace LoanPortal.Core.Entities
     public class UserDTO
     {
         public Guid? Id { get; set; }
+        public string UserName { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
@@ -38,6 +40,9 @@ namespace LoanPortal.Core.Entities
     {
         [BsonId]
         public Guid Id { get; set; }
+
+        [BsonElement("userName")]
+        public string UserName { get; set; }
 
         [BsonElement("firstName")]
         public string FirstName { get; set; }

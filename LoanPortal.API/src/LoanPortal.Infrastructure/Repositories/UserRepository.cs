@@ -87,5 +87,17 @@ namespace LoanPortal.Infrastructure.Repositories
             await _collection.ReplaceOneAsync(filter, doc);
         }
 
+        public async Task<UserEntity> GetUserByUserName(string userName)
+        {
+            try
+            {
+                return await _collection.Find(u => u.UserName == userName).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.GetUserById -> " + ex.Message);
+                throw;
+            }
+        }
     }
 }

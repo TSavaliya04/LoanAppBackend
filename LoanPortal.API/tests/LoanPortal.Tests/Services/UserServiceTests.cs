@@ -1,53 +1,22 @@
+using FirebaseAdmin;
 using FirebaseAdmin.Auth;
-using Microsoft.Extensions.Configuration;
-using Moq;
+using Google.Apis.Auth;
+using Google.Apis.Auth.OAuth2;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
 using LoanPortal.Core.Services;
 using LoanPortal.Shared;
+using Microsoft.Extensions.Configuration;
+using Moq;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
 using Xunit;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Auth;
 
 namespace LoanPortal.Tests.Services
 {
-    // Test abstraction for UserRecord
-    public interface ITestUserRecord
-    {
-        string Uid { get; }
-        string Email { get; }
-        bool EmailVerified { get; }
-        string DisplayName { get; }
-        string PhotoUrl { get; }
-        string PhoneNumber { get; }
-        bool Disabled { get; }
-        long TokensValidAfterTimestamp { get; }
-        IReadOnlyDictionary<string, object> CustomClaims { get; }
-        IReadOnlyList<IUserInfo> ProviderData { get; }
-        string TenantId { get; }
-    }
-
-    // Custom class that matches the structure we need
-    public class TestUserRecord : ITestUserRecord
-    {
-        public string Uid { get; set; }
-        public string Email { get; set; }
-        public bool EmailVerified { get; set; }
-        public string DisplayName { get; set; }
-        public string PhotoUrl { get; set; }
-        public string PhoneNumber { get; set; }
-        public bool Disabled { get; set; }
-        public long TokensValidAfterTimestamp { get; set; }
-        public IReadOnlyDictionary<string, object> CustomClaims { get; set; }
-        public IReadOnlyList<IUserInfo> ProviderData { get; set; }
-        public string TenantId { get; set; }
-    }
-
     public class UserServiceTests
     {
         private readonly Mock<IUserHelper> _mockUserHelper;
@@ -310,7 +279,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync((UserEntity)null);
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _userService.GetUserProfile(userId));
+            await Assert.ThrowsAsync<ValidationException>(() => _userService.GetUserProfile(userId));
         }
 
         [Fact]
@@ -401,5 +370,117 @@ namespace LoanPortal.Tests.Services
             // Act & Assert
             await Assert.ThrowsAsync<Exception>(() => _userService.SignUp(createUserRequest));
         }
+
+        //[Fact]
+        //public async Task ValidateUserToken_WithValidPhoneProvider_ReturnsUserDTO()
+        //{
+        //    // Arrange
+        //    var token = "valid_token";
+        //    var uid = "firebase_uid";
+        //    var phoneNumber = "+1234567890";
+        //    var phone = "1234567890";
+
+        //    // Create mock UserRecord with phone provider
+        //    var userRecord = new Mock<UserRecord>();
+        //    userRecord.Setup(x => x.Uid).Returns(uid);
+        //    userRecord.Setup(x => x.PhoneNumber).Returns(phoneNumber);
+
+        //    // Create mock provider data for phone
+        //    var providerInfo = new Mock<UserInfo>();
+        //    providerInfo.Setup(x => x.ProviderId).Returns("phone");
+
+        //    var providerData = new UserInfo[] { providerInfo.Object };
+        //    userRecord.Setup(x => x.ProviderData).Returns(providerData);
+
+        //    var userEntity = new UserEntity
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        Phone = phone,
+        //        Email = "test@example.com",
+        //        FirstName = "John",
+        //        LastName = "Doe"
+        //    };
+
+        //    _mockFirebaseAuthService.Setup(x => x.VerifyIdTokenAsync(token))
+        //        .ReturnsAsync(uid);
+        //    _mockFirebaseAuthService.Setup(x => x.GetUserAsync(uid))
+        //        .ReturnsAsync(userRecord.Object);
+        //    _mockUserRepository.Setup(x => x.GetUserByPhone(phone))
+        //        .ReturnsAsync(userEntity);
+        //    _mockFirebaseAuthService.Setup(x => x.SetCustomUserClaimsAsync(uid, It.IsAny<Dictionary<string, object>>()))
+        //        .Returns(Task.CompletedTask);
+
+        //    // Act
+        //    var result = await _userService.ValidateUserToken(token);
+
+        //    // Assert
+        //    _mockFirebaseAuthService.Verify(x => x.VerifyIdTokenAsync(token), Times.Once);
+        //    _mockFirebaseAuthService.Verify(x => x.GetUserAsync(uid), Times.Once);
+        //    _mockUserRepository.Verify(x => x.GetUserByPhone(phone), Times.Once);
+        //    _mockFirebaseAuthService.Verify(x => x.SetCustomUserClaimsAsync(uid, It.IsAny<Dictionary<string, object>>()), Times.Once);
+        //}
+
+        //[Fact]
+        //public async Task ValidateUserToken_WithValidPasswordProvider_ReturnsUserDTO()
+        //{
+        //    // Arrange
+        //    var token = "valid_token";
+        //    var uid = "firebase_uid";
+        //    var email = "test@example.com";
+
+        //    // Create mock UserRecord with password provider
+        //    var userRecord = new Mock<UserRecord>();
+        //    userRecord.Setup(x => x.Uid).Returns(uid);
+
+        //    // Create mock provider data for password
+        //    var providerInfo = new Mock<UserInfo>();
+        //    providerInfo.Setup(x => x.ProviderId).Returns("password");
+        //    providerInfo.Setup(x => x.Email).Returns(email);
+
+        //    var providerData = new UserInfo[] { providerInfo.Object };
+        //    userRecord.Setup(x => x.ProviderData).Returns(providerData);
+
+        //    var userEntity = new UserEntity
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        Email = email,
+        //        Phone = "1234567890",
+        //        FirstName = "John",
+        //        LastName = "Doe"
+        //    };
+
+        //    _mockFirebaseAuthService.Setup(x => x.VerifyIdTokenAsync(token))
+        //        .ReturnsAsync(uid);
+        //    _mockFirebaseAuthService.Setup(x => x.GetUserAsync(uid))
+        //        .ReturnsAsync(userRecord.Object);
+        //    _mockUserRepository.Setup(x => x.GetUserByEmail(email))
+        //        .ReturnsAsync(userEntity);
+        //    _mockFirebaseAuthService.Setup(x => x.SetCustomUserClaimsAsync(uid, It.IsAny<Dictionary<string, object>>()))
+        //        .Returns(Task.CompletedTask);
+
+        //    // Act
+        //    var result = await _service.ValidateUserToken(token);
+
+        //    // Assert
+        //    result.Should().NotBeNull();
+        //    _mockFirebaseAuthService.Verify(x => x.VerifyIdTokenAsync(token), Times.Once);
+        //    _mockFirebaseAuthService.Verify(x => x.GetUserAsync(uid), Times.Once);
+        //    _mockUserRepository.Verify(x => x.GetUserByEmail(email), Times.Once);
+        //    _mockFirebaseAuthService.Verify(x => x.SetCustomUserClaimsAsync(uid, It.IsAny<Dictionary<string, object>>()), Times.Once);
+        //}
+
+        //[Fact]
+        //public async Task ValidateUserToken_WithInvalidToken_ThrowsException()
+        //{
+        //    // Arrange
+        //    var token = "invalid_token";
+
+        //    _mockFirebaseAuthService.Setup(x => x.VerifyIdTokenAsync(token))
+        //        .ThrowsAsync(new FirebaseAuthException(ErrorCode.InvalidIdToken, "Invalid token"));
+
+        //    // Act & Assert
+        //    await Assert.ThrowsAsync<FirebaseAuthException>(() => _service.ValidateUserToken(token));
+        //    _mockFirebaseAuthService.Verify(x => x.VerifyIdTokenAsync(token), Times.Once);
+        //}
     }
 }

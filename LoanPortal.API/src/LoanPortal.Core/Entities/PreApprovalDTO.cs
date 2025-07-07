@@ -269,7 +269,6 @@ namespace LoanPortal.Core.Entities
         public decimal EstClosingCost { get; set; }
         public decimal EstPrepaidItemReserves { get; set; }
         public decimal TotalEstSettlementCharges { get; set; }
-        public decimal DownPayment { get; set; }
         public decimal SellerCredit { get; set; }
         public decimal EscrowDepositEMD { get; set; }
         public decimal TotalEstFundToClose { get; set; }

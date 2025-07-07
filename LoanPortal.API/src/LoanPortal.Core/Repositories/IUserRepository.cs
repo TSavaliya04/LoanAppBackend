@@ -15,5 +15,6 @@ namespace LoanPortal.Core.Repositories
         Task<UserEntity> GetUserByPhone(string phone);
         Task<UserEntity> GetUserById(Guid id);
         Task UpdateUserProfileAsync(Guid id, UserEntity doc);
+        Task<UserEntity> GetUserByUserName(string userName);
     }
 }

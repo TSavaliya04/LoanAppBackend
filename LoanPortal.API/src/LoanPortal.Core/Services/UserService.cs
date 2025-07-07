@@ -8,6 +8,7 @@ using LoanPortal.Shared.Constants;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using System.ComponentModel.DataAnnotations;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Json;
 
@@ -221,7 +222,7 @@ namespace LoanPortal.Core.Services
                 var user = await _userRepository.GetUserById(userId);
                 if (user == null)
                 {
-                    throw new Exception($"User with ID {userId} not found.");
+                    throw new ValidationException($"User with ID {userId} not found.");
                 }
                 return UserHelper.MaptoUserDTO(user);
             }
@@ -278,6 +279,26 @@ namespace LoanPortal.Core.Services
                 string link = await _firebaseAuthService.GeneratePasswordResetLinkAsync(email);
                 _userHelper.ResetPassword(email,link);
                 return true;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        
+        public async Task<UserDTO> GetUserProfileByUserName(string userName)
+        {
+            try
+            {
+                UserEntity user = await _userRepository.GetUserByUserName(userName);
+                if(user == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    return UserHelper.MaptoUserDTO(user);
+                }
             }
             catch (Exception ex)
             {

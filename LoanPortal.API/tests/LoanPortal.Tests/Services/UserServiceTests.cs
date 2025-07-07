@@ -371,116 +371,137 @@ namespace LoanPortal.Tests.Services
             await Assert.ThrowsAsync<Exception>(() => _userService.SignUp(createUserRequest));
         }
 
-        //[Fact]
-        //public async Task ValidateUserToken_WithValidPhoneProvider_ReturnsUserDTO()
-        //{
-        //    // Arrange
-        //    var token = "valid_token";
-        //    var uid = "firebase_uid";
-        //    var phoneNumber = "+1234567890";
-        //    var phone = "1234567890";
+        [Fact]
+        public async Task ResetPassword_ValidEmail_ReturnsTrue()
+        {
+            // Arrange
+            string email = "test@example.com";
+            string expectedLink = "https://firebase.com/reset-link";
 
-        //    // Create mock UserRecord with phone provider
-        //    var userRecord = new Mock<UserRecord>();
-        //    userRecord.Setup(x => x.Uid).Returns(uid);
-        //    userRecord.Setup(x => x.PhoneNumber).Returns(phoneNumber);
+            _mockFirebaseAuthService
+                .Setup(x => x.GeneratePasswordResetLinkAsync(email))
+                .ReturnsAsync(expectedLink);
 
-        //    // Create mock provider data for phone
-        //    var providerInfo = new Mock<UserInfo>();
-        //    providerInfo.Setup(x => x.ProviderId).Returns("phone");
+            _mockUserHelper
+                .Setup(x => x.ResetPassword(email, expectedLink))
+                .Verifiable();
 
-        //    var providerData = new UserInfo[] { providerInfo.Object };
-        //    userRecord.Setup(x => x.ProviderData).Returns(providerData);
+            // Act
+            bool result = await _userService.ResetPassword(email);
 
-        //    var userEntity = new UserEntity
-        //    {
-        //        Id = Guid.NewGuid(),
-        //        Phone = phone,
-        //        Email = "test@example.com",
-        //        FirstName = "John",
-        //        LastName = "Doe"
-        //    };
+            // Assert
+            Assert.True(result);
+            _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Once);
+            _mockUserHelper.Verify(x => x.ResetPassword(email, expectedLink), Times.Once);
+        }
 
-        //    _mockFirebaseAuthService.Setup(x => x.VerifyIdTokenAsync(token))
-        //        .ReturnsAsync(uid);
-        //    _mockFirebaseAuthService.Setup(x => x.GetUserAsync(uid))
-        //        .ReturnsAsync(userRecord.Object);
-        //    _mockUserRepository.Setup(x => x.GetUserByPhone(phone))
-        //        .ReturnsAsync(userEntity);
-        //    _mockFirebaseAuthService.Setup(x => x.SetCustomUserClaimsAsync(uid, It.IsAny<Dictionary<string, object>>()))
-        //        .Returns(Task.CompletedTask);
+        [Fact]
+        public async Task ResetPassword_FirebaseServiceThrowsException_ThrowsException()
+        {
+            // Arrange
+            string email = "test@example.com";
+            var expectedException = new Exception("Firebase service error");
 
-        //    // Act
-        //    var result = await _userService.ValidateUserToken(token);
+            _mockFirebaseAuthService
+                .Setup(x => x.GeneratePasswordResetLinkAsync(email))
+                .ThrowsAsync(expectedException);
 
-        //    // Assert
-        //    _mockFirebaseAuthService.Verify(x => x.VerifyIdTokenAsync(token), Times.Once);
-        //    _mockFirebaseAuthService.Verify(x => x.GetUserAsync(uid), Times.Once);
-        //    _mockUserRepository.Verify(x => x.GetUserByPhone(phone), Times.Once);
-        //    _mockFirebaseAuthService.Verify(x => x.SetCustomUserClaimsAsync(uid, It.IsAny<Dictionary<string, object>>()), Times.Once);
-        //}
+            // Act & Assert
+            var actualException = await Assert.ThrowsAsync<Exception>(() => _userService.ResetPassword(email));
 
-        //[Fact]
-        //public async Task ValidateUserToken_WithValidPasswordProvider_ReturnsUserDTO()
-        //{
-        //    // Arrange
-        //    var token = "valid_token";
-        //    var uid = "firebase_uid";
-        //    var email = "test@example.com";
+            Assert.Equal(expectedException.Message, actualException.Message);
+            _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Once);
+            _mockUserHelper.Verify(x => x.ResetPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
 
-        //    // Create mock UserRecord with password provider
-        //    var userRecord = new Mock<UserRecord>();
-        //    userRecord.Setup(x => x.Uid).Returns(uid);
+        [Fact]
+        public async Task ResetPassword_UserHelperThrowsException_ThrowsException()
+        {
+            // Arrange
+            string email = "test@example.com";
+            string resetLink = "https://firebase.com/reset-link";
+            var expectedException = new Exception("User helper error");
 
-        //    // Create mock provider data for password
-        //    var providerInfo = new Mock<UserInfo>();
-        //    providerInfo.Setup(x => x.ProviderId).Returns("password");
-        //    providerInfo.Setup(x => x.Email).Returns(email);
+            _mockFirebaseAuthService
+                .Setup(x => x.GeneratePasswordResetLinkAsync(email))
+                .ReturnsAsync(resetLink);
 
-        //    var providerData = new UserInfo[] { providerInfo.Object };
-        //    userRecord.Setup(x => x.ProviderData).Returns(providerData);
+            _mockUserHelper
+                .Setup(x => x.ResetPassword(email, resetLink))
+                .Throws(expectedException);
 
-        //    var userEntity = new UserEntity
-        //    {
-        //        Id = Guid.NewGuid(),
-        //        Email = email,
-        //        Phone = "1234567890",
-        //        FirstName = "John",
-        //        LastName = "Doe"
-        //    };
+            // Act & Assert
+            var actualException = await Assert.ThrowsAsync<Exception>(() => _userService.ResetPassword(email));
 
-        //    _mockFirebaseAuthService.Setup(x => x.VerifyIdTokenAsync(token))
-        //        .ReturnsAsync(uid);
-        //    _mockFirebaseAuthService.Setup(x => x.GetUserAsync(uid))
-        //        .ReturnsAsync(userRecord.Object);
-        //    _mockUserRepository.Setup(x => x.GetUserByEmail(email))
-        //        .ReturnsAsync(userEntity);
-        //    _mockFirebaseAuthService.Setup(x => x.SetCustomUserClaimsAsync(uid, It.IsAny<Dictionary<string, object>>()))
-        //        .Returns(Task.CompletedTask);
+            Assert.Equal(expectedException.Message, actualException.Message);
+            _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Once);
+            _mockUserHelper.Verify(x => x.ResetPassword(email, resetLink), Times.Once);
+        }
 
-        //    // Act
-        //    var result = await _service.ValidateUserToken(token);
+        [Fact]
+        public async Task GetUserProfileByUserName_ValidUserName_ReturnsUserDTO()
+        {
+            // Arrange
+            string userName = "testuser";
+            var userEntity = new UserEntity
+            {
+                UserName = userName,
+                Email = "test@example.com",
+                FirstName = "John",
+                LastName = "Doe"
+            };
+            var expectedUserDTO = new UserDTO
+            {
+                UserName = userName,
+                Email = "test@example.com",
+                FirstName = "John",
+                LastName = "Doe"
+            };
 
-        //    // Assert
-        //    result.Should().NotBeNull();
-        //    _mockFirebaseAuthService.Verify(x => x.VerifyIdTokenAsync(token), Times.Once);
-        //    _mockFirebaseAuthService.Verify(x => x.GetUserAsync(uid), Times.Once);
-        //    _mockUserRepository.Verify(x => x.GetUserByEmail(email), Times.Once);
-        //    _mockFirebaseAuthService.Verify(x => x.SetCustomUserClaimsAsync(uid, It.IsAny<Dictionary<string, object>>()), Times.Once);
-        //}
+            _mockUserRepository.Setup(repo => repo.GetUserByUserName(userName))
+                              .ReturnsAsync(userEntity);
 
-        //[Fact]
-        //public async Task ValidateUserToken_WithInvalidToken_ThrowsException()
-        //{
-        //    // Arrange
-        //    var token = "invalid_token";
+            // Act
+            var result = await _userService.GetUserProfileByUserName(userName);
 
-        //    _mockFirebaseAuthService.Setup(x => x.VerifyIdTokenAsync(token))
-        //        .ThrowsAsync(new FirebaseAuthException(ErrorCode.InvalidIdToken, "Invalid token"));
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expectedUserDTO.UserName, result.UserName);
+            Assert.Equal(expectedUserDTO.Email, result.Email);
+            _mockUserRepository.Verify(repo => repo.GetUserByUserName(userName), Times.Once);
+        }
 
-        //    // Act & Assert
-        //    await Assert.ThrowsAsync<FirebaseAuthException>(() => _service.ValidateUserToken(token));
-        //    _mockFirebaseAuthService.Verify(x => x.VerifyIdTokenAsync(token), Times.Once);
-        //}
+        [Fact]
+        public async Task GetUserProfileByUserName_UserNotFound_ReturnsNull()
+        {
+            // Arrange
+            string userName = "nonexistentuser";
+            _mockUserRepository.Setup(repo => repo.GetUserByUserName(userName))
+                              .ReturnsAsync((UserEntity)null);
+
+            // Act
+            var result = await _userService.GetUserProfileByUserName(userName);
+
+            // Assert
+            Assert.Null(result);
+            _mockUserRepository.Verify(repo => repo.GetUserByUserName(userName), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetUserProfileByUserName_RepositoryThrowsException_ThrowsException()
+        {
+            // Arrange
+            string userName = "testuser";
+            var expectedException = new Exception("Database connection failed");
+            _mockUserRepository.Setup(repo => repo.GetUserByUserName(userName))
+                              .ThrowsAsync(expectedException);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() =>
+                _userService.GetUserProfileByUserName(userName));
+
+            Assert.Equal(expectedException.Message, exception.Message);
+            _mockUserRepository.Verify(repo => repo.GetUserByUserName(userName), Times.Once);
+        }
     }
 }

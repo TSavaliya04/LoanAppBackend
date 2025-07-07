@@ -67,6 +67,7 @@ namespace LoanPortal.Core.Services
                 UserEntity userEntity = new UserEntity
                 {
                     Id = Guid.NewGuid(),
+                    UserName = user.UserName,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email,

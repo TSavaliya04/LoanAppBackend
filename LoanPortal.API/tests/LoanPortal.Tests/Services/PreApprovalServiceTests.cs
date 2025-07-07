@@ -173,12 +173,28 @@ namespace LoanPortal.Tests.Services
                 {
                     InterestRate = 3.5m,
                     Term = 30,
-                    MMI = 0.85m
+                    MMI = 0.85m,
+                    BaseLoanAmount = 294750 // Example value
                 },
                 PrepaidItems = new PrepaidItemsDTO
                 {
                     PropertyTaxAmount = 3000,
-                    HazardInsurance = 1200
+                    HazardInsurance = 1200,
+                    PrepaidInterestDays = 10,
+                    PrepaidInterestAmount = 50,
+                    PropertyTaxMonths = 2,
+                    HazardInsuranceMonths = 2,
+                    HazardInsuranceReserves = 100
+                },
+                LenderFees = new LenderFeesDTO
+                {
+                    LoanOriginationFee = 1,
+                    EscrowFees = 500,
+                    NotaryFee = 100,
+                    DiscountFee = 200,
+                    UpfrontMip = 5250,
+                    UnderWriter = 300,
+                    ProcessFee = 400
                 }
             };
 

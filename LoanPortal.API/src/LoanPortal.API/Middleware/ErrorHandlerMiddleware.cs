@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Text.Json;
 
 namespace LoanPortal.API.Middleware;
@@ -30,6 +31,10 @@ public class ErrorHandlerMiddleware
           response.StatusCode = (int)HttpStatusCode.NotFound;
           errorCode = (int)HttpStatusCode.NotFound;
           break;
+        //case ValidationException ve:
+        //  response.StatusCode = (int)HttpStatusCode.ba;
+        //  errorCode = (int)HttpStatusCode.NotFound;
+        //  break;
         default:
           response.StatusCode = (int)HttpStatusCode.InternalServerError;
           errorCode = (int)HttpStatusCode.InternalServerError;
@@ -40,7 +45,7 @@ public class ErrorHandlerMiddleware
       _ilogger.LogError(error?.StackTrace);
       var result = JsonSerializer.Serialize(new
       {
-        message = "Internal Server Error",
+        message = error.Message, //"Internal Server Error",
         errorCode,
       });
 

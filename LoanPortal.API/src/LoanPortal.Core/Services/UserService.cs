@@ -82,6 +82,11 @@ namespace LoanPortal.Core.Services
                 //_userHelper.SendWelcomeMail(userEntity.Email, user.FirstName + " " + user.LastName);
                 return UserHelper.MaptoUserDTO(entity);
             }
+            catch (ValidationException ex)
+            {
+                Console.WriteLine("Exception in UserService.SignUp -> " + ex.Message);
+                throw new ValidationException("Exceptionn in UserService.SignUp -> " + ex.Message);
+            }
             catch (Exception ex)
             {
                 Console.WriteLine("Exception in UserService.SignUp -> " + ex.Message);

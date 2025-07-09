@@ -47,9 +47,14 @@ namespace LoanPortal.Core.Helper
                 if (string.IsNullOrWhiteSpace(request.Email) || !Regex.IsMatch(request.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
                     error = "Invalid email format.";
 
-                // Phone: US phone number with country code (1XXXXXXXXXX, no plus sign)
-                if (string.IsNullOrWhiteSpace(request.Phone) || !Regex.IsMatch(request.Phone, @"^1\d{10}$"))
-                    error = "Phone number must be a valid US number with country code, e.g., 1XXXXXXXXXX";
+                // Phone: Optional, but if provided, must be US (1XXXXXXXXXX) or Indian (91XXXXXXXXXX) number
+                if (!string.IsNullOrWhiteSpace(request.Phone))
+                {
+                    bool isUS = Regex.IsMatch(request.Phone, @"^1\d{10}$");
+                    bool isIN = Regex.IsMatch(request.Phone, @"^91\d{10}$");
+                    if (!isUS && !isIN)
+                        error = "Phone number must be a valid US (1XXXXXXXXXX) or Indian (91XXXXXXXXXX) number.";
+                }
 
                 // Password: Minimum 6 characters, at least one letter, one number, and one special character
                 if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6 ||
@@ -61,9 +66,12 @@ namespace LoanPortal.Core.Helper
                 if (user != null)
                     error = "User with given email is already exists.";
 
-                user = await _userRepository.GetUserByPhone(request.Phone.Replace("+", "").Replace(" ", ""));
-                if (user != null)
-                    error = "User with given phone number is already exists.";
+                if (request != null && !string.IsNullOrEmpty(request.Phone))
+                {
+                    user = await _userRepository.GetUserByPhone(request.Phone.Replace("+", "").Replace(" ", ""));
+                    if (user != null)
+                        error = "User with given phone number is already exists.";
+                }
             }
             catch (Exception ex)
             {

@@ -38,7 +38,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<PreApprovalDocument>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(expectedPreApproval, response.Data);
         }
 
@@ -56,7 +56,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             var response = Assert.IsType<ApiResponse<BorrowerInfoDTO>>(notFoundResult.Value);
-            Assert.False(response.IsSuccess);
+            Assert.False(response.Success);
             Assert.Equal("Pre-approval not found", response.Message);
         }
 
@@ -74,7 +74,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<List<TopOpportunityDTO>>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(expectedOpportunities, response.Data);
         }
 
@@ -92,7 +92,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
             var response = Assert.IsType<ApiResponse<List<TopOpportunityDTO>>>(statusCodeResult.Value);
-            Assert.False(response.IsSuccess);
+            Assert.False(response.Success);
             Assert.Equal("Internal server error.", response.Message);
         }
 
@@ -111,7 +111,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<PreApprovalReport>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(expectedReport, response.Data);
         }
 
@@ -130,7 +130,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
             var response = Assert.IsType<ApiResponse<List<TopOpportunityDTO>>>(statusCodeResult.Value);
-            Assert.False(response.IsSuccess);
+            Assert.False(response.Success);
             Assert.Equal("Internal server error.", response.Message);
         }
 
@@ -149,7 +149,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<FHAReport>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(expectedReport, response.Data);
         }
 
@@ -168,7 +168,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
             var response = Assert.IsType<ApiResponse<List<TopOpportunityDTO>>>(statusCodeResult.Value);
-            Assert.False(response.IsSuccess);
+            Assert.False(response.Success);
             Assert.Equal("Internal server error.", response.Message);
         }
     }

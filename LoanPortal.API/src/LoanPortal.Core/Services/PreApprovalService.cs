@@ -116,7 +116,6 @@ public class PreApprovalService : IPreApprovalService
             borrowerIncomeDTO.Id = Guid.NewGuid();
             borrowerIncomeDTO.CreatedAt = DateTime.UtcNow;
 
-            // Ensure W2Form Ids are set for new borrower
             if (borrowerIncomeDTO.W2Forms != null)
             {
                 foreach (var w2 in borrowerIncomeDTO.W2Forms)
@@ -212,8 +211,7 @@ public class PreApprovalService : IPreApprovalService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Exception in PreApprovalService.GetTopOpportunities: {ex.Message}");
-            throw new Exception("Failed to retrieve top opportunities.", ex );
+            throw;
         }
     }
 
@@ -244,8 +242,7 @@ public class PreApprovalService : IPreApprovalService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Exception in PreApprovalService.GetPreApprovalReport: {ex.Message}");
-            throw new Exception("Failed to retrieve top GetPreApprovalReport.", ex);
+            throw;
         }
     }
 
@@ -293,8 +290,7 @@ public class PreApprovalService : IPreApprovalService
         }             
         catch (Exception ex)
         {
-            Console.WriteLine($"Exception in PreApprovalService.GetFHAReport: {ex.Message}");
-            throw new Exception("Failed to retrieve top GetFHAReport.", ex);
+            throw;
         }
     }
 

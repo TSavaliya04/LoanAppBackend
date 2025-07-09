@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Interfaces;
+using static LoanPortal.API.Helper.ResponseHelper;
 using System.ComponentModel.DataAnnotations;
 
 namespace LoanPortal.API.Controllers.Authentication
@@ -26,24 +27,15 @@ namespace LoanPortal.API.Controllers.Authentication
             try
             {
                 var result = await _userService.SignUp(user);
-                return Ok(new ApiResponse<UserDTO>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(data:result, message:"User Created Successfully."));
             }
             catch (ValidationException ex)
             {
-                return StatusCode(400, new ApiResponse<UserDTO>
-                {
-                    Message = ex.Message,
-                    IsSuccess = true
-                });
+                return StatusCode(400, ErrorResponse<UserDTO>(error:ex.Message));
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in UserController.SignUp -> " + ex.Message);
-                throw new Exception("Exception in UserController.SignUp -> " + ex.Message);
+                return StatusCode(500, ErrorResponse<UserDTO>(500,ex.Message));
             }
         }
 
@@ -54,16 +46,11 @@ namespace LoanPortal.API.Controllers.Authentication
             try
             {
                 var result = await _userService.Login(request);
-                return Ok(new ApiResponse<LoginResponse>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in UserController.Login -> " + ex.Message);
-                throw new Exception("Exception in UserController.Login -> " + ex.Message);
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
             }
         }
 
@@ -73,21 +60,15 @@ namespace LoanPortal.API.Controllers.Authentication
             try
             {
                 var result = await _userService.UpdateProfile(request);
-                return Ok(new ApiResponse<UserDTO>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (ValidationException ex)
             {
-                Console.WriteLine("Exception in UserController.UpdateProfile -> " + ex.Message);
-                throw new Exception("Exception in UserController.UpdateProfile -> " + ex.Message);
+                return StatusCode(400, ErrorResponse<UserDTO>(error: ex.Message));
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in UserController.UpdateProfile -> " + ex.Message);
-                throw new Exception("Exception in UserController.UpdateProfile -> " + ex.Message);
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
             }
         }
 
@@ -97,21 +78,15 @@ namespace LoanPortal.API.Controllers.Authentication
             try
             {
                 var result = await _userService.GetUserProfile(id);
-                return Ok(new ApiResponse<UserDTO>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (ValidationException ex)
             {
-                Console.WriteLine("Exception in UserController.GetUserProfile -> " + ex.Message);
-                throw new Exception("Exception in UserController.GetUserProfile -> " + ex.Message);
+                return StatusCode(400, ErrorResponse<UserDTO>(error: ex.Message));
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in UserController.GetUserProfile -> " + ex.Message);
-                throw new Exception("Exception in UserController.GetUserProfile -> " + ex.Message);
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
             }
         }
 
@@ -122,21 +97,15 @@ namespace LoanPortal.API.Controllers.Authentication
             try
             {
                 var result = await _userService.ValidateUserToken(token);
-                return Ok(new ApiResponse<UserDTO>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (ValidationException ex)
             {
-                Console.WriteLine("Exception in UserController.ValidateUserToken -> " + ex.Message);
-                throw new Exception("Exception in UserController.ValidateUserToken -> " + ex.Message);
+                return StatusCode(400, ErrorResponse<UserDTO>(error: ex.Message));
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in UserController.ValidateUserToken -> " + ex.Message);
-                throw new Exception("Exception in UserController.ValidateUserToken -> " + ex.Message);
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
             }
         }
 
@@ -147,21 +116,15 @@ namespace LoanPortal.API.Controllers.Authentication
             try
             {
                 var result = await _userService.ResetPassword(email);
-                return Ok(new ApiResponse<bool>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(data:result, message:"Password Reset Successfully."));
             }
             catch (ValidationException ex)
             {
-                Console.WriteLine("Exception in UserController.ResetPassword -> " + ex.Message);
-                throw new Exception("Exception in UserController.ResetPassword -> " + ex.Message);
+                return StatusCode(400, ErrorResponse<string>(error: ex.Message));
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in UserController.ResetPassword -> " + ex.Message);
-                throw new Exception("Exception in UserController.ResetPassword -> " + ex.Message);
+                return StatusCode(500, ErrorResponse<string>(500, ex.Message));
             }
         }
 
@@ -172,21 +135,15 @@ namespace LoanPortal.API.Controllers.Authentication
             try
             {
                 var result = await _userService.GetUserProfileByUserName(userName);
-                return Ok(new ApiResponse<UserDTO>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (ValidationException ex)
             {
-                Console.WriteLine("Exception in UserController.GetUserProfile -> " + ex.Message);
-                throw new Exception("Exception in UserController.GetUserProfile -> " + ex.Message);
+                return StatusCode(400, ErrorResponse<UserDTO>(error: ex.Message));
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in UserController.GetUserProfile -> " + ex.Message);
-                throw new Exception("Exception in UserController.GetUserProfile -> " + ex.Message);
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
             }
         }
     }

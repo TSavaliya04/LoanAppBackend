@@ -39,7 +39,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<BorrowerInfoDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(borrowerInfo, response.Data);
         }
 
@@ -55,7 +55,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             var response = Assert.IsType<ApiResponse<BorrowerInfoDTO>>(notFoundResult.Value);
-            Assert.False(response.IsSuccess);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<PurchaseInfoDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(purchaseInfo, response.Data);
         }
 
@@ -98,7 +98,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<LenderFeesDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(lenderFees, response.Data);
         }
 
@@ -123,7 +123,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<PrepaidItemsDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(prepaidItems, response.Data);
         }
 
@@ -146,7 +146,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<MiscFeesDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(miscFees, response.Data);
         }
 
@@ -169,7 +169,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<BorrowerIncomeDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(borrowerIncome, response.Data);
         }
 
@@ -192,7 +192,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<DebtBreakdownDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(debtBreakdown, response.Data);
         }
 
@@ -219,7 +219,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<LoanProgramDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(loanProgram, response.Data);
         }
     }

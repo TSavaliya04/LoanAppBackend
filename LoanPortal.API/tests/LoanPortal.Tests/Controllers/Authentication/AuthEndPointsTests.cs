@@ -53,7 +53,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(expectedUser, response.Data);
         }
 
@@ -155,7 +155,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<LoginResponse>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(expectedResponse, response.Data);
         }
 
@@ -232,7 +232,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(expectedUser, response.Data);
         }
 
@@ -298,7 +298,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
             Assert.Equal(expectedUser, response.Data);
         }
 
@@ -336,7 +336,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<bool>>(okResult.Value);
             Assert.True(response.Data);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
         }
 
         [Fact]
@@ -388,7 +388,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
             Assert.Equal(expectedUser.Id, response.Data.Id);
             Assert.Equal(expectedUser.Email, response.Data.Email);
             Assert.Equal(expectedUser.UserName, response.Data.UserName);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
         }
 
         [Fact]
@@ -454,7 +454,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
             Assert.Equal(expectedUser.Id, response.Data.Id);
             Assert.Equal(expectedUser.Email, response.Data.Email);
             Assert.Equal(expectedUser.UserName, response.Data.UserName);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
         }
         #endregion
 
@@ -477,7 +477,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
             Assert.NotNull(response.Data);
             Assert.Equal(expectedUser.Email, response.Data.Email);
             Assert.Equal(expectedUser.UserName, response.Data.UserName);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
         }
 
         [Fact]
@@ -532,7 +532,7 @@ namespace LoanPortal.Tests.Controllers.Authentication
             var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
             Assert.NotNull(response.Data);
             Assert.Equal(expectedUser.UserName, response.Data.UserName);
-            Assert.True(response.IsSuccess);
+            Assert.True(response.Success);
         }
     }
 } 

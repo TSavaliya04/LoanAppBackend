@@ -7,6 +7,7 @@ using LoanPortal.Core.Exceptions;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Services;
+using static LoanPortal.API.Helper.ResponseHelper;
 
 namespace LoanPortal.API.Controllers.PreApproval
 {
@@ -37,24 +38,17 @@ namespace LoanPortal.API.Controllers.PreApproval
                 }*/
 
                 var result = await _preApprovalService.CreateBorrowerInfo(info);
-                return Ok(new ApiResponse<BorrowerInfoDTO> { Data = result, IsSuccess = true });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    new ApiResponse<BorrowerInfoDTO> { IsSuccess = false, Message = ex.Message }
+                    ErrorResponse<BorrowerInfoDTO>(404, ex.Message)
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(
-                    500,
-                    new ApiResponse<BorrowerInfoDTO>
-                    {
-                        IsSuccess = false,
-                        Message = "Internal server error.",
-                    }
-                );
+                return StatusCode(500, ErrorResponse<BorrowerInfoDTO>(500, ex.Message));
             }
         }
 
@@ -64,24 +58,17 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.CreatePurchaseInfo(info);
-                return Ok(new ApiResponse<PurchaseInfoDTO> { Data = result, IsSuccess = true });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    new ApiResponse<PurchaseInfoDTO> { IsSuccess = false, Message = ex.Message }
+                    ErrorResponse<BorrowerInfoDTO>(404, ex.Message)
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(
-                    500,
-                    new ApiResponse<PurchaseInfoDTO>
-                    {
-                        IsSuccess = false,
-                        Message = "Internal server error.",
-                    }
-                );
+                return StatusCode(500, ErrorResponse<BorrowerInfoDTO>(500, ex.Message));
             }
         }
 
@@ -91,24 +78,17 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.CreateLenderFees(feesDTO);
-                return Ok(new ApiResponse<LenderFeesDTO> { Data = result, IsSuccess = true });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    new ApiResponse<LenderFeesDTO> { IsSuccess = false, Message = ex.Message }
+                    ErrorResponse<LenderFeesDTO>(404, ex.Message)
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(
-                    500,
-                    new ApiResponse<LenderFeesDTO>
-                    {
-                        IsSuccess = false,
-                        Message = "Internal server error.",
-                    }
-                );
+                return StatusCode(500, ErrorResponse<LenderFeesDTO>(500, ex.Message));
             }
         }
 
@@ -118,24 +98,17 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.CreatePrepaidItems(prepaidItemsDTO);
-                return Ok(new ApiResponse<PrepaidItemsDTO> { Data = result, IsSuccess = true });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    new ApiResponse<PrepaidItemsDTO> { IsSuccess = false, Message = ex.Message }
+                    ErrorResponse<PrepaidItemsDTO>(404, ex.Message)
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(
-                    500,
-                    new ApiResponse<PrepaidItemsDTO>
-                    {
-                        IsSuccess = false,
-                        Message = "Internal server error.",
-                    }
-                );
+                return StatusCode(500, ErrorResponse<PrepaidItemsDTO>(500, ex.Message));
             }
         }
 
@@ -145,24 +118,17 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.CreateMiscFees(miscFeesDTO);
-                return Ok(new ApiResponse<MiscFeesDTO> { Data = result, IsSuccess = true });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    new ApiResponse<MiscFeesDTO> { IsSuccess = false, Message = ex.Message }
+                    ErrorResponse<MiscFeesDTO>(404, ex.Message)
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(
-                    500,
-                    new ApiResponse<MiscFeesDTO>
-                    {
-                        IsSuccess = false,
-                        Message = "Internal server error.",
-                    }
-                );
+                return StatusCode(500, ErrorResponse<MiscFeesDTO>(500, ex.Message));
             }
         }
 
@@ -172,24 +138,17 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.CreateBorrowerIncome(borrowerIncomeDTO);
-                return Ok(new ApiResponse<BorrowerIncomeDTO> { Data = result, IsSuccess = true });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    new ApiResponse<BorrowerIncomeDTO> { IsSuccess = false, Message = ex.Message }
+                    ErrorResponse<BorrowerIncomeDTO>(404, ex.Message)
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(
-                    500,
-                    new ApiResponse<BorrowerIncomeDTO>
-                    {
-                        IsSuccess = false,
-                        Message = "Internal server error.",
-                    }
-                );
+                return StatusCode(500, ErrorResponse<BorrowerIncomeDTO>(500, ex.Message));
             }
         }
 
@@ -199,24 +158,17 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.CreateDebtBreakdown(debtDto);
-                return Ok(new ApiResponse<DebtBreakdownDTO> { Data = result, IsSuccess = true });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    new ApiResponse<DebtBreakdownDTO> { IsSuccess = false, Message = ex.Message }
+                    ErrorResponse<DebtBreakdownDTO>(404, ex.Message)
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(
-                    500,
-                    new ApiResponse<DebtBreakdownDTO>
-                    {
-                        IsSuccess = false,
-                        Message = "Internal server error.",
-                    }
-                );
+                return StatusCode(500, ErrorResponse<DebtBreakdownDTO>(500, ex.Message));
             }
         }
 
@@ -226,24 +178,17 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.CreateLoanProgram(loanProgramDto);
-                return Ok(new ApiResponse<LoanProgramDTO> { Data = result, IsSuccess = true });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    new ApiResponse<LoanProgramDTO> { IsSuccess = false, Message = ex.Message }
+                    ErrorResponse<LoanProgramDTO>(404, ex.Message) 
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(
-                    500,
-                    new ApiResponse<LoanProgramDTO>
-                    {
-                        IsSuccess = false,
-                        Message = "Internal server error.",
-                    }
-                );
+                return StatusCode(500, ErrorResponse<LoanProgramDTO>(500, ex.Message));
             }
         }
     }

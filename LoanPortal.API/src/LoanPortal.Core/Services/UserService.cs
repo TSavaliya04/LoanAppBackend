@@ -8,6 +8,7 @@ using LoanPortal.Shared.Constants;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using System.ComponentModel.DataAnnotations;
+using System.Numerics;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Json;
@@ -49,16 +50,19 @@ namespace LoanPortal.Core.Services
                     throw new ValidationException(error);
                 }
 
-                user.Phone = user.Phone.Replace("+", "").Replace(" ", "");
                 UserRecordArgs args = new UserRecordArgs()
                 {
                     Email = user.Email,
                     EmailVerified = true,
-                    PhoneNumber = "+" + user.Phone,
                     Password = user.Password,
                     DisplayName = user.FirstName + " " + user.LastName,
                     Disabled = false,
                 };
+                if (user != null && !string.IsNullOrEmpty(user.Phone))
+                {
+                    user.Phone = user.Phone.Replace(" ", "");
+                    args.PhoneNumber = "+" + user.Phone;
+                }
 
                 // Create Firebase user
                 string newUserId = await _firebaseAuthService.CreateUserAsync(args);
@@ -71,11 +75,14 @@ namespace LoanPortal.Core.Services
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email,
-                    Phone = user.Phone,
                     IsActive = true,
                     FirebaseId = newUserId,
                     CreatedAt = DateTime.UtcNow,
                 };
+                if (user != null && !string.IsNullOrEmpty(user.Phone))
+                {
+                    userEntity.Phone = user.Phone;
+                }
                 await _userRepository.CreateUser(userEntity);
 
                 var entity = await _userRepository.GetUserByEmail(user.Email);
@@ -84,13 +91,11 @@ namespace LoanPortal.Core.Services
             }
             catch (ValidationException ex)
             {
-                Console.WriteLine("Exception in UserService.SignUp -> " + ex.Message);
-                throw new ValidationException("Exceptionn in UserService.SignUp -> " + ex.Message);
+                throw;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in UserService.SignUp -> " + ex.Message);
-                throw new Exception("Exception in UserService.SignUp -> " + ex.Message);
+                throw;
             }
         }
 
@@ -150,7 +155,7 @@ namespace LoanPortal.Core.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Login failed: {ex.Message}");
+                throw;
             }
         }
 
@@ -210,14 +215,13 @@ namespace LoanPortal.Core.Services
                 // Return updated user data
                 return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(request.UserId));
             }
-            catch (ValidationException)
+            catch (ValidationException ex)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in UserService.UpdateProfile for user {request.UserId}: {ex.Message}");
-                throw new Exception($"Failed to update user profile: {ex.Message}");
+                throw;
             }
         }
 
@@ -234,7 +238,7 @@ namespace LoanPortal.Core.Services
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw;
             }
         }
 
@@ -272,9 +276,13 @@ namespace LoanPortal.Core.Services
                 await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
                 return UserHelper.MaptoUserDTO(user);
             }
+            catch (ValidationException ex)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                throw ex;
+                throw;
             }
         }
 
@@ -288,7 +296,7 @@ namespace LoanPortal.Core.Services
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw;
             }
         }
         
@@ -308,7 +316,7 @@ namespace LoanPortal.Core.Services
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw;
             }
         }
     }

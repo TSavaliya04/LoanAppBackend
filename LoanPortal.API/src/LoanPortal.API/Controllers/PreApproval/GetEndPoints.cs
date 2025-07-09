@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Exceptions;
 using LoanPortal.Core.Interfaces;
+using static LoanPortal.API.Helper.ResponseHelper;
 
 namespace LoanPortal.API.Controllers.PreApproval
 {
@@ -23,27 +24,15 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.GetPreApproval(id);
-                return Ok(new ApiResponse<PreApprovalDocument>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
-                return NotFound(new ApiResponse<BorrowerInfoDTO>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                });
+                return NotFound(ErrorResponse<BorrowerInfoDTO>(404, ex.Message));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<BorrowerInfoDTO>
-                {
-                    IsSuccess = false,
-                    Message = "Internal server error."
-                });
+                return StatusCode(500, ErrorResponse<BorrowerInfoDTO>(500, ex.Message));
             }
         }
 
@@ -53,19 +42,11 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.GetTopOpportunities();
-                return Ok(new ApiResponse<List<TopOpportunityDTO>>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<List<TopOpportunityDTO>>
-                {
-                    IsSuccess = false,
-                    Message = "Internal server error."
-                });
+                return StatusCode(500, ErrorResponse<TopOpportunityDTO>(500, ex.Message));
             }
         }
 
@@ -75,19 +56,11 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.GetPreApprovalReport(preApprovalId);
-                return Ok(new ApiResponse<PreApprovalReport>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<List<TopOpportunityDTO>>
-                {
-                    IsSuccess = false,
-                    Message = "Internal server error."
-                });
+                return StatusCode(500, ErrorResponse<PreApprovalReport>(500, ex.Message));
             }
         }
 
@@ -97,19 +70,11 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 var result = await _preApprovalService.GetFHAReport(preApprovalId);
-                return Ok(new ApiResponse<FHAReport>
-                {
-                    Data = result,
-                    IsSuccess = true
-                });
+                return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<List<TopOpportunityDTO>>
-                {
-                    IsSuccess = false,
-                    Message = "Internal server error."
-                });
+                return StatusCode(500, ErrorResponse<FHAReport>(500, ex.Message));
             }
         }
     }

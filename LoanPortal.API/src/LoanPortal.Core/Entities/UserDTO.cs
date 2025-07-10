@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FirebaseAdmin.Auth;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace LoanPortal.Core.Entities
 {
     public class CreateUserRequest
     {
-        public string UserName { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
@@ -22,7 +15,6 @@ namespace LoanPortal.Core.Entities
     public class UserDTO
     {
         public Guid? Id { get; set; }
-        public string UserName { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
@@ -40,9 +32,6 @@ namespace LoanPortal.Core.Entities
     {
         [BsonId]
         public Guid Id { get; set; }
-
-        [BsonElement("userName")]
-        public string UserName { get; set; }
 
         [BsonElement("firstName")]
         public string FirstName { get; set; }

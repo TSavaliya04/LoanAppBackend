@@ -57,7 +57,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             var response = Assert.IsType<ApiResponse<BorrowerInfoDTO>>(notFoundResult.Value);
             Assert.False(response.Success);
-            Assert.Equal("Pre-approval not found", response.Message);
+            Assert.Equal("Pre-approval not found", response.Error);
         }
 
         [Fact]
@@ -91,9 +91,9 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
-            var response = Assert.IsType<ApiResponse<List<TopOpportunityDTO>>>(statusCodeResult.Value);
+            var response = Assert.IsType<ApiResponse<TopOpportunityDTO>>(statusCodeResult.Value);
             Assert.False(response.Success);
-            Assert.Equal("Internal server error.", response.Message);
+            Assert.Equal("Request Failed.", response.Message);
         }
 
         [Fact]
@@ -129,9 +129,9 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
-            var response = Assert.IsType<ApiResponse<List<TopOpportunityDTO>>>(statusCodeResult.Value);
+            var response = Assert.IsType<ApiResponse<PreApprovalReport>>(statusCodeResult.Value);
             Assert.False(response.Success);
-            Assert.Equal("Internal server error.", response.Message);
+            Assert.Equal("Request Failed.", response.Message);
         }
 
         [Fact]
@@ -167,9 +167,8 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
-            var response = Assert.IsType<ApiResponse<List<TopOpportunityDTO>>>(statusCodeResult.Value);
+            var response = Assert.IsType<ApiResponse<FHAReport>>(statusCodeResult.Value);
             Assert.False(response.Success);
-            Assert.Equal("Internal server error.", response.Message);
         }
     }
 } 

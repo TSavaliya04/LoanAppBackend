@@ -71,7 +71,6 @@ namespace LoanPortal.Core.Services
                 UserEntity userEntity = new UserEntity
                 {
                     Id = Guid.NewGuid(),
-                    UserName = user.UserName,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email,
@@ -163,7 +162,7 @@ namespace LoanPortal.Core.Services
         {
             if (request == null)
             {
-                throw new ArgumentNullException(nameof(request), "Update profile request cannot be null");
+                throw new ValidationException("Update profile request cannot be null");
             }
 
             if (request.UserId == Guid.Empty)
@@ -293,26 +292,6 @@ namespace LoanPortal.Core.Services
                 string link = await _firebaseAuthService.GeneratePasswordResetLinkAsync(email);
                 _userHelper.ResetPassword(email,link);
                 return true;
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-        
-        public async Task<UserDTO> GetUserProfileByUserName(string userName)
-        {
-            try
-            {
-                UserEntity user = await _userRepository.GetUserByUserName(userName);
-                if(user == null)
-                {
-                    return null;
-                }
-                else
-                {
-                    return UserHelper.MaptoUserDTO(user);
-                }
             }
             catch (Exception ex)
             {

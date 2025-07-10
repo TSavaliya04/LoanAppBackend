@@ -89,7 +89,6 @@ namespace LoanPortal.Core.Helper
                 Id = entity.Id,
                 FirstName = entity.FirstName,
                 LastName = entity.LastName,
-                UserName = entity.UserName,
                 Email = entity.Email,
                 Phone = entity.Phone,
                 IsActive = entity.IsActive,

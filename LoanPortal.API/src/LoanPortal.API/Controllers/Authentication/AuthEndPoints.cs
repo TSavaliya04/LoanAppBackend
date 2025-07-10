@@ -127,24 +127,5 @@ namespace LoanPortal.API.Controllers.Authentication
                 return StatusCode(500, ErrorResponse<string>(500, ex.Message));
             }
         }
-
-        [AllowAnonymous]
-        [HttpGet("user/GetUserByUserName")]
-        public async Task<IActionResult> GetUserByUserName(string userName)
-        {
-            try
-            {
-                var result = await _userService.GetUserProfileByUserName(userName);
-                return Ok(SuccessResponse(result));
-            }
-            catch (ValidationException ex)
-            {
-                return StatusCode(400, ErrorResponse<UserDTO>(error: ex.Message));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
-            }
-        }
     }
 }

@@ -106,7 +106,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync("Invalid user data");
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _userService.SignUp(createUserRequest));
+            await Assert.ThrowsAsync<ValidationException>(() => _userService.SignUp(createUserRequest));
         }
 
         [Fact]
@@ -240,7 +240,7 @@ namespace LoanPortal.Tests.Services
         public async Task UpdateProfile_NullRequest_ThrowsArgumentNullException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _userService.UpdateProfile(null));
+            await Assert.ThrowsAsync<ValidationException>(() => _userService.UpdateProfile(null));
         }
 
         [Fact]
@@ -317,7 +317,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(existingUser);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _userService.SignUp(createUserRequest));
+            var exception = await Assert.ThrowsAsync<ValidationException>(() => _userService.SignUp(createUserRequest));
             Assert.Contains("User with given email is already exists", exception.Message);
         }
 
@@ -338,7 +338,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync("Invalid email format"); // Expected validation error message
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _userService.SignUp(createUserRequest));
+            await Assert.ThrowsAsync<ValidationException>(() => _userService.SignUp(createUserRequest));
         }
 
         [Fact]
@@ -358,7 +358,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync("Invalid password"); // Validation returns an error message
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _userService.SignUp(createUserRequest));
+            await Assert.ThrowsAsync<ValidationException>(() => _userService.SignUp(createUserRequest));
         }
 
         [Fact]
@@ -368,7 +368,7 @@ namespace LoanPortal.Tests.Services
             CreateUserRequest createUserRequest = null;
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _userService.SignUp(createUserRequest));
+            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.SignUp(createUserRequest));
         }
 
         [Fact]
@@ -436,72 +436,6 @@ namespace LoanPortal.Tests.Services
             Assert.Equal(expectedException.Message, actualException.Message);
             _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Once);
             _mockUserHelper.Verify(x => x.ResetPassword(email, resetLink), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetUserProfileByUserName_ValidUserName_ReturnsUserDTO()
-        {
-            // Arrange
-            string userName = "testuser";
-            var userEntity = new UserEntity
-            {
-                UserName = userName,
-                Email = "test@example.com",
-                FirstName = "John",
-                LastName = "Doe"
-            };
-            var expectedUserDTO = new UserDTO
-            {
-                UserName = userName,
-                Email = "test@example.com",
-                FirstName = "John",
-                LastName = "Doe"
-            };
-
-            _mockUserRepository.Setup(repo => repo.GetUserByUserName(userName))
-                              .ReturnsAsync(userEntity);
-
-            // Act
-            var result = await _userService.GetUserProfileByUserName(userName);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(expectedUserDTO.UserName, result.UserName);
-            Assert.Equal(expectedUserDTO.Email, result.Email);
-            _mockUserRepository.Verify(repo => repo.GetUserByUserName(userName), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetUserProfileByUserName_UserNotFound_ReturnsNull()
-        {
-            // Arrange
-            string userName = "nonexistentuser";
-            _mockUserRepository.Setup(repo => repo.GetUserByUserName(userName))
-                              .ReturnsAsync((UserEntity)null);
-
-            // Act
-            var result = await _userService.GetUserProfileByUserName(userName);
-
-            // Assert
-            Assert.Null(result);
-            _mockUserRepository.Verify(repo => repo.GetUserByUserName(userName), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetUserProfileByUserName_RepositoryThrowsException_ThrowsException()
-        {
-            // Arrange
-            string userName = "testuser";
-            var expectedException = new Exception("Database connection failed");
-            _mockUserRepository.Setup(repo => repo.GetUserByUserName(userName))
-                              .ThrowsAsync(expectedException);
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() =>
-                _userService.GetUserProfileByUserName(userName));
-
-            Assert.Equal(expectedException.Message, exception.Message);
-            _mockUserRepository.Verify(repo => repo.GetUserByUserName(userName), Times.Once);
         }
     }
 }

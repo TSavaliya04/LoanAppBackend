@@ -91,7 +91,8 @@ namespace LoanPortal.Infrastructure.Repositories
         {
             try
             {
-                return await _collection.Find(u => u.UserName == userName).FirstOrDefaultAsync();
+                //return await _collection.Find(u => u.UserName == userName).FirstOrDefaultAsync();
+                return null;
             }
             catch (Exception ex)
             {

@@ -28,6 +28,7 @@ namespace LoanPortal.Core.Entities
         public string? CompanyName { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class UserEntity
     {
         [BsonId]

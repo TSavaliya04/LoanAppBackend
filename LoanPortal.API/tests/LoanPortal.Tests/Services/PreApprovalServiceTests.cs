@@ -266,13 +266,14 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(preApproval);
 
             // Act
-            var result = await _service.CreateBorrowerIncome(borrowerIncome);
+            var result = await _service.CreateBorrowerIncome(new List<BorrowerIncomeDTO> { borrowerIncome });
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotEqual(Guid.Empty, result.Id);
-            Assert.Equal("John Doe", result.BorrowerName);
-            Assert.Equal(preApprovalId, result.PreApprovalId);
+            Assert.Single(result);
+            Assert.NotEqual(Guid.Empty, result[0].Id);
+            Assert.Equal("John Doe", result[0].BorrowerName);
+            Assert.Equal(preApprovalId, result[0].PreApprovalId);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
         }
 
@@ -306,12 +307,13 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(preApproval);
 
             // Act
-            var result = await _service.CreateBorrowerIncome(borrowerIncome);
+            var result = await _service.CreateBorrowerIncome(new List<BorrowerIncomeDTO> { borrowerIncome });
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(incomeId, result.Id);
-            Assert.Equal("John Doe Updated", result.BorrowerName);
+            Assert.Single(result);
+            Assert.Equal(incomeId, result[0].Id);
+            Assert.Equal("John Doe Updated", result[0].BorrowerName);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
         }
 
@@ -337,7 +339,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(preApproval);
 
             // Act & Assert
-            await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateBorrowerIncome(borrowerIncome));
+            await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateBorrowerIncome(new List<BorrowerIncomeDTO> { borrowerIncome }));
         }
 
         [Fact]

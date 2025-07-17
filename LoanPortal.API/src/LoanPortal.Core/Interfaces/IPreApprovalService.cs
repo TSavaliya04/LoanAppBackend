@@ -14,7 +14,7 @@ namespace LoanPortal.Core.Interfaces
         public Task<LenderFeesDTO> CreateLenderFees(LenderFeesDTO feesDTO);
         public Task<PrepaidItemsDTO> CreatePrepaidItems(PrepaidItemsDTO prepaidItemsDTO);
         public Task<MiscFeesDTO> CreateMiscFees(MiscFeesDTO miscFeesDTO);
-        public Task<BorrowerIncomeDTO> CreateBorrowerIncome(BorrowerIncomeDTO borrowerIncomeDTO);
+        public Task<List<BorrowerIncomeDTO>> CreateBorrowerIncome(List<BorrowerIncomeDTO> borrowerIncomeDTO);
         public Task<PreApprovalDocument> GetPreApproval(Guid id);
         public Task<DebtBreakdownDTO> CreateDebtBreakdown(DebtBreakdownDTO debtDto);
         public Task<LoanProgramDTO> CreateLoanProgram(LoanProgramDTO loanProgramDto);

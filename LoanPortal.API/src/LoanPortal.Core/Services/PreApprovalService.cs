@@ -85,56 +85,58 @@ public class PreApprovalService : IPreApprovalService
         );
     }
 
-    public async Task<BorrowerIncomeDTO> CreateBorrowerIncome(BorrowerIncomeDTO borrowerIncomeDTO)
+    public async Task<List<BorrowerIncomeDTO>> CreateBorrowerIncome(List<BorrowerIncomeDTO> borrowerIncomeDTOs)
     {
-        PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(borrowerIncomeDTO.PreApprovalId);
-        BorrowerIncomeDTO result = new BorrowerIncomeDTO();
+        if (borrowerIncomeDTOs == null || !borrowerIncomeDTOs.Any())
+            throw new ValidationException("Input list cannot be null or empty");
 
+        var preApprovalId = borrowerIncomeDTOs.First().PreApprovalId;
+        PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
         if (preApproval.BorrowerIncomes == null)
         {
             preApproval.BorrowerIncomes = new List<BorrowerIncomeDTO>();
         }
 
-        if (borrowerIncomeDTO.Id != null && borrowerIncomeDTO.Id != Guid.Empty)
-        {
-            var oldEntity = preApproval.BorrowerIncomes
-                .FirstOrDefault(b => b.Id == borrowerIncomeDTO.Id);
+        var results = new List<BorrowerIncomeDTO>();
 
-            if (oldEntity != null)
+        foreach (var borrowerIncomeDTO in borrowerIncomeDTOs)
+        {
+            if (borrowerIncomeDTO.Id != null && borrowerIncomeDTO.Id != Guid.Empty)
             {
-                UpdateHelper.UpdateEntity(oldEntity, borrowerIncomeDTO);
-                oldEntity.UpdatedAt = DateTime.UtcNow;
-                result = oldEntity;
+                var oldEntity = preApproval.BorrowerIncomes.FirstOrDefault(b => b.Id == borrowerIncomeDTO.Id);
+                if (oldEntity != null)
+                {
+                    UpdateHelper.UpdateEntity(oldEntity, borrowerIncomeDTO);
+                    oldEntity.UpdatedAt = DateTime.UtcNow;
+                    results.Add(oldEntity);
+                }
+                else
+                {
+                    throw new NotFoundException($"Borrower Income with ID {borrowerIncomeDTO.Id} was not found.");
+                }
             }
             else
             {
-                throw new NotFoundException($"Borrower Income with ID {borrowerIncomeDTO.Id} was not found.");
+                borrowerIncomeDTO.Id = Guid.NewGuid();
+                borrowerIncomeDTO.CreatedAt = DateTime.UtcNow;
+                // if (borrowerIncomeDTO.W2Forms != null)
+                // {
+                //     foreach (var w2 in borrowerIncomeDTO.W2Forms)
+                //     {
+                //         if (w2.Id == Guid.Empty)
+                //         {
+                //             w2.Id = Guid.NewGuid();
+                //         }
+                //     }
+                // }
+                preApproval.BorrowerIncomes.Add(borrowerIncomeDTO);
+                results.Add(borrowerIncomeDTO);
             }
-        }
-        else
-        {
-            borrowerIncomeDTO.Id = Guid.NewGuid();
-            borrowerIncomeDTO.CreatedAt = DateTime.UtcNow;
-
-            if (borrowerIncomeDTO.W2Forms != null)
-            {
-                foreach (var w2 in borrowerIncomeDTO.W2Forms)
-                {
-                    if (w2.Id == Guid.Empty)
-                    {
-                        w2.Id = Guid.NewGuid();
-                    }
-                }
-            }
-
-            preApproval.BorrowerIncomes.Add(borrowerIncomeDTO);
-            result = borrowerIncomeDTO;
         }
 
         preApproval.UpdatedAt = DateTime.UtcNow;
         await _preApprovalRepository.UpdateAsync(preApproval.Id, preApproval);
-
-        return result;
+        return results;
     }
 
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)

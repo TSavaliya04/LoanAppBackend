@@ -161,16 +161,19 @@ namespace LoanPortal.Tests.Controllers.PreApproval
                 YTDEarnings = 96000
             };
 
-            _mockPreApprovalService
-                .Setup(x => x.CreateBorrowerIncome(It.IsAny<BorrowerIncomeDTO>()))
-                .ReturnsAsync(borrowerIncome);
+            var borrowerIncomeList = new List<BorrowerIncomeDTO> { borrowerIncome };
 
-            var result = await _controller.BorrowerIncome(borrowerIncome);
+            _mockPreApprovalService
+                .Setup(x => x.CreateBorrowerIncome(It.IsAny<List<BorrowerIncomeDTO>>()))
+                .ReturnsAsync(borrowerIncomeList);
+
+            var result = await _controller.BorrowerIncome(borrowerIncomeList);
 
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<ApiResponse<BorrowerIncomeDTO>>(okResult.Value);
+            var response = Assert.IsType<ApiResponse<List<BorrowerIncomeDTO>>>(okResult.Value);
             Assert.True(response.Success);
-            Assert.Equal(borrowerIncome, response.Data);
+            Assert.Single(response.Data);
+            Assert.Equal(borrowerIncome.BorrowerName, response.Data[0].BorrowerName);
         }
 
         [Fact]

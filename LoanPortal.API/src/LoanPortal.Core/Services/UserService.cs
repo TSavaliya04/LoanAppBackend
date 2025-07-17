@@ -85,7 +85,7 @@ namespace LoanPortal.Core.Services
                 await _userRepository.CreateUser(userEntity);
 
                 var entity = await _userRepository.GetUserByEmail(user.Email);
-                //_userHelper.SendWelcomeMail(userEntity.Email, user.FirstName + " " + user.LastName);
+                _userHelper.SendWelcomeMail(userEntity.Email, user.FirstName + " " + user.LastName);
                 return UserHelper.MaptoUserDTO(entity);
             }
             catch (ValidationException ex)

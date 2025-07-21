@@ -147,41 +147,48 @@ public class PreApprovalService : IPreApprovalService
         return document;
     }
 
-    public async Task<DebtBreakdownDTO> CreateDebtBreakdown(DebtBreakdownDTO debtDto)
+    public async Task<List<DebtBreakdownDTO>> CreateDebtBreakdown(List<DebtBreakdownDTO> debtDtos)
     {
-        PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(debtDto.PreApprovalId);
+        if (debtDtos == null || !debtDtos.Any())
+            throw new ValidationException("Input list cannot be null or empty");
 
+        var preApprovalId = debtDtos.First().PreApprovalId;
+        PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
         if (preApproval.DebtBreakdowns == null)
         {
             preApproval.DebtBreakdowns = new List<DebtBreakdownDTO>();
         }
 
-        if (debtDto.Id != null && debtDto.Id != Guid.Empty)
-        {
-            var oldEntity = preApproval.DebtBreakdowns
-                .FirstOrDefault(d => d.Id == debtDto.Id);
+        var results = new List<DebtBreakdownDTO>();
 
-            if (oldEntity != null)
+        foreach (var debtDto in debtDtos)
+        {
+            if (debtDto.Id != null && debtDto.Id != Guid.Empty)
             {
-                UpdateHelper.UpdateEntity(oldEntity, debtDto);
-                oldEntity.UpdatedAt = DateTime.UtcNow;
+                var oldEntity = preApproval.DebtBreakdowns.FirstOrDefault(d => d.Id == debtDto.Id);
+                if (oldEntity != null)
+                {
+                    UpdateHelper.UpdateEntity(oldEntity, debtDto);
+                    oldEntity.UpdatedAt = DateTime.UtcNow;
+                    results.Add(oldEntity);
+                }
+                else
+                {
+                    throw new NotFoundException($"Debt Breakdown with ID {debtDto.Id} was not found.");
+                }
             }
             else
             {
-                throw new NotFoundException($"Debt Breakdown with ID {debtDto.Id} was not found.");
+                debtDto.Id = Guid.NewGuid();
+                debtDto.CreatedAt = DateTime.UtcNow;
+                preApproval.DebtBreakdowns.Add(debtDto);
+                results.Add(debtDto);
             }
-        }
-        else
-        {
-            debtDto.Id = Guid.NewGuid();
-            debtDto.CreatedAt = DateTime.UtcNow;
-            preApproval.DebtBreakdowns.Add(debtDto);
         }
 
         preApproval.UpdatedAt = DateTime.UtcNow;
         await _preApprovalRepository.UpdateAsync(preApproval.Id, preApproval);
-
-        return debtDto;
+        return results;
     }
 
     public async Task<LoanProgramDTO> CreateLoanProgram(LoanProgramDTO loanProgramDto)

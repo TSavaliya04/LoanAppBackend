@@ -188,15 +188,16 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             };
 
             _mockPreApprovalService
-                .Setup(x => x.CreateDebtBreakdown(It.IsAny<DebtBreakdownDTO>()))
-                .ReturnsAsync(debtBreakdown);
+                .Setup(x => x.CreateDebtBreakdown(It.IsAny<List<DebtBreakdownDTO>>()))
+                .ReturnsAsync(new List<DebtBreakdownDTO> { debtBreakdown });
 
-            var result = await _controller.DebtBreakdown(debtBreakdown);
+            var result = await _controller.DebtBreakdown(new List<DebtBreakdownDTO> { debtBreakdown });
 
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<ApiResponse<DebtBreakdownDTO>>(okResult.Value);
+            var response = Assert.IsType<ApiResponse<List<DebtBreakdownDTO>>>(okResult.Value);
             Assert.True(response.Success);
-            Assert.Equal(debtBreakdown, response.Data);
+            Assert.Single(response.Data);
+            Assert.Equal(debtBreakdown, response.Data[0]);
         }
 
         [Fact]

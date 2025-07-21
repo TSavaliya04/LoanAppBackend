@@ -539,15 +539,16 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(preApproval);
 
             // Act
-            var result = await _service.CreateDebtBreakdown(debtBreakdown);
+            var result = await _service.CreateDebtBreakdown(new List<DebtBreakdownDTO> { debtBreakdown });
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotEqual(Guid.Empty, result.Id);
-            Assert.Equal(1, result.DebtType);
-            Assert.Equal(10000, result.Balance);
-            Assert.Equal(12000, result.HighCredit);
-            Assert.Equal(500, result.MonthlyPayment);
+            Assert.Single(result);
+            Assert.NotEqual(Guid.Empty, result[0].Id);
+            Assert.Equal(1, result[0].DebtType);
+            Assert.Equal(10000, result[0].Balance);
+            Assert.Equal(12000, result[0].HighCredit);
+            Assert.Equal(500, result[0].MonthlyPayment);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
         }
 
@@ -587,15 +588,16 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(preApproval);
 
             // Act
-            var result = await _service.CreateDebtBreakdown(debtBreakdown);
+            var result = await _service.CreateDebtBreakdown(new List<DebtBreakdownDTO> { debtBreakdown });
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(debtId, result.Id);
-            Assert.Equal(1, result.DebtType);
-            Assert.Equal(12000, result.Balance);
-            Assert.Equal(14000, result.HighCredit);
-            Assert.Equal(600, result.MonthlyPayment);
+            Assert.Single(result);
+            Assert.Equal(debtId, result[0].Id);
+            Assert.Equal(1, result[0].DebtType);
+            Assert.Equal(12000, result[0].Balance);
+            Assert.Equal(14000, result[0].HighCredit);
+            Assert.Equal(600, result[0].MonthlyPayment);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
         }
 
@@ -621,7 +623,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(preApproval);
 
             // Act & Assert
-            await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateDebtBreakdown(debtBreakdown));
+            await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateDebtBreakdown(new List<DebtBreakdownDTO> { debtBreakdown }));
         }
 
         [Fact]

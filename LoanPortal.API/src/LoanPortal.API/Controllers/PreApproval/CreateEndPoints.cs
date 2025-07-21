@@ -153,22 +153,22 @@ namespace LoanPortal.API.Controllers.PreApproval
         }
 
         [HttpPost("preapproval/DebtBreakdown")]
-        public async Task<IActionResult> DebtBreakdown([FromBody] DebtBreakdownDTO debtDto)
+        public async Task<IActionResult> DebtBreakdown([FromBody] List<DebtBreakdownDTO> debtDtos)
         {
             try
             {
-                var result = await _preApprovalService.CreateDebtBreakdown(debtDto);
+                var result = await _preApprovalService.CreateDebtBreakdown(debtDtos);
                 return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    ErrorResponse<DebtBreakdownDTO>(404, ex.Message)
+                    ErrorResponse<List<DebtBreakdownDTO>>(404, ex.Message)
                 );
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<DebtBreakdownDTO>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<List<DebtBreakdownDTO>>(500, ex.Message));
             }
         }
 

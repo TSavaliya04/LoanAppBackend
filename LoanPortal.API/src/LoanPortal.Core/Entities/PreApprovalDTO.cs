@@ -150,6 +150,14 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    public class LoanProgramBorrowerIncomeDTO
+    {
+        public Guid? Id { get; set; }
+        public decimal? MonthlyIncome { get; set; }
+        public decimal? Debts { get; set; }
+        public int? FicoScore { get; set; }
+    }
+
     public class LoanProgramDTO
     {
         public Guid? Id { get; set; }
@@ -172,14 +180,7 @@ namespace LoanPortal.Core.Entities
         public decimal? ClearingCart { get; set; }
         public decimal? PropertyTax { get; set; }
         public decimal? TotalNeededToClear{ get; set; }
-        // Borrower 1
-        public decimal? Borrower1MonthlyIncome { get; set; }
-        public decimal? Borrower1Debts { get; set; }
-        public int? Borrower1FicoScore { get; set; }
-        // Borrower 2
-        public decimal? Borrower2MonthlyIncome { get; set; }
-        public decimal? Borrower2Debts { get; set; }
-        public int? Borrower2FicoScore { get; set; }
+        public List<LoanProgramBorrowerIncomeDTO> Borrowers { get; set; }
         public decimal? CombinedMonthlyIncome { get; set; }
         public decimal? PrincipalAndInterest { get; set; }
         public decimal? MonthlyPropertyTax { get; set; }
@@ -274,6 +275,7 @@ namespace LoanPortal.Core.Entities
         public decimal TotalEstFundToClose { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class PreApprovalDocument
     {
         [BsonId]

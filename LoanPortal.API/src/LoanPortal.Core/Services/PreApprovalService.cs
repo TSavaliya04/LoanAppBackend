@@ -193,14 +193,56 @@ public class PreApprovalService : IPreApprovalService
 
     public async Task<LoanProgramDTO> CreateLoanProgram(LoanProgramDTO loanProgramDto)
     {
-        return await CreateOrUpdateEntity(
-            loanProgramDto,
-            loanProgramDto.Id,
-            loanProgramDto.PreApprovalId,
-            FormType.LoanProgram,
-            doc => doc.LoanProgram,
-            (doc, value) => doc.LoanProgram = value
-        );
+        if (loanProgramDto == null)
+            throw new ValidationException("LoanProgramDTO cannot be null");
+        if (loanProgramDto.PreApprovalId == null || loanProgramDto.PreApprovalId == Guid.Empty)
+            throw new ValidationException("PreApprovalId cannot be null or empty");
+
+        var preApprovalId = loanProgramDto.PreApprovalId;
+        var entityId = loanProgramDto.Id;
+        var t = _loginUserDetails;
+
+        var document = await _preApprovalRepository.GetByIdAsync(preApprovalId);
+        if (document == null)
+        {
+            throw new NotFoundException($"Pre Approval with ID {preApprovalId} was not found.");
+        }
+
+        document.UpdatedAt = DateTime.UtcNow;
+
+        if (!entityId.HasValue || entityId.Value == Guid.Empty)
+        {
+            loanProgramDto.Id = Guid.NewGuid();
+            loanProgramDto.CreatedAt = DateTime.UtcNow;
+            loanProgramDto.PreApprovalId = document.Id;
+            document.LastSubmittedFormNo = (int)FormType.LoanProgram;
+            document.LoanProgram = loanProgramDto;
+        }
+        else
+        {
+            // Update only the properties that are provided in the new entity
+            var existingEntity = document.LoanProgram;
+            if (existingEntity != null)
+            {
+                foreach (var prop in typeof(LoanProgramDTO).GetProperties())
+                {
+                    var newValue = prop.GetValue(loanProgramDto);
+                    if (newValue != null && !prop.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
+                    {
+                        prop.SetValue(existingEntity, newValue);
+                    }
+                }
+                existingEntity.UpdatedAt = DateTime.UtcNow;
+                document.LoanProgram = existingEntity;
+            }
+            else
+            {
+                loanProgramDto.UpdatedAt = DateTime.UtcNow;
+                document.LoanProgram = loanProgramDto;
+            }
+        }
+        await _preApprovalRepository.UpdateAsync(document.Id, document);
+        return document.LoanProgram;
     }
 
     public async Task<List<TopOpportunityDTO>> GetTopOpportunities()

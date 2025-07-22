@@ -121,8 +121,7 @@ namespace LoanPortal.Core.Entities
         public string? BorrowerName { get; set; }
         public string? Employer { get; set; }
         public decimal? MonthlyIncome { get; set; }
-        //public decimal? YTDEarnings { get; set; }
-        //public List<W2DTO>? W2Forms { get; set; }
+        public List<DebtBreakdownDTO> Debts { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

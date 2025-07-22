@@ -250,10 +250,15 @@ namespace LoanPortal.Tests.Services
         {
             // Arrange
             var preApprovalId = Guid.NewGuid();
+            var debts = new List<DebtBreakdownDTO>
+            {
+                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, HighCredit = 2000, MonthlyPayment = 100 }
+            };
             var borrowerIncome = new BorrowerIncomeDTO
             {
                 PreApprovalId = preApprovalId,
-                BorrowerName = "John Doe"
+                BorrowerName = "John Doe",
+                Debts = debts
             };
 
             var preApproval = new PreApprovalDocument
@@ -274,6 +279,9 @@ namespace LoanPortal.Tests.Services
             Assert.NotEqual(Guid.Empty, result[0].Id);
             Assert.Equal("John Doe", result[0].BorrowerName);
             Assert.Equal(preApprovalId, result[0].PreApprovalId);
+            Assert.NotNull(result[0].Debts);
+            Assert.Single(result[0].Debts);
+            Assert.Equal(debts[0].DebtType, result[0].Debts[0].DebtType);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
         }
 
@@ -283,11 +291,21 @@ namespace LoanPortal.Tests.Services
             // Arrange
             var preApprovalId = Guid.NewGuid();
             var incomeId = Guid.NewGuid();
+            var oldDebts = new List<DebtBreakdownDTO>
+            {
+                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, HighCredit = 2000, MonthlyPayment = 100 }
+            };
+            var newDebts = new List<DebtBreakdownDTO>
+            {
+                new DebtBreakdownDTO { Id = oldDebts[0].Id, DebtType = 2, Balance = 1500, HighCredit = 2500, MonthlyPayment = 150 },
+                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 3, Balance = 500, HighCredit = 1000, MonthlyPayment = 50 }
+            };
             var borrowerIncome = new BorrowerIncomeDTO
             {
                 Id = incomeId,
                 PreApprovalId = preApprovalId,
-                BorrowerName = "John Doe Updated"
+                BorrowerName = "John Doe Updated",
+                Debts = newDebts
             };
 
             var preApproval = new PreApprovalDocument
@@ -298,7 +316,8 @@ namespace LoanPortal.Tests.Services
                     new BorrowerIncomeDTO
                     {
                         Id = incomeId,
-                        BorrowerName = "John Doe"
+                        BorrowerName = "John Doe",
+                        Debts = oldDebts
                     }
                 }
             };
@@ -314,6 +333,10 @@ namespace LoanPortal.Tests.Services
             Assert.Single(result);
             Assert.Equal(incomeId, result[0].Id);
             Assert.Equal("John Doe Updated", result[0].BorrowerName);
+            Assert.NotNull(result[0].Debts);
+            Assert.Equal(2, result[0].Debts.Count);
+            Assert.Contains(result[0].Debts, d => d.DebtType == 2 && d.Balance == 1500);
+            Assert.Contains(result[0].Debts, d => d.DebtType == 3 && d.Balance == 500);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
         }
 
@@ -323,10 +346,15 @@ namespace LoanPortal.Tests.Services
             // Arrange
             var preApprovalId = Guid.NewGuid();
             var incomeId = Guid.NewGuid();
+            var debts = new List<DebtBreakdownDTO>
+            {
+                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, HighCredit = 2000, MonthlyPayment = 100 }
+            };
             var borrowerIncome = new BorrowerIncomeDTO
             {
                 Id = incomeId,
-                PreApprovalId = preApprovalId
+                PreApprovalId = preApprovalId,
+                Debts = debts
             };
 
             var preApproval = new PreApprovalDocument

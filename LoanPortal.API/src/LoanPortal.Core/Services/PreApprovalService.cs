@@ -101,11 +101,19 @@ public class PreApprovalService : IPreApprovalService
 
         foreach (var borrowerIncomeDTO in borrowerIncomeDTOs)
         {
+            if (borrowerIncomeDTO.Debts == null)
+            {
+                borrowerIncomeDTO.Debts = new List<DebtBreakdownDTO>();
+            }
+
             if (borrowerIncomeDTO.Id != null && borrowerIncomeDTO.Id != Guid.Empty)
             {
                 var oldEntity = preApproval.BorrowerIncomes.FirstOrDefault(b => b.Id == borrowerIncomeDTO.Id);
                 if (oldEntity != null)
                 {
+                    if (oldEntity.Debts == null)
+                        oldEntity.Debts = new List<DebtBreakdownDTO>();
+
                     UpdateHelper.UpdateEntity(oldEntity, borrowerIncomeDTO);
                     oldEntity.UpdatedAt = DateTime.UtcNow;
                     results.Add(oldEntity);
@@ -119,16 +127,16 @@ public class PreApprovalService : IPreApprovalService
             {
                 borrowerIncomeDTO.Id = Guid.NewGuid();
                 borrowerIncomeDTO.CreatedAt = DateTime.UtcNow;
-                // if (borrowerIncomeDTO.W2Forms != null)
-                // {
-                //     foreach (var w2 in borrowerIncomeDTO.W2Forms)
-                //     {
-                //         if (w2.Id == Guid.Empty)
-                //         {
-                //             w2.Id = Guid.NewGuid();
-                //         }
-                //     }
-                // }
+                if(borrowerIncomeDTO.Debts != null)
+                {
+                    foreach (var debt in borrowerIncomeDTO.Debts)
+                    {
+                        if (debt.Id == null || debt.Id == Guid.Empty)
+                        {
+                            debt.Id = Guid.NewGuid();
+                        }
+                    }
+                }
                 preApproval.BorrowerIncomes.Add(borrowerIncomeDTO);
                 results.Add(borrowerIncomeDTO);
             }
@@ -147,7 +155,7 @@ public class PreApprovalService : IPreApprovalService
         return document;
     }
 
-    public async Task<List<DebtBreakdownDTO>> CreateDebtBreakdown(List<DebtBreakdownDTO> debtDtos)
+    /*public async Task<List<DebtBreakdownDTO>> CreateDebtBreakdown(List<DebtBreakdownDTO> debtDtos)
     {
         if (debtDtos == null || !debtDtos.Any())
             throw new ValidationException("Input list cannot be null or empty");
@@ -189,7 +197,7 @@ public class PreApprovalService : IPreApprovalService
         preApproval.UpdatedAt = DateTime.UtcNow;
         await _preApprovalRepository.UpdateAsync(preApproval.Id, preApproval);
         return results;
-    }
+    }*/
 
     public async Task<LoanProgramDTO> CreateLoanProgram(LoanProgramDTO loanProgramDto)
     {

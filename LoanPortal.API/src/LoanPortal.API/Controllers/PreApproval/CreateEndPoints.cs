@@ -152,7 +152,7 @@ namespace LoanPortal.API.Controllers.PreApproval
             }
         }
 
-        [HttpPost("preapproval/DebtBreakdown")]
+        /*[HttpPost("preapproval/DebtBreakdown")]
         public async Task<IActionResult> DebtBreakdown([FromBody] List<DebtBreakdownDTO> debtDtos)
         {
             try
@@ -170,7 +170,7 @@ namespace LoanPortal.API.Controllers.PreApproval
             {
                 return StatusCode(500, ErrorResponse<List<DebtBreakdownDTO>>(500, ex.Message));
             }
-        }
+        }*/
 
         [HttpPost("preapproval/LoanProgram")]
         public async Task<IActionResult> LoanProgram([FromBody] LoanProgramDTO loanProgramDto)

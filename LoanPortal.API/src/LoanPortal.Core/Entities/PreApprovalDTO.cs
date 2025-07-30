@@ -14,16 +14,16 @@ namespace LoanPortal.Core.Entities
         
         [BsonIgnore]
         public Guid? PreApprovalId { get; set; }
-        public string? BorrowerName { get; set; }
+        public string BorrowerName { get; set; }
         public string? CoBorrowerName { get; set; }
-        public int? FicoScore { get; set; }
+        public int FicoScore { get; set; }
         public int? CoBorrowerFicoScore { get; set; }
-        public string? BorrowerCellNumber { get; set; }
+        public string BorrowerCellNumber { get; set; }
         public string? CoBorrowerCellNumber { get; set; }
-        public string? BorrowerEmail { get; set; }
-        public int? LoanProgram { get; set; }
-        public int? PropertyType { get; set; }
-        public int? OccupancyStatus { get; set; }
+        public string BorrowerEmail { get; set; }
+        public int LoanProgram { get; set; }
+        public int PropertyType { get; set; }
+        public int OccupancyStatus { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -41,11 +41,11 @@ namespace LoanPortal.Core.Entities
 
         [BsonIgnore]
         public Guid PreApprovalId { get; set; }
-        public decimal? PurchasePrice { get; set; }
-        public decimal? DownPayment { get; set; }
-        public decimal? LoanAmount { get; set; }
-        public decimal? FirstRateLoan { get; set; }
-        public decimal? MipFundingFee { get; set; }
+        public decimal PurchasePrice { get; set; }
+        public decimal DownPayment { get; set; }
+        public decimal LoanAmount { get; set; }
+        public decimal? AnnualInterestRate { get; set; }
+        public decimal MipFundingFee { get; set; }
         public decimal? HazardInsurance { get; set; }
         public decimal? AssociationFee { get; set; }
         public decimal? MiPercent { get; set; }
@@ -59,17 +59,18 @@ namespace LoanPortal.Core.Entities
         
         [BsonIgnore]
         public Guid PreApprovalId { get; set; }
-        public string? AgentName { get; set; }
-        public decimal? LoanOriginationFee { get; set; }
-        public decimal? DiscountFee { get; set; }
-        public decimal? UpfrontMip { get; set; }
-        public decimal? AppraisalFee { get; set; }
-        public decimal? EscrowFees { get; set; }
+        public string AgentName { get; set; }
+        public decimal LoanOriginationFee { get; set; }
+        public decimal DiscountFee { get; set; }
+        public decimal UpfrontMip { get; set; }
+        public decimal AppraisalFee { get; set; }
+        public decimal EscrowFees { get; set; }
         public decimal? TitleFees { get; set; }
         public decimal? ThirdPartyLenderFee { get; set; }
-        public decimal? NotaryFee { get; set; }
-        public decimal? UnderWriter { get; set; }
-        public decimal? ProcessFee { get; set; }
+        public decimal NotaryFee { get; set; }
+        public decimal UnderWriter { get; set; }
+        public decimal ProcessFee { get; set; }
+        public decimal? NonRecurringCost { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -80,13 +81,14 @@ namespace LoanPortal.Core.Entities
 
         [BsonIgnore]
         public Guid PreApprovalId { get; set; }
-        public int? PrepaidInterestDays { get; set; }
-        public decimal? PrepaidInterestAmount { get; set; }
-        public decimal? HazardInsurance { get; set; }
-        public int? HazardInsuranceMonths { get; set; }
-        public decimal? HazardInsuranceReserves { get; set; }
-        public int? PropertyTaxMonths { get; set; }
-        public decimal? PropertyTaxAmount { get; set; }
+        public int PrepaidInterestDays { get; set; }
+        public decimal PrepaidInterestAmount { get; set; }
+        public decimal HazardInsurance { get; set; }
+        public int HazardInsuranceMonths { get; set; }
+        public decimal HazardInsuranceReserves { get; set; }
+        public int PropertyTaxMonths { get; set; }
+        public decimal PropertyTaxAmount { get; set; }
+        public decimal PrePayCost { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -118,7 +120,7 @@ namespace LoanPortal.Core.Entities
 
         [BsonIgnore] 
         public Guid PreApprovalId { get; set; }
-        public string? BorrowerName { get; set; }
+        public string BorrowerName { get; set; }
         public string? Employer { get; set; }
         public decimal? MonthlyIncome { get; set; }
         public List<DebtBreakdownDTO> Debts { get; set; }
@@ -163,17 +165,17 @@ namespace LoanPortal.Core.Entities
 
         [BsonIgnore]
         public Guid PreApprovalId { get; set; }
-        public int? LoanProgram { get; set; }
+        public int LoanProgram { get; set; }
         public decimal? FrontEndRatio { get; set; }
         public decimal? BackEndRatio { get; set; }
         public decimal? Price { get; set; }
-        public decimal? InterestRate { get; set; }
-        public decimal? BaseLoanAmount { get; set; }
+        public decimal InterestRate { get; set; }
+        public decimal BaseLoanAmount { get; set; }
         public decimal? UPMIPRate { get; set; }
         public decimal? UPMIPAmount { get; set; }
         public decimal? FinalLoanAmount { get; set; }
         public decimal? MMI { get; set; }
-        public int? Term { get; set; }
+        public int Term { get; set; }
         public decimal? DownPaymentAmount { get; set; }
         public decimal? DownPaymentPercentage { get; set; }
         public decimal? ClearingCart { get; set; }

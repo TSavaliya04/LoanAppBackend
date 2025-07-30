@@ -280,8 +280,8 @@ public class PreApprovalService : IPreApprovalService
         {              
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             UserEntity user = await _userRepository.GetUserById(_loginUserDetails.UserID);
-            decimal purchasePrice = preApproval.PurchaseInfo.PurchasePrice.Value;
-            decimal downPercent = preApproval.PurchaseInfo.DownPayment.Value;
+            decimal purchasePrice = preApproval.PurchaseInfo.PurchasePrice;
+            decimal downPercent = preApproval.PurchaseInfo.DownPayment;
             decimal downAmount = (purchasePrice * downPercent) / 100;
             decimal fma = purchasePrice - downAmount;
             List<string> borrowers = preApproval.BorrowerIncomes.Select(b => b.BorrowerName).ToList();
@@ -293,8 +293,8 @@ public class PreApprovalService : IPreApprovalService
                 DownPaymentPercentage = downPercent,    
                 DownPaymentAmount = downAmount,
                 PurchasePrice = purchasePrice,
-                LoanProgram = preApproval.LoanProgram.LoanProgram.Value,
-                PropertyType = preApproval.BorrowerInfo.PropertyType.Value,
+                LoanProgram = preApproval.LoanProgram.LoanProgram,
+                PropertyType = preApproval.BorrowerInfo.PropertyType,
                 Borrowers = borrowers,
                 LendingCompany = user.CompanyName
             };
@@ -312,20 +312,20 @@ public class PreApprovalService : IPreApprovalService
         {
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             UserEntity user = await _userRepository.GetUserById(_loginUserDetails.UserID);
-            decimal purchasePrice = preApproval.PurchaseInfo.PurchasePrice.Value;
-            decimal downPercent = preApproval.PurchaseInfo.DownPayment.Value;
+            decimal purchasePrice = preApproval.PurchaseInfo.PurchasePrice;
+            decimal downPercent = preApproval.PurchaseInfo.DownPayment;
             decimal downAmount = (purchasePrice * downPercent) / 100;
-            decimal upFront = preApproval.PurchaseInfo.MipFundingFee.Value;
+            decimal upFront = preApproval.PurchaseInfo.MipFundingFee;
             decimal upFrontAmount = (purchasePrice * upFront) / 100;
             decimal totalLoanAmount = (purchasePrice - downAmount) + upFrontAmount;
 
-            decimal interestRate = preApproval.LoanProgram.InterestRate.Value;
-            int loanTerm = preApproval.LoanProgram.Term.Value;
+            decimal interestRate = preApproval.LoanProgram.InterestRate;
+            int loanTerm = preApproval.LoanProgram.Term;
             double MonthlyPILoanAmount = PreApprovalHelper.CalculateMonthlyPI(Decimal.ToDouble(totalLoanAmount), Decimal.ToDouble(interestRate), loanTerm);
 
-            decimal realEstateTaxes = preApproval.PrepaidItems.PropertyTaxAmount.Value;
+            decimal realEstateTaxes = preApproval.PrepaidItems.PropertyTaxAmount;
             decimal MMI = preApproval.LoanProgram.MMI.Value;
-            decimal hazInsurancePremium = preApproval.PrepaidItems.HazardInsurance.Value;
+            decimal hazInsurancePremium = preApproval.PrepaidItems.HazardInsurance;
             decimal monthlyMortgageInsurance = ((totalLoanAmount * MMI) / 100) / 12;
 
             report.PreApprovalId = preApproval.Id;
@@ -338,8 +338,8 @@ public class PreApprovalService : IPreApprovalService
             report.InterestRate = interestRate;
             report.LoanTerm = loanTerm;
             report.PILoanAmount = (decimal)MonthlyPILoanAmount;
-            report.PropertyTax = preApproval.PrepaidItems.PropertyTaxAmount.Value;
-            report.HazardInsurancePremium = preApproval.PrepaidItems.HazardInsurance.Value;
+            report.PropertyTax = preApproval.PrepaidItems.PropertyTaxAmount;
+            report.HazardInsurancePremium = preApproval.PrepaidItems.HazardInsurance;
             report.CoverageRate = preApproval.LoanProgram.MMI.Value;
             report.MortgageInsurance = monthlyMortgageInsurance;
             
@@ -361,18 +361,18 @@ public class PreApprovalService : IPreApprovalService
         PurchaseInfoDTO purchaseInfo = preApproval.PurchaseInfo;
 
         EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO();
-        estClosingCost.LoanOriginationFees = (preApproval.LoanProgram.BaseLoanAmount.Value * lenderFees.LoanOriginationFee.Value) / 100;
-        estClosingCost.HazInsPremium = prepaidItems.HazardInsurance.Value;
-        estClosingCost.PrepaidInterest = prepaidItems.PrepaidInterestDays.Value * prepaidItems.PrepaidInterestAmount.Value;
-        estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxMonths.Value * prepaidItems.PropertyTaxAmount.Value;
-        estClosingCost.HazInsReserve = prepaidItems.HazardInsuranceMonths.Value * prepaidItems.HazardInsuranceReserves.Value;
+        estClosingCost.LoanOriginationFees = (preApproval.LoanProgram.BaseLoanAmount * lenderFees.LoanOriginationFee) / 100;
+        estClosingCost.HazInsPremium = prepaidItems.HazardInsurance;
+        estClosingCost.PrepaidInterest = prepaidItems.PrepaidInterestDays * prepaidItems.PrepaidInterestAmount;
+        estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxMonths * prepaidItems.PropertyTaxAmount;
+        estClosingCost.HazInsReserve = prepaidItems.HazardInsuranceMonths * prepaidItems.HazardInsuranceReserves;
         estClosingCost.TitleInsurance = PreApprovalHelper.CalculateTitleInsurance(report.TotalLoanAmount);
-        estClosingCost.EscrowFee = lenderFees.EscrowFees.Value;
-        estClosingCost.NotaryFee = lenderFees.NotaryFee.Value;
-        estClosingCost.DiscountFee = lenderFees.DiscountFee.Value;
-        estClosingCost.UpFrontMIP = lenderFees.UpfrontMip.Value;
-        estClosingCost.UnderWriter = lenderFees.UnderWriter.Value;
-        estClosingCost.ProcessFee = lenderFees.ProcessFee.Value;
+        estClosingCost.EscrowFee = lenderFees.EscrowFees;
+        estClosingCost.NotaryFee = lenderFees.NotaryFee;
+        estClosingCost.DiscountFee = lenderFees.DiscountFee;
+        estClosingCost.UpFrontMIP = lenderFees.UpfrontMip;
+        estClosingCost.UnderWriter = lenderFees.UnderWriter;
+        estClosingCost.ProcessFee = lenderFees.ProcessFee;
         estClosingCost.EstClosingCost = new[]
         {
             estClosingCost.LoanOriginationFees,
@@ -407,22 +407,19 @@ public class PreApprovalService : IPreApprovalService
     )
         where T : class
     {
-        PreApprovalDocument document = null;
-
+        // Validation (do not change)
         if (typeof(T) != typeof(BorrowerInfoDTO) && !preApprovalId.HasValue)
-        {
             throw new ValidationException("PreApproval Id can't be null or empty");
-        }
         if (typeof(T) == typeof(BorrowerInfoDTO) && id.HasValue && !preApprovalId.HasValue)
-        {
             throw new ValidationException("PreApproval Id can't be null or empty");
-        }
 
         var idProp = typeof(T).GetProperty("Id");
         var createdAtProp = typeof(T).GetProperty("CreatedAt");
         var preApprovalIdProp = typeof(T).GetProperty("PreApprovalId");
         var entUpdatedAtProp = typeof(T).GetProperty("UpdatedAt");
         var entityId = idProp.GetValue(entity) as Guid?;
+
+        PreApprovalDocument document = null;
 
         if (!preApprovalId.HasValue)
         {
@@ -450,40 +447,26 @@ public class PreApprovalService : IPreApprovalService
         {
             document = await _preApprovalRepository.GetByIdAsync(preApprovalId.Value);
             if (document == null)
-            {
                 throw new NotFoundException($"Pre Approval with ID {preApprovalId} was not found.");
-            }
 
-            // Update existing document
             document.UpdatedAt = DateTime.UtcNow;
 
+            // If entity does not exist, insert it
             if (!entityId.HasValue || entityId.Value == Guid.Empty)
             {
                 idProp.SetValue(entity, Guid.NewGuid());
-                createdAtProp.SetValue(entity, DateTime.UtcNow);
+                // createdAtProp.SetValue(entity, DateTime.UtcNow);
                 preApprovalIdProp.SetValue(entity, document.Id);
-                document.LastSubmittedFormNo = (int)formType;
             }
-            else
-            {
-                // Get the existing entity
-                var existingEntity = getValue(document);
-                if (existingEntity != null)
-                {
-                    // Update only the properties that are provided in the new entity
-                    foreach (var prop in typeof(T).GetProperties())
-                    {
-                        var newValue = prop.GetValue(entity);
-                        if (newValue != null && !prop.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
-                        {
-                            prop.SetValue(existingEntity, newValue);
-                        }
-                    }
-                    entity = existingEntity;
-                }
-                entUpdatedAtProp.SetValue(entity, DateTime.UtcNow);
-            }
+            // Always set UpdatedAt
+            entUpdatedAtProp.SetValue(entity, DateTime.UtcNow);
+
+            // Replace the entity (insert or replace)
             setValue(document, entity);
+
+            // Optionally update LastSubmittedFormNo if needed
+            document.LastSubmittedFormNo = (int)formType;
+
             await _preApprovalRepository.UpdateAsync(document.Id, document);
         }
         return getValue(document);

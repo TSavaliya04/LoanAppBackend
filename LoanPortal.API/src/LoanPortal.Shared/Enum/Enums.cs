@@ -42,8 +42,8 @@ namespace LoanPortal.Shared.Enum
         PrepaidItems = 4,
         MiscFees = 5,
         BorrowerIncomeData = 6,
-        DebtBreakdown = 7,
-        LoanProgram = 8
+        LoanProgram = 7
+        //DebtBreakdown = 7,
         //BorrowerIncomeDataHourly = 7,
         //BorrowerIncomeDataSalary = 8,
         //BorrowerIncomeDataBonus = 9,

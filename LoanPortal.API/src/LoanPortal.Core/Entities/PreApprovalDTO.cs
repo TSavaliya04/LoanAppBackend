@@ -44,11 +44,12 @@ namespace LoanPortal.Core.Entities
         public decimal PurchasePrice { get; set; }
         public decimal DownPayment { get; set; }
         public decimal LoanAmount { get; set; }
-        public decimal? AnnualInterestRate { get; set; }
+        public decimal AnnualInterestRate { get; set; }
         public decimal MipFundingFee { get; set; }
         public decimal? HazardInsurance { get; set; }
         public decimal? AssociationFee { get; set; }
         public decimal? MiPercent { get; set; }
+        public decimal? homeOwnerInsurance { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

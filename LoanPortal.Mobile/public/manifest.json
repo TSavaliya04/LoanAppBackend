@@ -4,6 +4,7 @@
   "description": "Your app description",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#FDE9C9",
   "theme_color": "#FDE9C9",
   "icons": [

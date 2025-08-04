@@ -1,6 +1,7 @@
 import './globals.css';
 import { Metadata } from 'next';
 import { ThemeRegistry } from '@/providers/ThemeRegistry';
+import { QueryProvider } from '@/providers/QueryProvider';
 
 export const metadata: Metadata = {
   title: 'Loans N Stuff',
@@ -22,7 +23,9 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeRegistry>
-          {children}
+          <QueryProvider>
+            {children}
+          </QueryProvider>
         </ThemeRegistry>
       </body>
     </html>

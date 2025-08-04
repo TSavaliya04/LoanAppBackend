@@ -200,6 +200,7 @@ namespace LoanPortal.Core.Entities
         public string? BorrowerName { get; set; }
         public int? LoanProgram { get; set; }
         public string? AgentName { get; set; }
+        public List<BorrowerIncomeDTO> Borrowers { get; set;}
     }
 
     public class PreApprovalReport

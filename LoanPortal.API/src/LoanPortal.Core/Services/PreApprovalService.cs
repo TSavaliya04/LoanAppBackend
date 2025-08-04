@@ -265,7 +265,8 @@ public class PreApprovalService : IPreApprovalService
                 PreApprovalId = doc.Id,
                 BorrowerName = doc.BorrowerInfo?.BorrowerName,
                 LoanProgram = doc.LoanProgram?.LoanProgram,
-                AgentName = doc.LenderFees?.AgentName
+                AgentName = doc.LenderFees?.AgentName,
+                Borrowers = doc.BorrowerIncomes?.ToList()
             }).ToList();
         }
         catch (Exception ex)

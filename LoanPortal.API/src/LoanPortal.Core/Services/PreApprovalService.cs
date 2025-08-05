@@ -96,8 +96,14 @@ public class PreApprovalService : IPreApprovalService
         {
             preApproval.BorrowerIncomes = new List<BorrowerIncomeDTO>();
         }
-
-        var results = new List<BorrowerIncomeDTO>();
+        foreach (BorrowerIncomeDTO income in borrowerIncomeDTOs)
+        {
+            if (income.Id == null || income.Id == Guid.Empty)
+            {
+                income.Id = Guid.NewGuid();
+            }
+        }
+        /*var results = new List<BorrowerIncomeDTO>();
 
         foreach (var borrowerIncomeDTO in borrowerIncomeDTOs)
         {
@@ -140,11 +146,13 @@ public class PreApprovalService : IPreApprovalService
                 preApproval.BorrowerIncomes.Add(borrowerIncomeDTO);
                 results.Add(borrowerIncomeDTO);
             }
-        }
+        }*/
 
+        preApproval.BorrowerIncomes = borrowerIncomeDTOs;
+        preApproval.LastSubmittedFormNo = (int)FormType.BorrowerIncomeData;
         preApproval.UpdatedAt = DateTime.UtcNow;
         await _preApprovalRepository.UpdateAsync(preApproval.Id, preApproval);
-        return results;
+        return borrowerIncomeDTOs;
     }
 
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)

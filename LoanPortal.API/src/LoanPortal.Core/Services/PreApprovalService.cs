@@ -272,7 +272,7 @@ public class PreApprovalService : IPreApprovalService
             {
                 PreApprovalId = doc.Id,
                 BorrowerName = doc.BorrowerInfo?.BorrowerName,
-                LoanProgram = doc.LoanProgram?.LoanProgram,
+                LoanProgram = doc.BorrowerInfo?.LoanProgram,
                 AgentName = doc.LenderFees?.AgentName,
                 Borrowers = doc.BorrowerIncomes?.ToList()
             }).ToList();

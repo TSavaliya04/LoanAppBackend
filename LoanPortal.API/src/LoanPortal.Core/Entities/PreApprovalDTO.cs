@@ -49,7 +49,6 @@ namespace LoanPortal.Core.Entities
         public decimal? HazardInsurance { get; set; }
         public decimal? AssociationFee { get; set; }
         public decimal? MiPercent { get; set; }
-        public decimal? HomeOwnerInsurance { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

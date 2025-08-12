@@ -35,6 +35,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? CreatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class PurchaseInfoDTO
     {
         public Guid? Id { get; set; }
@@ -254,27 +255,27 @@ namespace LoanPortal.Core.Entities
         public decimal EscrowFee { get; set; }
         public decimal NotaryFee { get; set; }
         public decimal TitleInsurance { get; set; }
-        public decimal AppraisalFee { get; set; }
-        public decimal UnderWritingFee { get; set; }
-        public decimal WireFee { get; set; }
-        public decimal MtgInsPremium { get; set; }
-        public decimal MtgInsReserve { get; set; }
-        public decimal PropertyTaxReserves { get; set; }
-        public decimal SettlementFee { get; set; }
-        public decimal WIREFee { get; set; }
-        public decimal AttorneyFee { get; set; }
-        public decimal AddTitleCharges { get; set; }
-        public decimal AddEscrowCharges { get; set; }
-        public decimal RecordingFee { get; set; }
-        public decimal RecordingFeeOtherOne { get; set; }
-        public decimal RecordingFeeOtherTwo { get; set; }
-        public decimal RecordingFeeUPMIP { get; set; }
-        public decimal RecordingFeePadding { get; set; }
+        //public decimal AppraisalFee { get; set; }
+        //public decimal UnderWritingFee { get; set; }
+        //public decimal WireFee { get; set; }
+        //public decimal MtgInsPremium { get; set; }
+        //public decimal MtgInsReserve { get; set; }
+        //public decimal PropertyTaxReserves { get; set; }
+        //public decimal SettlementFee { get; set; }
+        //public decimal WIREFee { get; set; }
+        //public decimal AttorneyFee { get; set; }
+        //public decimal AddTitleCharges { get; set; }
+        //public decimal AddEscrowCharges { get; set; }
+        //public decimal RecordingFee { get; set; }
+        //public decimal RecordingFeeOtherOne { get; set; }
+        //public decimal RecordingFeeOtherTwo { get; set; }
+        //public decimal RecordingFeeUPMIP { get; set; }
+        //public decimal RecordingFeePadding { get; set; }
+        //public decimal SellerCredit { get; set; }
+        //public decimal EscrowDepositEMD { get; set; }
         public decimal EstClosingCost { get; set; }
         public decimal EstPrepaidItemReserves { get; set; }
         public decimal TotalEstSettlementCharges { get; set; }
-        public decimal SellerCredit { get; set; }
-        public decimal EscrowDepositEMD { get; set; }
         public decimal TotalEstFundToClose { get; set; }
     }
 

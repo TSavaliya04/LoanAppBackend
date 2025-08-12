@@ -54,6 +54,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class LenderFeesDTO
     {
         public Guid? Id { get; set; }
@@ -62,8 +63,11 @@ namespace LoanPortal.Core.Entities
         public Guid PreApprovalId { get; set; }
         public string AgentName { get; set; }
         public decimal LoanOriginationFee { get; set; }
+        public decimal LoanOriginationFeePercentage { get; set; }
         public decimal DiscountFee { get; set; }
+        public decimal DiscountFeePercentage { get; set; }
         public decimal UpfrontMip { get; set; }
+        public decimal UpfrontMipPercentage { get; set; }
         public decimal AppraisalFee { get; set; }
         public decimal EscrowFees { get; set; }
         public decimal? TitleFees { get; set; }

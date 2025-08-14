@@ -111,12 +111,12 @@ namespace LoanPortal.API.Controllers.Authentication
 
         [AllowAnonymous]
         [HttpPost("user/ResetPassword")]
-        public async Task<IActionResult> ResetPassword([FromBody] string email)
+        public async Task<IActionResult> ResetPassword(string email)
         {
             try
             {
                 var result = await _userService.ResetPassword(email);
-                return Ok(SuccessResponse(data:result, message:"Password Reset Successfully."));
+                return Ok(SuccessResponse(data:result, message:"Password reset link sent successfully."));
             }
             catch (ValidationException ex)
             {

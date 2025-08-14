@@ -289,6 +289,11 @@ namespace LoanPortal.Core.Services
         {
             try
             {
+                UserEntity user = await _userRepository.GetUserByEmail(email);
+                if(user == null || user.Id == Guid.Empty)
+                {
+                    throw new ValidationException($"User with email {email} is not exists.");
+                }
                 string link = await _firebaseAuthService.GeneratePasswordResetLinkAsync(email);
                 _userHelper.ResetPassword(email,link);
                 return true;

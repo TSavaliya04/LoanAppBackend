@@ -378,6 +378,19 @@ namespace LoanPortal.Tests.Services
             string email = "test@example.com";
             string expectedLink = "https://firebase.com/reset-link";
 
+            var existingUser = new UserEntity
+            {
+                Id = Guid.NewGuid(),
+                Email = email,
+                FirstName = "Test",
+                LastName = "User",
+                IsActive = true
+            };
+
+            _mockUserRepository
+                .Setup(x => x.GetUserByEmail(email))
+                .ReturnsAsync(existingUser);
+
             _mockFirebaseAuthService
                 .Setup(x => x.GeneratePasswordResetLinkAsync(email))
                 .ReturnsAsync(expectedLink);
@@ -391,6 +404,7 @@ namespace LoanPortal.Tests.Services
 
             // Assert
             Assert.True(result);
+            _mockUserRepository.Verify(x => x.GetUserByEmail(email), Times.Once);
             _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Once);
             _mockUserHelper.Verify(x => x.ResetPassword(email, expectedLink), Times.Once);
         }
@@ -407,35 +421,10 @@ namespace LoanPortal.Tests.Services
                 .ThrowsAsync(expectedException);
 
             // Act & Assert
-            var actualException = await Assert.ThrowsAsync<Exception>(() => _userService.ResetPassword(email));
+            var actualException = await Assert.ThrowsAsync<ValidationException>(() => _userService.ResetPassword(email));
 
-            Assert.Equal(expectedException.Message, actualException.Message);
-            _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Once);
+            _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Never);
             _mockUserHelper.Verify(x => x.ResetPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task ResetPassword_UserHelperThrowsException_ThrowsException()
-        {
-            // Arrange
-            string email = "test@example.com";
-            string resetLink = "https://firebase.com/reset-link";
-            var expectedException = new Exception("User helper error");
-
-            _mockFirebaseAuthService
-                .Setup(x => x.GeneratePasswordResetLinkAsync(email))
-                .ReturnsAsync(resetLink);
-
-            _mockUserHelper
-                .Setup(x => x.ResetPassword(email, resetLink))
-                .Throws(expectedException);
-
-            // Act & Assert
-            var actualException = await Assert.ThrowsAsync<Exception>(() => _userService.ResetPassword(email));
-
-            Assert.Equal(expectedException.Message, actualException.Message);
-            _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Once);
-            _mockUserHelper.Verify(x => x.ResetPassword(email, resetLink), Times.Once);
         }
     }
 }

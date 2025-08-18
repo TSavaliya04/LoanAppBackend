@@ -416,7 +416,6 @@ public class PreApprovalService : IPreApprovalService
     )
         where T : class
     {
-        // Validation (do not change)
         if (typeof(T) != typeof(BorrowerInfoDTO) && !preApprovalId.HasValue)
             throw new ValidationException("PreApproval Id can't be null or empty");
         if (typeof(T) == typeof(BorrowerInfoDTO) && id.HasValue && !preApprovalId.HasValue)

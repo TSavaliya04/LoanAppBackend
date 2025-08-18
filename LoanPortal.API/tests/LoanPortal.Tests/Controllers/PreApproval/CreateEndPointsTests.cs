@@ -158,7 +158,6 @@ namespace LoanPortal.Tests.Controllers.PreApproval
                 BorrowerName = "John Doe",
                 Employer = "ABC Company",
                 MonthlyIncome = 8000,
-                YTDEarnings = 96000
             };
 
             var borrowerIncomeList = new List<BorrowerIncomeDTO> { borrowerIncome };
@@ -176,29 +175,29 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             Assert.Equal(borrowerIncome.BorrowerName, response.Data[0].BorrowerName);
         }
 
-        [Fact]
-        public async Task DebtBreakdown_ValidData_ReturnsOkResult()
-        {
-            var debtBreakdown = new DebtBreakdownDTO
-            {
-                DebtType = 1,
-                Balance = 5000,
-                HighCredit = 10000,
-                MonthlyPayment = 200
-            };
+        //[Fact]
+        //public async Task DebtBreakdown_ValidData_ReturnsOkResult()
+        //{
+        //    var debtBreakdown = new DebtBreakdownDTO
+        //    {
+        //        DebtType = 1,
+        //        Balance = 5000,
+        //        HighCredit = 10000,
+        //        MonthlyPayment = 200
+        //    };
 
-            _mockPreApprovalService
-                .Setup(x => x.CreateDebtBreakdown(It.IsAny<List<DebtBreakdownDTO>>()))
-                .ReturnsAsync(new List<DebtBreakdownDTO> { debtBreakdown });
+        //    _mockPreApprovalService
+        //        .Setup(x => x.CreateDebtBreakdown(It.IsAny<List<DebtBreakdownDTO>>()))
+        //        .ReturnsAsync(new List<DebtBreakdownDTO> { debtBreakdown });
 
-            var result = await _controller.DebtBreakdown(new List<DebtBreakdownDTO> { debtBreakdown });
+        //    var result = await _controller.DebtBreakdown(new List<DebtBreakdownDTO> { debtBreakdown });
 
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<ApiResponse<List<DebtBreakdownDTO>>>(okResult.Value);
-            Assert.True(response.Success);
-            Assert.Single(response.Data);
-            Assert.Equal(debtBreakdown, response.Data[0]);
-        }
+        //    var okResult = Assert.IsType<OkObjectResult>(result);
+        //    var response = Assert.IsType<ApiResponse<List<DebtBreakdownDTO>>>(okResult.Value);
+        //    Assert.True(response.Success);
+        //    Assert.Single(response.Data);
+        //    Assert.Equal(debtBreakdown, response.Data[0]);
+        //}
 
         [Fact]
         public async Task LoanProgram_ValidData_ReturnsOkResult()

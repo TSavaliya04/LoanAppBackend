@@ -73,11 +73,9 @@ namespace LoanPortal.Core.Entities
 
     public class UpdateProfileRequest
     {
-        public Guid UserId { get; set; }
         public string? JobTitle { get; set; }
         public string? Address { get; set; }
         public IFormFile? Profile { get; set; }
         public string? CompanyName { get; set; }
-        public DateTime? UpdatedAt { get; set; }
     }
 }

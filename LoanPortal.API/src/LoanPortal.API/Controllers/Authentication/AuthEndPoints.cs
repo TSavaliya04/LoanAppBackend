@@ -55,7 +55,7 @@ namespace LoanPortal.API.Controllers.Authentication
         }
 
         [HttpPut("user/UpdateProfile")]
-        public async Task<IActionResult> UpdateProfile(UpdateProfileRequest request)
+        public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileRequest request)
         {
             try
             {

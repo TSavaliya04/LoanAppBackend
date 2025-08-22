@@ -65,6 +65,8 @@ builder.Services.Configure<MongoDbSettings>(options =>
     options.UserCollectionName = Environment.GetEnvironmentVariable("MONGODB_USER_COLLECTION_NAME") ?? (mongoSettings != null ? mongoSettings["UserCollectionName"] : "");
 });
 builder.Services.Configure<SMTPConfigModel>(builder.Configuration.GetSection("SMTPConfig"));
+builder.Services.Configure<BlobStorageSettings>(builder.Configuration.GetSection("BlobStorageSettings"));
+
 
 
 builder.Services.AddSingleton<IMongoClient>(sp =>

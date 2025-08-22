@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace LoanPortal.Core.Entities
 {
+    [BsonIgnoreExtraElements]
     public class BorrowerInfoDTO
     {
         public Guid? Id { get; set; }
@@ -28,6 +29,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class PreApprovalDTO
     {
         public Guid? Id { get; set; }
@@ -80,6 +82,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class PrepaidItemsDTO
     {
         public Guid? Id { get; set; }
@@ -98,6 +101,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class MiscFeesDTO
     {
         public Guid? Id { get; set; }
@@ -112,6 +116,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class PreApprovalTrackDTO
     {
         public Guid PreApprovalId { get; set; }
@@ -119,6 +124,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class BorrowerIncomeDTO
     {
         public Guid? Id { get; set; }
@@ -126,13 +132,14 @@ namespace LoanPortal.Core.Entities
         [BsonIgnore] 
         public Guid PreApprovalId { get; set; }
         public string BorrowerName { get; set; }
-        public string? Employer { get; set; }
+        public int? FicoScore { get; set; }
         public decimal? MonthlyIncome { get; set; }
         public List<DebtBreakdownDTO> Debts { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class W2DTO
     {
         public Guid Id {  get; set; }
@@ -142,6 +149,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class DebtBreakdownDTO
     {
         public Guid? Id { get; set; }
@@ -150,12 +158,12 @@ namespace LoanPortal.Core.Entities
         public Guid PreApprovalId { get; set; }
         public int DebtType { get; set; }
         public decimal Balance { get; set; }
-        public decimal HighCredit { get; set; }
         public decimal MonthlyPayment { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class LoanProgramBorrowerIncomeDTO
     {
         public Guid? Id { get; set; }
@@ -164,6 +172,7 @@ namespace LoanPortal.Core.Entities
         public int? FicoScore { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class LoanProgramDTO
     {
         public Guid? Id { get; set; }
@@ -198,6 +207,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class TopOpportunityDTO
     {
         public Guid PreApprovalId { get; set; }
@@ -207,6 +217,7 @@ namespace LoanPortal.Core.Entities
         public List<BorrowerIncomeDTO> Borrowers { get; set;}
     }
 
+    [BsonIgnoreExtraElements]
     public class PreApprovalReport
     {
         public Guid PreApprovalId { get; set; }
@@ -222,6 +233,7 @@ namespace LoanPortal.Core.Entities
         public int PropertyType { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class FHAReport
     {
         public Guid PreApprovalId { get; set; }
@@ -245,6 +257,7 @@ namespace LoanPortal.Core.Entities
         public EstimatedClosingCostDTO estimatedClosingCost { get; set; }
     }
 
+    [BsonIgnoreExtraElements]
     public class EstimatedClosingCostDTO
     {
         public decimal LoanOriginationFees { get; set; }

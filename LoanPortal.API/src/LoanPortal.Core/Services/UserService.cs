@@ -23,6 +23,7 @@ namespace LoanPortal.Core.Services
         private readonly IUserRepository _userRepository;
         private readonly IBlobStorageHelper _blobStorageHelper;
         private readonly IFirebaseAuthService _firebaseAuthService;
+        private readonly ILoginUserDetails _loginUserDetails;
 
         public UserService(
             IUserHelper userHelper,
@@ -30,7 +31,8 @@ namespace LoanPortal.Core.Services
             IHttpClientService httpClientService,
             IUserRepository userRepository,
             IBlobStorageHelper blobStorageHelper,
-            IFirebaseAuthService firebaseAuthService)
+            IFirebaseAuthService firebaseAuthService,
+            ILoginUserDetails loginUserDetails)
         {
             _userHelper = userHelper;
             _config = config;
@@ -38,6 +40,7 @@ namespace LoanPortal.Core.Services
             _userRepository = userRepository;
             _blobStorageHelper = blobStorageHelper;
             _firebaseAuthService = firebaseAuthService;
+            _loginUserDetails = loginUserDetails; 
         }
 
         public async Task<UserDTO> SignUp(CreateUserRequest user)
@@ -160,30 +163,16 @@ namespace LoanPortal.Core.Services
 
         public async Task<UserDTO> UpdateProfile(UpdateProfileRequest request)
         {
-            if (request == null)
-            {
-                throw new ValidationException("Update profile request cannot be null");
-            }
-
-            if (request.UserId == Guid.Empty)
-            {
-                throw new ValidationException("User ID cannot be empty");
-            }
-
             try
             {
                 // Get existing user data
-                var existingUser = await _userRepository.GetUserById(request.UserId);
-                if (existingUser == null)
-                {
-                    throw new ValidationException($"User with ID {request.UserId} does not exist");
-                }
+                var existingUser = await _userRepository.GetUserById(_loginUserDetails.UserID);
 
                 string url = "";
                 if (request.Profile != null && BlobStorageHelper.isValidFile(request.Profile.FileName))
                 {
                     string filename = $"{request.Profile.FileName.Split(".")[0]}_{DateTime.UtcNow:yyMMddHHmmss}.{request.Profile.FileName.Split(".")[1]}";
-                    Uri fileURI = await _blobStorageHelper.UploadFileBlobAsyncUsingSAS(request.Profile.OpenReadStream(), filename, "user-profile");
+                    Uri fileURI = await _blobStorageHelper.UploadFileBlobAsyncUsingSAS(request.Profile.OpenReadStream(), filename, "ProfilePictures");
                     url = fileURI.ToString();
                 }
 
@@ -209,10 +198,10 @@ namespace LoanPortal.Core.Services
                 //UpdateHelper.UpdateEntity(existingUser, updateEntity);
 
                 // Update the user document
-                await _userRepository.UpdateUserProfileAsync(request.UserId, updateEntity);
+                await _userRepository.UpdateUserProfileAsync(_loginUserDetails.UserID, updateEntity);
 
                 // Return updated user data
-                return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(request.UserId));
+                return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
             }
             catch (ValidationException ex)
             {

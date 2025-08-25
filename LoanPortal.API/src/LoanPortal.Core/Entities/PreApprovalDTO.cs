@@ -272,7 +272,7 @@ namespace LoanPortal.Core.Entities
         public decimal EscrowFee { get; set; }
         public decimal NotaryFee { get; set; }
         public decimal TitleInsurance { get; set; }
-        //public decimal AppraisalFee { get; set; }
+        public decimal AppraisalFee { get; set; }
         //public decimal UnderWritingFee { get; set; }
         //public decimal WireFee { get; set; }
         //public decimal MtgInsPremium { get; set; }

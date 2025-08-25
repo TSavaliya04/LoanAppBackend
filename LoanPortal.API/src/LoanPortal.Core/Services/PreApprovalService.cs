@@ -296,6 +296,7 @@ public class PreApprovalService : IPreApprovalService
             List<string> borrowers = preApproval.BorrowerIncomes.Select(b => b.BorrowerName).ToList();
             return new PreApprovalReport
             {
+                Date = DateTime.UtcNow,
                 PreApprovalId = preApproval.Id,
                 BorrowerName = preApproval.BorrowerInfo.BorrowerName,
                 FirstMortgageAmount = fma,
@@ -376,6 +377,7 @@ public class PreApprovalService : IPreApprovalService
         estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxMonths * prepaidItems.PropertyTaxAmount;
         estClosingCost.HazInsReserve = prepaidItems.HazardInsuranceMonths * prepaidItems.HazardInsuranceReserves;
         estClosingCost.TitleInsurance = PreApprovalHelper.CalculateTitleInsurance(report.TotalLoanAmount);
+        estClosingCost.AppraisalFee = lenderFees.AppraisalFee;
         estClosingCost.EscrowFee = lenderFees.EscrowFees;
         estClosingCost.NotaryFee = lenderFees.NotaryFee;
         estClosingCost.DiscountFee = lenderFees.DiscountFee;

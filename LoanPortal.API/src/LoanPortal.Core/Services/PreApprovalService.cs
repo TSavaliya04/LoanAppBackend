@@ -306,7 +306,8 @@ public class PreApprovalService : IPreApprovalService
                 LoanProgram = preApproval.LoanProgram.LoanProgram,
                 PropertyType = preApproval.BorrowerInfo.PropertyType,
                 Borrowers = borrowers,
-                LendingCompany = user.CompanyName
+                LendingCompany = user.CompanyName,
+                OccupancyStatus = preApproval.BorrowerInfo.OccupancyStatus,
             };
         }
         catch (Exception ex)

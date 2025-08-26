@@ -231,6 +231,7 @@ namespace LoanPortal.Core.Entities
         public decimal PurchasePrice { get; set; }
         public int LoanProgram { get; set; }
         public int PropertyType { get; set; }
+        public int OccupancyStatus { get; set; }
     }
 
     [BsonIgnoreExtraElements]

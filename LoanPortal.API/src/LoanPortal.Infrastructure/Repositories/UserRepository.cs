@@ -32,7 +32,7 @@ namespace LoanPortal.Infrastructure.Repositories
         {
             try
             {
-                return await _collection.Find(u => u.Email == email).FirstOrDefaultAsync();
+                return await _collection.Find(u => u.Email.ToLower() == email.ToLower()).FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {

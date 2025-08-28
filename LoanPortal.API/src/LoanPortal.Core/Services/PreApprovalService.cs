@@ -330,7 +330,7 @@ public class PreApprovalService : IPreApprovalService
             decimal upFrontAmount = (purchasePrice * upFront) / 100;
             decimal totalLoanAmount = (purchasePrice - downAmount) + upFrontAmount;
 
-            decimal interestRate = preApproval.LoanProgram.InterestRate;
+            decimal interestRate = preApproval.PurchaseInfo.AnnualInterestRate;
             int loanTerm = preApproval.LoanProgram.Term;
             double MonthlyPILoanAmount = PreApprovalHelper.CalculateMonthlyPI(Decimal.ToDouble(totalLoanAmount), Decimal.ToDouble(interestRate), loanTerm);
 

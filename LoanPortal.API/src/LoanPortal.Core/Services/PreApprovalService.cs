@@ -353,6 +353,7 @@ public class PreApprovalService : IPreApprovalService
             report.HazardInsurancePremium = preApproval.PrepaidItems.HazardInsurance;
             report.CoverageRate = preApproval.LoanProgram.MMI.Value;
             report.MortgageInsurance = monthlyMortgageInsurance;
+            report.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
             
             EstimatedClosingCostDTO costDto = GetEstClosingCost(preApproval, report);
             report.estimatedClosingCost = costDto;

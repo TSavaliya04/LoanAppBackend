@@ -255,6 +255,7 @@ namespace LoanPortal.Core.Entities
         public decimal CoverageRate { get; set; }
         public decimal HOADues { get; set; }
         public decimal TotalMonthlyPayment { get; set; }
+        public int LoanProgram { get; set; }
         public EstimatedClosingCostDTO estimatedClosingCost { get; set; }
     }
 

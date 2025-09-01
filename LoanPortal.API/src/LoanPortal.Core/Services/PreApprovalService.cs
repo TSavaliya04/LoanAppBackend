@@ -354,6 +354,7 @@ public class PreApprovalService : IPreApprovalService
             report.CoverageRate = preApproval.LoanProgram.MMI.Value;
             report.MortgageInsurance = monthlyMortgageInsurance;
             report.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
+            report.OtherFinancedItems = (report.SalePrice - report.DownPaymentAmount) * 1.75m;
             
             EstimatedClosingCostDTO costDto = GetEstClosingCost(preApproval, report);
             report.estimatedClosingCost = costDto;

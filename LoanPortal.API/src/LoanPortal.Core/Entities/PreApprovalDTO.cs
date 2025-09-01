@@ -17,11 +17,11 @@ namespace LoanPortal.Core.Entities
         public Guid? PreApprovalId { get; set; }
         public string BorrowerName { get; set; }
         public string? CoBorrowerName { get; set; }
-        public int FicoScore { get; set; }
+        public int? FicoScore { get; set; }
         public int? CoBorrowerFicoScore { get; set; }
-        public string BorrowerCellNumber { get; set; }
+        public string? BorrowerCellNumber { get; set; }
         public string? CoBorrowerCellNumber { get; set; }
-        public string BorrowerEmail { get; set; }
+        public string? BorrowerEmail { get; set; }
         public int LoanProgram { get; set; }
         public int PropertyType { get; set; }
         public int OccupancyStatus { get; set; }
@@ -256,6 +256,7 @@ namespace LoanPortal.Core.Entities
         public decimal HOADues { get; set; }
         public decimal TotalMonthlyPayment { get; set; }
         public int LoanProgram { get; set; }
+        public decimal OtherFinancedItems { get; set; }
         public EstimatedClosingCostDTO estimatedClosingCost { get; set; }
     }
 

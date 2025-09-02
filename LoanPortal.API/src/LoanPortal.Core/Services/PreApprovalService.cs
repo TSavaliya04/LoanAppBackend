@@ -332,7 +332,7 @@ public class PreApprovalService : IPreApprovalService
 
             decimal interestRate = preApproval.PurchaseInfo.AnnualInterestRate;
             int loanTerm = preApproval.LoanProgram.Term;
-            double MonthlyPILoanAmount = PreApprovalHelper.CalculateMonthlyPI(Decimal.ToDouble(totalLoanAmount), Decimal.ToDouble(interestRate), loanTerm);
+            double MonthlyPILoanAmount = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount, interestRate, loanTerm);
 
             decimal realEstateTaxes = preApproval.PrepaidItems.PropertyTaxAmount;
             decimal MMI = preApproval.LoanProgram.MMI.Value;
@@ -351,12 +351,12 @@ public class PreApprovalService : IPreApprovalService
             report.InterestRate = interestRate;
             report.LoanTerm = loanTerm;
             report.PILoanAmount = (decimal)MonthlyPILoanAmount;
-            report.PropertyTax = preApproval.PrepaidItems.PropertyTaxAmount;
-            report.HazardInsurancePremium = preApproval.PrepaidItems.HazardInsurance;
-            report.CoverageRate = preApproval.LoanProgram.MMI.Value;
-            report.MortgageInsurance = monthlyMortgageInsurance;
+            report.PropertyTax = preApproval.LoanProgram.MonthlyPropertyTax.Value;
+            report.HazardInsurancePremium = preApproval.PurchaseInfo.HazardInsurance.Value;
+            report.CoverageRate = preApproval.LoanProgram.AnnualMIPRate.Value;
+            report.MortgageInsurance = ((report.SalePrice * report.CoverageRate) / 100) / 12;
             report.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
-            report.OtherFinancedItems = (report.SalePrice - report.DownPaymentAmount) * 1.75m;
+            report.OtherFinancedItems = ((report.SalePrice - report.DownPaymentAmount) * 1.75m) / 100 ;
             report.HOADues = preApproval.PurchaseInfo.AssociationFee.Value;
             report.TotalMonthlyPayment = (report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues);
             

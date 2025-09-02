@@ -37,16 +37,26 @@ namespace LoanPortal.Core.Helper
             return errors;
         }
 
-        public static double CalculateMonthlyPI(double loanAmount, double ratePercent, int termInMonths)
+        //public static double CalculateMonthlyPI(double loanAmount, double ratePercent, int termInMonths)
+        //{
+        //    double monthlyRate = (ratePercent / 100.0) / 12.0;
+        //    if (Math.Abs(monthlyRate) < 1e-12)
+        //    {
+        //        return loanAmount / termInMonths;
+        //    }
+        //    double numerator = monthlyRate * loanAmount;
+        //    double denominator = 1.0 - Math.Pow(1.0 + monthlyRate, -termInMonths);
+        //    return numerator / denominator;
+        //}
+
+        public static double CalculateMonthlyPI(decimal loanAmount, decimal annualInterestRate, int termInYears)
         {
-            double monthlyRate = (ratePercent / 100.0) / 12.0;
-            if (Math.Abs(monthlyRate) < 1e-12)
-            {
-                return loanAmount / termInMonths;
-            }
-            double numerator = monthlyRate * loanAmount;
-            double denominator = 1.0 - Math.Pow(1.0 + monthlyRate, -termInMonths);
-            return numerator / denominator;
+            double monthlyRate = (double)annualInterestRate / 12 / 100;
+            int totalMonths = termInYears * 12;
+            double factor = Math.Pow(1 + monthlyRate, totalMonths);
+            double monthlyPayment = (double)loanAmount * monthlyRate * factor / (factor - 1);
+
+            return monthlyPayment;
         }
 
         public static decimal CalculateTitleInsurance(decimal loanAmount)

@@ -257,6 +257,7 @@ namespace LoanPortal.Core.Entities
         public decimal TotalMonthlyPayment { get; set; }
         public int LoanProgram { get; set; }
         public decimal OtherFinancedItems { get; set; }
+        public DateTime ExpirationDate { get; set; }
         public EstimatedClosingCostDTO estimatedClosingCost { get; set; }
     }
 

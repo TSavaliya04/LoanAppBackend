@@ -339,6 +339,8 @@ public class PreApprovalService : IPreApprovalService
             decimal hazInsurancePremium = preApproval.PrepaidItems.HazardInsurance;
             decimal monthlyMortgageInsurance = ((totalLoanAmount * MMI) / 100) / 12;
 
+            report.Date = DateTime.UtcNow;
+            report.ExpirationDate = report.Date.AddMonths(1);
             report.PreApprovalId = preApproval.Id;
             report.BorrowerName = preApproval.BorrowerInfo.BorrowerName;
             report.DownPaymentAmount = downAmount;
@@ -355,6 +357,8 @@ public class PreApprovalService : IPreApprovalService
             report.MortgageInsurance = monthlyMortgageInsurance;
             report.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
             report.OtherFinancedItems = (report.SalePrice - report.DownPaymentAmount) * 1.75m;
+            report.HOADues = preApproval.PurchaseInfo.AssociationFee.Value;
+            report.TotalMonthlyPayment = (report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues);
             
             EstimatedClosingCostDTO costDto = GetEstClosingCost(preApproval, report);
             report.estimatedClosingCost = costDto;

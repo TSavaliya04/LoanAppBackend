@@ -289,7 +289,7 @@ public class PreApprovalService : IPreApprovalService
         {              
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             UserEntity user = await _userRepository.GetUserById(_loginUserDetails.UserID);
-            decimal purchasePrice = preApproval.PurchaseInfo.PurchasePrice;
+            decimal purchasePrice = preApproval.LoanProgram.Price.Value;
             decimal downPercent = preApproval.PurchaseInfo.DownPayment;
             decimal downAmount = (purchasePrice * downPercent) / 100;
             decimal fma = purchasePrice - downAmount;
@@ -323,7 +323,7 @@ public class PreApprovalService : IPreApprovalService
         {
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             UserEntity user = await _userRepository.GetUserById(_loginUserDetails.UserID);
-            decimal purchasePrice = preApproval.PurchaseInfo.PurchasePrice;
+            decimal purchasePrice = preApproval.LoanProgram.Price.Value;
             decimal downPercent = preApproval.PurchaseInfo.DownPayment;
             decimal downAmount = (purchasePrice * downPercent) / 100;
             decimal upFront = preApproval.PurchaseInfo.MipFundingFee;

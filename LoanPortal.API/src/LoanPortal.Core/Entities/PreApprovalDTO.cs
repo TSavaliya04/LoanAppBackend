@@ -264,19 +264,23 @@ namespace LoanPortal.Core.Entities
     [BsonIgnoreExtraElements]
     public class EstimatedClosingCostDTO
     {
-        public decimal LoanOriginationFees { get; set; }
+        public decimal DiscountFeePercent { get; set; }
         public decimal DiscountFee { get; set; }
-        public decimal UpFrontMIP { get; set; }
-        public decimal UnderWriter { get; set; }
-        public decimal ProcessFee { get; set; }
+        public int PrepaidInterestDays { get; set; }
         public decimal PrepaidInterest { get; set; }
         public decimal HazInsPremium { get; set; }
+        public int HazInsReserveMonths { get; set; }
         public decimal HazInsReserve { get; set; }
+        public int PpdPropTaxesMonths { get; set; }
         public decimal PpdPropTaxes { get; set; }
-        public decimal EscrowFee { get; set; }
-        public decimal NotaryFee { get; set; }
+        public decimal EscrowFees { get; set; }
         public decimal TitleInsurance { get; set; }
         public decimal AppraisalFee { get; set; }
+        public decimal TotalEstSettlementCharges { get; set; }
+        public decimal DownPayment { get; set; }
+        public decimal TotalEstFundToClose { get; set; }
+        //public decimal NotaryFee { get; set; }
+        //public decimal LoanOriginationFees { get; set; }
         //public decimal UnderWritingFee { get; set; }
         //public decimal WireFee { get; set; }
         //public decimal MtgInsPremium { get; set; }
@@ -294,10 +298,11 @@ namespace LoanPortal.Core.Entities
         //public decimal RecordingFeePadding { get; set; }
         //public decimal SellerCredit { get; set; }
         //public decimal EscrowDepositEMD { get; set; }
-        public decimal EstClosingCost { get; set; }
-        public decimal EstPrepaidItemReserves { get; set; }
-        public decimal TotalEstSettlementCharges { get; set; }
-        public decimal TotalEstFundToClose { get; set; }
+        //public decimal UpFrontMIP { get; set; }
+        //public decimal UnderWriter { get; set; }
+        //public decimal ProcessFee { get; set; }
+        //public decimal EstClosingCost { get; set; }
+        //public decimal EstPrepaidItemReserves { get; set; }
     }
 
     [BsonIgnoreExtraElements]

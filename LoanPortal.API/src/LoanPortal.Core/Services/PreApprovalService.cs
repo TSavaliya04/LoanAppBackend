@@ -378,40 +378,35 @@ public class PreApprovalService : IPreApprovalService
         PurchaseInfoDTO purchaseInfo = preApproval.PurchaseInfo;
 
         EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO();
-        estClosingCost.LoanOriginationFees = (preApproval.LoanProgram.BaseLoanAmount * lenderFees.LoanOriginationFee) / 100;
-        estClosingCost.HazInsPremium = prepaidItems.HazardInsurance;
-        estClosingCost.PrepaidInterest = prepaidItems.PrepaidInterestDays * prepaidItems.PrepaidInterestAmount;
-        estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxMonths * prepaidItems.PropertyTaxAmount;
-        estClosingCost.HazInsReserve = prepaidItems.HazardInsuranceMonths * prepaidItems.HazardInsuranceReserves;
-        estClosingCost.TitleInsurance = PreApprovalHelper.CalculateTitleInsurance(report.TotalLoanAmount);
-        estClosingCost.AppraisalFee = lenderFees.AppraisalFee;
-        estClosingCost.EscrowFee = lenderFees.EscrowFees;
-        estClosingCost.NotaryFee = lenderFees.NotaryFee;
+        
+        estClosingCost.DiscountFeePercent = lenderFees.DiscountFeePercentage;
         estClosingCost.DiscountFee = lenderFees.DiscountFee;
-        estClosingCost.UpFrontMIP = lenderFees.UpfrontMip;
-        estClosingCost.UnderWriter = lenderFees.UnderWriter;
-        estClosingCost.ProcessFee = lenderFees.ProcessFee;
-        estClosingCost.EstClosingCost = new[]
+        estClosingCost.AppraisalFee = lenderFees.AppraisalFee;
+        estClosingCost.PrepaidInterestDays = prepaidItems.PrepaidInterestDays;
+        estClosingCost.PrepaidInterest = prepaidItems.PrepaidInterestAmount;
+        estClosingCost.HazInsPremium = prepaidItems.HazardInsurance;
+        estClosingCost.HazInsReserveMonths = prepaidItems.HazardInsuranceMonths;
+        estClosingCost.HazInsReserve = prepaidItems.HazardInsuranceReserves;
+        estClosingCost.PpdPropTaxesMonths = prepaidItems.PropertyTaxMonths;
+        estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxAmount;
+        estClosingCost.EscrowFees = lenderFees.EscrowFees;
+        estClosingCost.TitleInsurance = lenderFees.TitleFees.Value;
+
+       
+        estClosingCost.TotalEstSettlementCharges = new[]
         {
-            estClosingCost.LoanOriginationFees,
-            estClosingCost.HazInsPremium,
-            estClosingCost.PrepaidInterest,
-            estClosingCost.PpdPropTaxes,
-            estClosingCost.HazInsReserve,
-            estClosingCost.TitleInsurance,
-            estClosingCost.EscrowFee,
-            estClosingCost.NotaryFee,
             estClosingCost.DiscountFee,
-            estClosingCost.UpFrontMIP,
-            estClosingCost.UnderWriter,
-            estClosingCost.ProcessFee
+            estClosingCost.AppraisalFee,
+            estClosingCost.PrepaidInterest,
+            estClosingCost.HazInsPremium,
+            estClosingCost.HazInsReserve,
+            estClosingCost.PpdPropTaxes,
+            estClosingCost.EscrowFees,
+            estClosingCost.TitleInsurance,
         }.Sum();
-        DateTime lastDayOfMonth = new DateTime(report.Date.Year, report.Date.Month,
-            DateTime.DaysInMonth(report.Date.Year, report.Date.Month));
-        int daysDifference = (lastDayOfMonth - report.Date).Days;
-        estClosingCost.EstPrepaidItemReserves = ((report.TotalLoanAmount * report.InterestRate) / 365) * daysDifference;
-        estClosingCost.TotalEstSettlementCharges = estClosingCost.EstClosingCost + report.DownPaymentAmount;
-        estClosingCost.TotalEstFundToClose = estClosingCost.EstClosingCost + report.DownPaymentAmount;
+
+        estClosingCost.DownPayment = report.DownPaymentAmount;
+        estClosingCost.TotalEstFundToClose = estClosingCost.TotalEstSettlementCharges + report.DownPaymentAmount;
         return estClosingCost;
     }
     

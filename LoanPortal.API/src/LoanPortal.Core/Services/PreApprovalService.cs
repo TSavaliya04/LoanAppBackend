@@ -328,7 +328,8 @@ public class PreApprovalService : IPreApprovalService
             decimal downAmount = (purchasePrice * downPercent) / 100;
             decimal upFront = preApproval.PurchaseInfo.MipFundingFee;
             decimal upFrontAmount = (purchasePrice * upFront) / 100;
-            decimal totalLoanAmount = (purchasePrice - downAmount) + upFrontAmount;
+            decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
+            decimal totalLoanAmount = (purchasePrice - downAmount) + otherFinancedItem;
 
             decimal interestRate = preApproval.PurchaseInfo.AnnualInterestRate;
             int loanTerm = preApproval.LoanProgram.Term;
@@ -356,7 +357,7 @@ public class PreApprovalService : IPreApprovalService
             report.CoverageRate = preApproval.LoanProgram.AnnualMIPRate.Value;
             report.MortgageInsurance = ((report.SalePrice * report.CoverageRate) / 100) / 12;
             report.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
-            report.OtherFinancedItems = ((report.SalePrice - report.DownPaymentAmount) * 1.75m) / 100 ;
+            report.OtherFinancedItems = otherFinancedItem;
             report.HOADues = preApproval.PurchaseInfo.AssociationFee.Value;
             report.TotalMonthlyPayment = (report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues);
             

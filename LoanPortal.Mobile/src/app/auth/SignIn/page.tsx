@@ -17,7 +17,7 @@ import {
 import SVGs from "@/components/SVGs";
 // import Loader from "@/components/CassavaLoader";
 import ControlledInput from "@/components/Forms/Fields/ControlledInput";
-import { User } from "@/api/models/user";
+// import { User } from "@/api/models/user";
 import { getOfficeUser } from "@/api/network/user";
 import { useSessionStore } from "@/stores/SessionStore";
 // import { useUserOrganisationStore } from "@/store/useUserOrganisationStore";
@@ -27,6 +27,11 @@ import AuthButton from "@/components/Auth/AuthButton";
 import { useSnackBarStore } from "@/store/SnackBarStore";
 import CustomSnackBar from "@/components/CustomSnackBar";
 import { firebaseAuth as auth } from "@/api/instances/firebase";
+
+type OfficeUserResponse = {
+  status: string;
+  // add more fields if needed, like user info, token, etc.
+};
 
 const SignInSchema = z.object({
   email: z.string().email(),
@@ -84,8 +89,7 @@ const SignInPage = () => {
           if (firebaseUser) {
             const token = await firebaseUser.getIdToken();
 
-            console.log("User is authenticated. Token:", token);
-            
+            // console.log("User is authenticated. Token:", token);
 
             const customUser = {
               token,
@@ -97,9 +101,11 @@ const SignInPage = () => {
               email: firebaseUser.email ?? "",
               profilePicture: firebaseUser.photoURL ?? "",
             };
-
+            // console.log("111", customUser);
+            
             setUser(customUser);
           } else {
+            // console.log("222");
             setUser(null);
           }
 
@@ -134,48 +140,33 @@ const SignInPage = () => {
 
       const user = userCredential.user;
       const token = await user?.getIdToken();
-      console.log("token =>", token);
-      
+      // console.log("token =>", token);
 
       if (user && token) {
-        const customUser = {
-          token,
-          displayName: user.displayName ?? "",
-          firstName: "", // You might fetch or derive this elsewhere
-          lastName: "", // You might fetch or derive this elsewhere
-          userId: user.uid,
-          isNewClaim: false,
-          phone: user.phoneNumber ?? "",
-          email: user.email ?? "",
+        const axiosResponse = await getOfficeUser(await token);
+        const response: OfficeUserResponse = {
+          status: String(axiosResponse.status),
         };
-        // await setUser(customUser);
-        // router.push("/dashboard");
-        // return;
-        const response = await getOfficeUser(await token) as any;
-        if (response.status === '499') {
+        if (response.status === "499") {
           router.push("/downtime");
         } else {
+          // console.log("Log new =>", axiosResponse?.data?.data);
+          // console.log("user id =>",user.uid);
           
-          var userResponse = response?.data;
-          console.log('Lon new =>', response?.data[0]);
-          
-          // if (userResponse.find((x) => x.organisation !== null)) {
-            // setUserOrganizations(userResponse)
-            // if(userResponse[0].designation === 'Resident'){
-            //   response && router.push("/profile");
-            // } else {
-            //   response && router.push("/dashboard");
-            // }
-            // const applicationVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
-            // const confirmationResult = await signInWithPhoneNumber(auth, "+16505553434", applicationVerifier);
-            //console.log(confirmationResult)
-            //setVerificationId(confirmationResult.verificationId);
-
-            //response && router.push("/auth/Verify");
-          // } else {
-            // setUserOrganizations([]);
-            setUser(response?.data[0]);
-            response && router.push("/dashboard");
+          const customUser = {
+            token,
+            displayName: user.displayName ?? "",
+            firstName: axiosResponse?.data?.data?.firstName, // You might fetch or derive this elsewhere
+            lastName: axiosResponse?.data?.data?.lastName, // You might fetch or derive this elsewhere
+            userId: user.uid,
+            phone: user.phoneNumber ?? "",
+            email: user.email ?? "",
+          };
+          // console.log("111111",customUser);
+          setUser(customUser);
+          if (axiosResponse) {
+            router.push("/dashboard");
+          }
           // }
         }
       }
@@ -258,7 +249,6 @@ const SignInPage = () => {
           <Typography sx={textStyle}>Forgot your password?</Typography>
         </Link>
       </Box>
-
     </>
   );
 

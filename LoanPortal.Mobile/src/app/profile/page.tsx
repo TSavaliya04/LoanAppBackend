@@ -26,7 +26,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 // import { useSessionStore } from '@/stores/SessionStore';
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
-// import { firebaseAuth } from "@/api/instances/firebase";
+import { firebaseAuth } from "@/api/instances/firebase";
 // import { signOut } from "@firebase/auth";
 import { useSessionStore } from "@/stores/SessionStore";
 
@@ -36,11 +36,13 @@ const Profile = () => {
   const { setUser } = useSessionStore();
   const [selectedTab, setSelectedTab] = useState(4);
 
-    const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
-      // await signOut(auth); // Firebase sign out
-      await setUser(null); // Clear user from Zustand store
-      router.push("/auth/SignIn"); // Redirect to login page
+      await firebaseAuth.signOut();
+      await localStorage.clear();
+      await sessionStorage.clear();
+      await setUser(null);
+      router.push("/auth/SignIn");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -84,6 +86,7 @@ const Profile = () => {
                   fontSize: "1.6rem",
                   fontWeight: 400,
                 }}
+                component="div" // <-- Change from <p> to <div>
               >
                 <Typography
                   sx={{
@@ -92,6 +95,7 @@ const Profile = () => {
                     fontSize: "1.6rem",
                     fontWeight: 700,
                   }}
+                  component="span" // <-- Inline element
                 >
                   Loans
                 </Typography>{" "}
@@ -116,7 +120,6 @@ const Profile = () => {
           <Button variant="outlined" color="error" onClick={handleLogout}>
             Logout
           </Button>
-
         </Container>
 
         {/* Bottom Navigation */}
@@ -129,7 +132,7 @@ const Profile = () => {
             left: 0,
             right: 0,
             paddingBottom: 2,
-            height: '76px',
+            height: "76px",
             bgcolor: "background.paper",
             borderTop: "1px solid #e5e7eb",
             "& .MuiBottomNavigationAction-root": {

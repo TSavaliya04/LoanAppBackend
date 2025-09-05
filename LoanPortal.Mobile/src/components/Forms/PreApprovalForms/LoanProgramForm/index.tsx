@@ -9,51 +9,84 @@ import {
   Collapse,
   InputAdornment,
   MenuItem,
+  Button,
+  CircularProgress,
 } from "@mui/material";
-import { useFormContext, Controller, useWatch } from "react-hook-form";
+import {
+  useFormContext,
+  Controller,
+  useWatch,
+  useFieldArray,
+} from "react-hook-form";
 import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSchema";
 import SVGs from "@/components/SVGs";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePreApprovalStore } from "@/store/usePreApprovalStore";
 import { NumericFormat } from "react-number-format";
+import { PreApprovalPDF } from "@/components/PDFViews/PreApprovalPDF";
+import { pdf } from "@react-pdf/renderer";
+import { saveAs } from "file-saver";
+import { FHAGFEPDF } from "@/components/PDFViews/FHAGFEPDF";
+import {
+  getFHAGFEReport,
+  getpreApprovalReport,
+} from "@/api/network/getAllPreApprovals";
 
 type LoanProgramFormProps = {
   expanded: boolean;
   onToggle: () => void;
-  preApprovalData: object;
+  isCompleted?: boolean;
+  isDisabled?: boolean;
+  // preApprovalData: {
+  //   data?: {
+  //     borrowerIncomes?: any[];
+  //     // add other properties as needed
+  //   };
+  //   // add other properties as needed
+  // };
 };
 
 export default function LoanProgramForm({
   expanded,
   onToggle,
-  preApprovalData,
-}: LoanProgramFormProps) {
-  console.log(preApprovalData);
+  isCompleted,
+  isDisabled,
+}: // preApprovalData,
+LoanProgramFormProps) {
+  const preApprovalId = usePreApprovalStore((state) => state.preApprovalId);
+  // const borrowerIncomes = preApprovalData?.data?.borrowerIncomes || [];
 
   const {
     control,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useFormContext<CombinedPreApprovalFormData>();
+
+  const { fields } = useFieldArray({
+    control,
+    name: "loanProgram.borrowers",
+  });
   const frontEndRatio = usePreApprovalStore((state) => state.frontEndRatio);
-  const homeOwnerInsurance = usePreApprovalStore(
-    (state) => state.homeOwnerInsurance
-  );
-  const associationFee = usePreApprovalStore((state) => state.associationFee);
   const monthlyIncome = usePreApprovalStore((state) => state.monthlyIncome);
   const frontEndRatiocolor = frontEndRatio <= 45 ? "#00CF1F" : "#F44336";
 
   const backEndRatio = usePreApprovalStore((state) => state.backEndRatio);
-  useEffect(() => {
-    setValue("loanProgram.backEndRatio", backEndRatio);
-  }, [backEndRatio, setValue]);
   const backEndRatiocolor = backEndRatio <= 45 ? "#00CF1F" : "#F44336";
 
+  const borrowerIncome = useWatch({
+    control,
+    name: "borrowersIncomeData.borrowerIncome",
+  });
+  const associationFee =
+    useWatch({
+      control,
+      name: "purchaseInfo.associationFee",
+    }) ?? 0;
   const loanProgram =
-    useWatch({ control, name: "loanProgram.loanProgram" }) ?? "1";
-  const price = useWatch({ control, name: "loanProgram.price" }) ?? 0;
+    useWatch({ control, name: "borrowerInfo.loanProgram" }) ?? "1";
+  const price = useWatch({ control, name: "purchaseInfo.purchasePrice" }) ?? 0;
   const downPaymentPercentage =
-    useWatch({ control, name: "loanProgram.downPaymentPercentage" }) ?? 0;
+    useWatch({ control, name: "purchaseInfo.downPayment" }) ?? 0;
   const upmipRate = useWatch({ control, name: "loanProgram.upmipRate" }) ?? 0;
   const mmi = useWatch({ control, name: "loanProgram.mmi" }) ?? 0;
   const annualMIPRate =
@@ -63,7 +96,7 @@ export default function LoanProgramForm({
   const propertyTax =
     useWatch({ control, name: "loanProgram.propertyTax" }) ?? 0;
   const interestRate =
-    useWatch({ control, name: "loanProgram.interestRate" }) ?? 0;
+    useWatch({ control, name: "purchaseInfo.annualInterestRate" }) ?? 0;
   const term = useWatch({ control, name: "loanProgram.term" }) ?? 0;
   const monthlyPropertyTax =
     useWatch({ control, name: "loanProgram.monthlyPropertyTax" }) ?? 0;
@@ -75,18 +108,36 @@ export default function LoanProgramForm({
   //   useWatch({ control, name: "loanProgram.mortgageInsurance" }) ?? 0;
 
   useEffect(() => {
+    const downPaymentAmount = price * (downPaymentPercentage / 100);
+    const baseLoanAmount = price - downPaymentAmount;
     let calculatedAnnualMIPRate = 0;
 
+    const ltv = (baseLoanAmount / price) * 100; // in percentage
+
     if (loanProgram === "3") {
-      calculatedAnnualMIPRate = 0.55;
+      if (baseLoanAmount <= 726200) {
+        if (ltv <= 90) {
+          calculatedAnnualMIPRate = 0.5; // 50 bps
+        } else if (ltv > 90 && ltv <= 95) {
+          calculatedAnnualMIPRate = 0.55; // 55 bps
+        } else if (ltv > 95) {
+          calculatedAnnualMIPRate = 0.55; // 55 bps
+        }
+      } else {
+        if (ltv <= 90) {
+          calculatedAnnualMIPRate = 0.7; // 70 bps
+        } else if (ltv > 90 && ltv <= 95) {
+          calculatedAnnualMIPRate = 0.7; // 70 bps
+        } else if (ltv > 95) {
+          calculatedAnnualMIPRate = 0.75; // 75 bps
+        }
+      }
     }
 
     // If you want to override form state field as well
     if (calculatedAnnualMIPRate !== annualMIPRate) {
       setValue("loanProgram.annualMIPRate", calculatedAnnualMIPRate);
     }
-    const downPaymentAmount = price * (downPaymentPercentage / 100);
-    const baseLoanAmount = price - downPaymentAmount;
     const upmipAmount = baseLoanAmount * (upmipRate / 100);
     const finalLoanAmount = baseLoanAmount + upmipAmount;
 
@@ -129,9 +180,35 @@ export default function LoanProgramForm({
         : 0;
 
     // Update the store
-    usePreApprovalStore.setState({ frontEndRatio: calculatedFrontEndRatio });
+    usePreApprovalStore.setState({
+      frontEndRatio: !isFinite(calculatedFrontEndRatio)
+        ? 0
+        : calculatedFrontEndRatio,
+    });
+
+    let calculatedBackEndRatio = 0;
+    let totalIncome = 0;
+    let totalPayment = 0;
+
+    borrowerIncome?.forEach((borrower) => {
+      totalIncome += Number(borrower.monthlyIncome) || 0;
+      borrower?.debts?.forEach((debt) => {
+        totalPayment += Number(debt.monthlyPayment) || 0;
+      });
+    });
+
+    calculatedBackEndRatio = Number(
+      (((monthlyHousingExpenses + totalPayment) / totalIncome) * 100).toFixed(2)
+    );
+
+    usePreApprovalStore.setState({
+      backEndRatio: !isFinite(calculatedBackEndRatio)
+        ? 0
+        : calculatedBackEndRatio,
+    });
 
     setValue("loanProgram.frontEndRatio", calculatedFrontEndRatio);
+    setValue("loanProgram.backEndRatio", calculatedBackEndRatio);
     setValue(
       "loanProgram.downPaymentAmount",
       isNaN(downPaymentAmount) ? 0 : +downPaymentAmount.toFixed(2)
@@ -151,21 +228,23 @@ export default function LoanProgramForm({
     setValue("loanProgram.mmi", isNaN(calmmi) ? 0 : +calmmi.toFixed(2));
     setValue(
       "loanProgram.totalNeededToClear",
-      isNaN(totalNeededToClear) ? 0 : +totalNeededToClear.toFixed(2)
+      isNaN(totalNeededToClear) ? 0 : +totalNeededToClear
     );
     setValue(
       "loanProgram.principalAndInterest",
-      isNaN(monthlyPI) ? 0 : +monthlyPI.toFixed(2)
+      isNaN(monthlyPI) ? 0 : +monthlyPI.toFixed(0)
     );
     setValue(
       "loanProgram.mortgageInsurance",
-      isNaN(mortgageInsurance) ? 0 : +mortgageInsurance.toFixed(2)
+      isNaN(mortgageInsurance) ? 0 : +mortgageInsurance.toFixed(0)
     );
     setValue(
       "loanProgram.monthlyTotal",
-      isNaN(monthlyTotal) ? 0 : +monthlyTotal.toFixed(2)
+      isNaN(monthlyTotal) ? 0 : +monthlyTotal.toFixed(0)
     );
   }, [
+    borrowerIncome,
+    backEndRatio,
     loanProgram,
     price,
     downPaymentPercentage,
@@ -178,12 +257,183 @@ export default function LoanProgramForm({
     annualMIPRate,
     monthlyPropertyTax,
     principalAndInterest,
-    homeOwnerInsurance,
     associationFee,
     monthlyIncome,
     hazardInsurance,
     setValue,
   ]);
+
+  const loanProgramNames = {
+    "1": "Non QM",
+    "2": "Conventional",
+    "3": "FHA",
+  };
+
+  const propertyTypes = {
+    "1": "SFR",
+    "2": "2 Units",
+    "3": "3 Units",
+    "4": "4 Units",
+    "5": "Condo/Townhome",
+  };
+
+  const occupancyStatuses = {
+    "1": "Owner Occupied",
+    "2": "2nd Home",
+    "3": "Investment",
+  };
+
+  const [preApprovalloading, setPreApprovalloading] = useState(false);
+  const [FHAGFEloading, setFHAGFELoading] = useState(false);
+
+  const generatePreApproval = async (preApprovalId: string) => {
+    setPreApprovalloading(true);
+
+    try {
+      const response = await getpreApprovalReport(preApprovalId);
+      const preApprovalReportData = response.data.data;
+      console.log(preApprovalReportData);
+
+      const mockData = {
+        borrowerName: preApprovalReportData.borrowerName,
+        borrowers: preApprovalReportData.borrowers,
+        date: formatDate(preApprovalReportData.date),
+        downPaymentAmount: formatAmount(
+          preApprovalReportData.downPaymentAmount
+        ),
+        downPaymentPercentage: preApprovalReportData.downPaymentPercentage,
+        firstMortgageAmount: formatAmount(
+          preApprovalReportData.firstMortgageAmount
+        ),
+        lendingCompany: preApprovalReportData.lendingCompany,
+        loanProgram:
+          loanProgramNames[
+            preApprovalReportData.loanProgram as keyof typeof loanProgramNames
+          ] || "",
+        propertyType:
+          propertyTypes[
+            preApprovalReportData.propertyType as keyof typeof propertyTypes
+          ] || "",
+        purchasePrice: formatAmount(preApprovalReportData.purchasePrice),
+        occupancyStatus:
+          occupancyStatuses[
+            preApprovalReportData.occupancyStatus as keyof typeof occupancyStatuses
+          ] || "",
+        address: "",
+        loanUse: "Real Estate Purchase",
+        firstMortgage: "",
+        secondMortgage: "",
+        unitCount: "",
+        ppp: "",
+      };
+
+      const blob = await pdf(<PreApprovalPDF data={mockData} />).toBlob();
+      saveAs(blob, "pre-approval-letter.pdf");
+    } catch (err) {
+      console.error("PDF generation failed", err);
+    } finally {
+      setPreApprovalloading(false);
+    }
+  };
+
+  const generateFHAGFE = async (preApprovalId: string) => {
+    setFHAGFELoading(true);
+
+    try {
+      const response = await getFHAGFEReport(preApprovalId);
+      const FHAGFEReportData = response.data.data;
+      console.log(FHAGFEReportData);
+
+      const FHAGFEPDFData = {
+        borrower: FHAGFEReportData.borrowerName,
+        propertyAddress: "",
+        date: formatDate(FHAGFEReportData.date),
+        loanType:
+          loanProgramNames[
+            FHAGFEReportData.loanProgram as keyof typeof loanProgramNames
+          ] || "",
+        salesPrice: formatAmount(FHAGFEReportData.salePrice),
+        downPayment: formatAmount(FHAGFEReportData.downPaymentAmount),
+        subFinancing: formatAmount(FHAGFEReportData.subFinancing),
+        otherFinanced: formatAmount(FHAGFEReportData.otherFinancedItems),
+        upfrontMIP: FHAGFEReportData.upfrontMipPercent,
+        loanAmount: formatAmount(FHAGFEReportData.totalLoanAmount),
+        interestRate: FHAGFEReportData.interestRate,
+        loanTerm: FHAGFEReportData.loanTerm,
+        monthlyTaxes: formatAmount(FHAGFEReportData.propertyTax),
+        piLoanAmount: formatAmount(FHAGFEReportData.piLoanAmount),
+        hazardInsurance: formatAmount(FHAGFEReportData.hazardInsurancePremium),
+        mortgageInsurance: formatAmount(FHAGFEReportData.mortgageInsurance),
+        loanOriginationFees: formatAmount(FHAGFEReportData.loanOriginationFees),
+        discountFee: formatAmount(FHAGFEReportData.discountFee),
+        CoverageRate: formatAmount(FHAGFEReportData.CoverageRate),
+        TotalMonthlyPayment: formatAmount(FHAGFEReportData.TotalMonthlyPayment),
+        appraisalFee: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.appraisalFee
+        ),
+        prepaidInterest: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.prepaidInterest
+        ),
+        hazInsReserve: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.hazInsReserve
+        ),
+        escrowFee: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.escrowFee
+        ),
+        titleInsurance: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.titleInsurance
+        ),
+        estClosingCost: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.estClosingCost
+        ),
+        estPrepaidItemReserves: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.estPrepaidItemReserves
+        ),
+        totalEstSettlementCharges: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.totalEstSettlementCharges
+        ),
+        totalEstFundToClose: formatAmount(
+          FHAGFEReportData.estimatedClosingCost.totalEstFundToClose
+        ),
+        hoaDues: formatAmount(FHAGFEReportData.estimatedClosingCost.hoaDues),
+        prepaidInterestDays:
+          FHAGFEReportData.estimatedClosingCost.prepaidInterestDays,
+        lockRequested: true,
+        lockRate: FHAGFEReportData.interestRate,
+        lockExpiration: formatDate(FHAGFEReportData.expirationDate),
+      };
+      const blob = await pdf(<FHAGFEPDF data={FHAGFEPDFData} />).toBlob();
+      saveAs(blob, "FHAGFE-report.pdf");
+    } catch (err) {
+      console.error("PDF generation failed", err);
+    } finally {
+      setPreApprovalloading(false);
+    }
+
+    // Simulate async action
+    setTimeout(() => {
+      setFHAGFELoading(false);
+    }, 2000);
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+
+    // Get month, day, and year
+    const month = date.getMonth() + 1; // Months are 0-based
+    const day = date.getDate();
+    const year = date.getFullYear() % 100; // Last two digits
+
+    return `${month}/${day}/${year}`;
+  };
+
+  function formatAmount(amount: number) {
+    if (isNaN(amount)) return "0.00";
+    return Number(amount).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
 
   return (
     <Box
@@ -191,13 +441,7 @@ export default function LoanProgramForm({
         borderRadius: 4,
       }}
     >
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        onClick={onToggle}
-        sx={{ cursor: "pointer" }}
-      >
+      <Box display="flex" alignItems="center" justifyContent="space-between">
         {expanded ? (
           <Typography display={"none"} fontWeight={600} color="primary">
             Loan Program
@@ -222,13 +466,24 @@ export default function LoanProgramForm({
                   width: 40,
                   height: 40,
                   borderRadius: 2,
-                  backgroundColor: "#7444F5",
+                  backgroundColor: isCompleted
+                    ? "#1F9A00"
+                    : isDisabled
+                    ? "gray"
+                    : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <SVGs name="Loan_Program_icon" />
+                {/* <CheckIcon sx={{ color: "#fff" }} /> */}
+                {isCompleted ? (
+                  <SVGs name="Check_Mark_icon" />
+                ) : isDisabled ? (
+                  <SVGs name="Loan_Program_icon" />
+                ) : (
+                  <SVGs name="Loan_Program_icon" />
+                )}
               </Box>
               <Typography
                 sx={{ fontWeight: 500, fontSize: "20px", color: "black" }}
@@ -236,9 +491,15 @@ export default function LoanProgramForm({
                 Loan Program
               </Typography>
             </Box>
-            <IconButton size="small" sx={{ color: "black" }}>
-              <SVGs name="Edit_icon" />
-            </IconButton>
+            {!isDisabled && (
+              <IconButton
+                size="small"
+                sx={{ color: "black" }}
+                onClick={onToggle}
+              >
+                <SVGs name="Edit_icon" />
+              </IconButton>
+            )}
           </Box>
         )}
       </Box>
@@ -255,7 +516,7 @@ export default function LoanProgramForm({
                 p: 2,
               }}
             >
-              <Controller
+              {/* <Controller
                 name="loanProgram.loanProgram"
                 control={control}
                 render={({ field }) => (
@@ -266,6 +527,24 @@ export default function LoanProgramForm({
                     label="Loan Program"
                     error={!!errors.loanProgram?.loanProgram}
                     helperText={errors.loanProgram?.loanProgram?.message}
+                  >
+                    <MenuItem value="1">Non QM</MenuItem>
+                    <MenuItem value="2">Conventional</MenuItem>
+                    <MenuItem value="3">FHA</MenuItem>
+                  </TextField>
+                )}
+              /> */}
+              <Controller
+                name="borrowerInfo.loanProgram"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    select
+                    label="Loan Program *"
+                    error={!!errors.borrowerInfo?.loanProgram}
+                    helperText={errors.borrowerInfo?.loanProgram?.message}
                   >
                     <MenuItem value="1">Non QM</MenuItem>
                     <MenuItem value="2">Conventional</MenuItem>
@@ -389,13 +668,15 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Price</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Price
+                </Typography>
                 <Controller
-                  name="loanProgram.price"
+                  name="purchaseInfo.purchasePrice"
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -403,19 +684,20 @@ export default function LoanProgramForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.loanProgram?.price}
-                      helperText={errors.loanProgram?.price?.message}
+                      error={!!errors.purchaseInfo?.purchasePrice}
+                      helperText={errors.purchaseInfo?.purchasePrice?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           borderRadius: 2,
@@ -454,33 +736,36 @@ export default function LoanProgramForm({
                 alignItems="center"
                 justifyContent="space-between"
                 sx={{
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Annual Interest Rate</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Annual Interest Rate
+                </Typography>
                 <Controller
-                  name="loanProgram.interestRate"
+                  name="purchaseInfo.annualInterestRate"
                   control={control}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       onChange={(e) =>
                         field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
+                          e.target.value === "" ? "" : Number(e.target.value)
                         )
                       }
                       value={field.value ?? ""}
                       fullWidth
                       type="number"
+                      inputMode="numeric"
                       placeholder="0"
                       size="medium"
-                      error={!!errors.loanProgram?.interestRate}
-                      helperText={errors.loanProgram?.interestRate?.message}
+                      error={!!errors.purchaseInfo?.annualInterestRate}
+                      helperText={
+                        errors.purchaseInfo?.annualInterestRate?.message
+                      }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           borderRadius: 2,
@@ -530,11 +815,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Base Loan Amount</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Base Loan Amount
+                </Typography>
                 <Controller
                   name="loanProgram.baseLoanAmount"
                   control={control}
@@ -557,7 +844,7 @@ export default function LoanProgramForm({
                       error={!!errors.loanProgram?.baseLoanAmount}
                       helperText={errors.loanProgram?.baseLoanAmount?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -591,11 +878,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>UPMIP</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  UPMIP
+                </Typography>
 
                 <Box display="flex" gap={1} alignItems="center">
                   {/* Percentage Field */}
@@ -607,22 +896,22 @@ export default function LoanProgramForm({
                         {...field}
                         onChange={(e) =>
                           field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value)
+                            e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
                         value={field.value ?? ""}
                         type="number"
+                        inputMode="numeric"
                         placeholder="0"
                         size="small"
                         error={!!errors.loanProgram?.upmipRate}
                         helperText={errors.loanProgram?.upmipRate?.message}
                         sx={{
-                          maxWidth: 84,
+                          maxWidth: 76,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             borderRadius: 2,
+                            paddingRight: "8.5px",
                             "& fieldset": {
                               borderColor: "#F6F6F6",
                             },
@@ -636,11 +925,17 @@ export default function LoanProgramForm({
                               color: "#9e9e9e",
                               opacity: 1,
                             },
+                            "& input": {
+                              padding: "8.5px 0 8.5px 8.5px", // adjust as needed
+                            },
                           },
                         }}
                         InputProps={{
                           endAdornment: (
-                            <InputAdornment position="end">
+                            <InputAdornment
+                              position="end"
+                              sx={{ marginLeft: 0 }}
+                            >
                               <span
                                 style={{ fontWeight: "bold", color: "black" }}
                               >
@@ -676,7 +971,7 @@ export default function LoanProgramForm({
                         error={!!errors.loanProgram?.upmipAmount}
                         helperText={errors.loanProgram?.upmipAmount?.message}
                         sx={{
-                          maxWidth: 160,
+                          maxWidth: 120,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#f7f7f7",
@@ -711,38 +1006,53 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Annual MIP Rate</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Annual MIP Rate
+                </Typography>
                 <Controller
                   name="loanProgram.annualMIPRate"
                   control={control}
                   render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) => {
+                    <TextField
+                      {...field}
+                      onChange={(e) =>
                         field.onChange(
-                          values.floatValue === undefined
-                            ? undefined
-                            : values.floatValue
-                        );
-                      }}
-                      allowNegative={false}
+                          e.target.value === "" ? "" : Number(e.target.value)
+                        )
+                      }
+                      value={field.value ?? ""}
+                      fullWidth
+                      disabled={loanProgram === "3"}
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="0"
+                      size="medium"
                       error={!!errors.loanProgram?.annualMIPRate}
                       helperText={errors.loanProgram?.annualMIPRate?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
+                          borderRadius: 2,
+                          backgroundColor:
+                            loanProgram === "3" ? "#f7f7f7" : "#fff", // ✅ match your other disabled fields
                           "& fieldset": {
-                            border: "none",
+                            border:
+                              loanProgram === "3"
+                                ? "none"
+                                : "1px solid #F6F6F6", // ✅ border removed if disabled
+                          },
+                          "&:hover fieldset": {
+                            borderColor:
+                              loanProgram === "3" ? "none" : "#F6F6F6",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor:
+                              loanProgram === "3" ? "none" : "#F6F6F6",
                           },
                           "& input::placeholder": {
                             color: "#9e9e9e",
@@ -771,11 +1081,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Final Loan Amount</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Final Loan Amount
+                </Typography>
                 <Controller
                   name="loanProgram.finalLoanAmount"
                   control={control}
@@ -798,7 +1110,7 @@ export default function LoanProgramForm({
                       error={!!errors.loanProgram?.finalLoanAmount}
                       helperText={errors.loanProgram?.finalLoanAmount?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -832,11 +1144,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>MMI</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  MMI
+                </Typography>
                 <Controller
                   name="loanProgram.mmi"
                   control={control}
@@ -859,7 +1173,7 @@ export default function LoanProgramForm({
                       error={!!errors.loanProgram?.mmi}
                       helperText={errors.loanProgram?.mmi?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -892,11 +1206,13 @@ export default function LoanProgramForm({
                 alignItems="center"
                 justifyContent="space-between"
                 sx={{
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Term</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Term
+                </Typography>
                 <Controller
                   name="loanProgram.term"
                   control={control}
@@ -905,19 +1221,18 @@ export default function LoanProgramForm({
                       {...field}
                       onChange={(e) =>
                         field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
+                          e.target.value === "" ? "" : Number(e.target.value)
                         )
                       }
                       value={field.value ?? ""}
                       fullWidth
                       type="number"
+                      inputMode="numeric"
                       size="medium"
                       error={!!errors.loanProgram?.term}
                       helperText={errors.loanProgram?.term?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           borderRadius: 2,
@@ -956,40 +1271,40 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Down Payment</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Down Payment
+                </Typography>
 
                 <Box display="flex" gap={1} alignItems="center">
                   {/* Percentage Field */}
                   <Controller
-                    name="loanProgram.downPaymentPercentage"
+                    name="purchaseInfo.downPayment"
                     control={control}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         onChange={(e) =>
                           field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value)
+                            e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
                         value={field.value ?? ""}
                         type="number"
+                        inputMode="numeric"
                         placeholder="0"
                         size="small"
-                        error={!!errors.loanProgram?.downPaymentPercentage}
-                        helperText={
-                          errors.loanProgram?.downPaymentPercentage?.message
-                        }
+                        error={!!errors.purchaseInfo?.downPayment}
+                        helperText={errors.purchaseInfo?.downPayment?.message}
                         sx={{
-                          maxWidth: 84,
+                          maxWidth: 76,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             borderRadius: 2,
+                            paddingRight: "8.5px",
                             "& fieldset": {
                               borderColor: "#F6F6F6",
                             },
@@ -1003,11 +1318,17 @@ export default function LoanProgramForm({
                               color: "#9e9e9e",
                               opacity: 1,
                             },
+                            "& input": {
+                              padding: "8.5px 0 8.5px 8.5px", // adjust as needed
+                            },
                           },
                         }}
                         InputProps={{
                           endAdornment: (
-                            <InputAdornment position="end">
+                            <InputAdornment
+                              position="end"
+                              sx={{ marginLeft: 0 }}
+                            >
                               <span
                                 style={{ fontWeight: "bold", color: "black" }}
                               >
@@ -1045,7 +1366,7 @@ export default function LoanProgramForm({
                           errors.loanProgram?.downPaymentAmount?.message
                         }
                         sx={{
-                          maxWidth: 160,
+                          maxWidth: 120,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#f7f7f7",
@@ -1081,11 +1402,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Closing Costs</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Closing Costs
+                </Typography>
                 <Controller
                   name="loanProgram.clearingCart"
                   control={control}
@@ -1095,30 +1418,26 @@ export default function LoanProgramForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      disabled
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
                       error={!!errors.loanProgram?.clearingCart}
                       helperText={errors.loanProgram?.clearingCart?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
+                          backgroundColor: "#f7f7f7",
                           "& fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#F6F6F6",
+                            border: "none",
                           },
                           "& input::placeholder": {
                             color: "#9e9e9e",
@@ -1147,11 +1466,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Property Tax</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Property Tax
+                </Typography>
                 <Controller
                   name="loanProgram.propertyTax"
                   control={control}
@@ -1161,30 +1482,26 @@ export default function LoanProgramForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      disabled
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
                       error={!!errors.loanProgram?.propertyTax}
                       helperText={errors.loanProgram?.propertyTax?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
+                          backgroundColor: "#f7f7f7",
                           "& fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#F6F6F6",
+                            border: "none",
                           },
                           "& input::placeholder": {
                             color: "#9e9e9e",
@@ -1212,11 +1529,13 @@ export default function LoanProgramForm({
                 alignItems="center"
                 justifyContent="space-between"
                 sx={{
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Total Needed to Clear</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Total Needed to Clear
+                </Typography>
                 <Controller
                   name="loanProgram.totalNeededToClear"
                   control={control}
@@ -1241,7 +1560,7 @@ export default function LoanProgramForm({
                         errors.loanProgram?.totalNeededToClear?.message
                       }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -1279,182 +1598,210 @@ export default function LoanProgramForm({
                 p: 2,
               }}
             >
-              <Box 
-                sx={{borderBottom: "2px solid #f0f0f0",}}
-              >
-                <Typography fontWeight={600} color="primary">
-                  Borrower 1
-                </Typography>
+              {fields.map((field, index) => (
                 <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{
-                    px: 2,
-                    py: 1.5,
-                  }}
+                  key={field.id}
+                  sx={{ borderBottom: "2px solid #f0f0f0", mb: 2, pb: 2 }}
                 >
-                  <Typography fontWeight={600}>Monthly Income</Typography>
-                  <Controller
-                    name="loanProgram.baseLoanAmount"
-                    control={control}
-                    render={({ field }) => (
-                      <NumericFormat
-                        customInput={TextField}
-                        fullWidth
-                        value={field.value ?? ""}
-                        placeholder="0"
-                        disabled
-                        onValueChange={(values) => {
-                          field.onChange(
-                            values.floatValue === undefined
-                              ? undefined
-                              : values.floatValue
-                          );
-                        }}
-                        thousandSeparator=","
-                        allowNegative={false}
-                        error={!!errors.loanProgram?.baseLoanAmount}
-                        helperText={errors.loanProgram?.baseLoanAmount?.message}
-                        sx={{
-                          maxWidth: 160,
-                          borderRadius: 2,
-                          "& .MuiOutlinedInput-root": {
-                            backgroundColor: "#f7f7f7",
-                            "& fieldset": {
-                              border: "none",
+                  <Typography fontWeight={600} color="primary">
+                    Borrower {index + 1}
+                  </Typography>
+
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{
+                      paddingLeft: 0.5,
+                      py: 1.5,
+                    }}
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Monthly Income
+                    </Typography>
+                    <Controller
+                      name={`loanProgram.borrowers.${index}.monthlyIncome`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.loanProgram?.borrowers?.[index]
+                              ?.monthlyIncome
+                          }
+                          helperText={
+                            errors.loanProgram?.borrowers?.[index]
+                              ?.monthlyIncome?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
                             },
-                            "& input::placeholder": {
-                              color: "#9e9e9e",
-                              opacity: 1,
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{
+                      paddingLeft: 0.5,
+                      py: 1.5,
+                    }}
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Debts
+                    </Typography>
+                    <Controller
+                      name={`loanProgram.borrowers.${index}.debts`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.loanProgram?.borrowers?.[index]?.debts
+                          }
+                          helperText={
+                            errors.loanProgram?.borrowers?.[index]?.debts
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
                             },
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <span
-                                style={{ fontWeight: "bold", color: "black" }}
-                              >
-                                $
-                              </span>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{
+                      paddingLeft: 0.5,
+                      py: 1.5,
+                    }}
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      FICO Score
+                    </Typography>
+                    <Controller
+                      name={`loanProgram.borrowers.${index}.ficoScore`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.loanProgram?.borrowers?.[index]?.ficoScore
+                          }
+                          helperText={
+                            errors.loanProgram?.borrowers?.[index]?.ficoScore
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
                 </Box>
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{
-                    px: 2,
-                    py: 1.5,
-                  }}
-                >
-                  <Typography fontWeight={600}>Debts</Typography>
-                  <Controller
-                    name="loanProgram.baseLoanAmount"
-                    control={control}
-                    render={({ field }) => (
-                      <NumericFormat
-                        customInput={TextField}
-                        fullWidth
-                        value={field.value ?? ""}
-                        placeholder="0"
-                        disabled
-                        onValueChange={(values) => {
-                          field.onChange(
-                            values.floatValue === undefined
-                              ? undefined
-                              : values.floatValue
-                          );
-                        }}
-                        thousandSeparator=","
-                        allowNegative={false}
-                        error={!!errors.loanProgram?.baseLoanAmount}
-                        helperText={errors.loanProgram?.baseLoanAmount?.message}
-                        sx={{
-                          maxWidth: 160,
-                          borderRadius: 2,
-                          "& .MuiOutlinedInput-root": {
-                            backgroundColor: "#f7f7f7",
-                            "& fieldset": {
-                              border: "none",
-                            },
-                            "& input::placeholder": {
-                              color: "#9e9e9e",
-                              opacity: 1,
-                            },
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <span
-                                style={{ fontWeight: "bold", color: "black" }}
-                              >
-                                $
-                              </span>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
-                </Box>
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{
-                    px: 2,
-                    py: 1.5,
-                  }}
-                >
-                  <Typography fontWeight={600}>Fico Score</Typography>
-                  <Controller
-                    name="loanProgram.baseLoanAmount"
-                    control={control}
-                    render={({ field }) => (
-                      <NumericFormat
-                        customInput={TextField}
-                        fullWidth
-                        value={field.value ?? ""}
-                        placeholder="0"
-                        disabled
-                        onValueChange={(values) => {
-                          field.onChange(
-                            values.floatValue === undefined
-                              ? undefined
-                              : values.floatValue
-                          );
-                        }}
-                        thousandSeparator=","
-                        allowNegative={false}
-                        error={!!errors.loanProgram?.baseLoanAmount}
-                        helperText={errors.loanProgram?.baseLoanAmount?.message}
-                        sx={{
-                          maxWidth: 160,
-                          borderRadius: 2,
-                          "& .MuiOutlinedInput-root": {
-                            backgroundColor: "#f7f7f7",
-                            "& fieldset": {
-                              border: "none",
-                            },
-                            "& input::placeholder": {
-                              color: "#9e9e9e",
-                              opacity: 1,
-                            },
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                </Box>
-              </Box>
+              ))}
             </Grid>
 
             <Grid
@@ -1471,11 +1818,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Principal & Interest</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Principal & Interest
+                </Typography>
                 <Controller
                   name="loanProgram.principalAndInterest"
                   control={control}
@@ -1500,7 +1849,7 @@ export default function LoanProgramForm({
                         errors.loanProgram?.principalAndInterest?.message
                       }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -1534,11 +1883,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Property Tax</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Property Tax
+                </Typography>
                 <Controller
                   name="loanProgram.monthlyPropertyTax"
                   control={control}
@@ -1548,13 +1899,15 @@ export default function LoanProgramForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      disabled
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
                       error={!!errors.loanProgram?.monthlyPropertyTax}
@@ -1562,18 +1915,12 @@ export default function LoanProgramForm({
                         errors.loanProgram?.monthlyPropertyTax?.message
                       }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
+                          backgroundColor: "#f7f7f7",
                           "& fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#F6F6F6",
+                            border: "none",
                           },
                           "& input::placeholder": {
                             color: "#9e9e9e",
@@ -1602,11 +1949,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Haz Insurance</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Haz Insurance
+                </Typography>
                 <Controller
                   name="loanProgram.hazardInsurance"
                   control={control}
@@ -1616,30 +1965,26 @@ export default function LoanProgramForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      disabled
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
                       error={!!errors.loanProgram?.hazardInsurance}
                       helperText={errors.loanProgram?.hazardInsurance?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
+                          backgroundColor: "#f7f7f7",
                           "& fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#F6F6F6",
+                            border: "none",
                           },
                           "& input::placeholder": {
                             color: "#9e9e9e",
@@ -1668,11 +2013,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Mortgage Insurance</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Mortgage Insurance
+                </Typography>
                 <Controller
                   name="loanProgram.mortgageInsurance"
                   control={control}
@@ -1697,7 +2044,7 @@ export default function LoanProgramForm({
                         errors.loanProgram?.mortgageInsurance?.message
                       }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -1731,11 +2078,13 @@ export default function LoanProgramForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Monthly Total</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Monthly Total
+                </Typography>
                 <Controller
                   name="loanProgram.monthlyTotal"
                   control={control}
@@ -1758,7 +2107,7 @@ export default function LoanProgramForm({
                       error={!!errors.loanProgram?.monthlyTotal}
                       helperText={errors.loanProgram?.monthlyTotal?.message}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -1785,6 +2134,77 @@ export default function LoanProgramForm({
                     />
                   )}
                 />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-around",
+                  gap: "1rem",
+                }}
+              >
+                <Button
+                  onClick={() => generatePreApproval(preApprovalId)}
+                  disabled={preApprovalloading || isDirty}
+                  variant="outlined"
+                  sx={{
+                    width: "165px",
+                    borderRadius: "999px",
+                    borderColor: "#ff453b",
+                    color: "#ff453b",
+                    fontWeight: "bold",
+                    px: 3,
+                    py: 1.2,
+                    "&:hover": {
+                      backgroundColor: "#ffe6e6",
+                      borderColor: "#ff453b",
+                    },
+                  }}
+                >
+                  {preApprovalloading ? (
+                    <CircularProgress size={20} sx={{ color: "#ff453b" }} />
+                  ) : (
+                    <Typography
+                      fontWeight={600}
+                      color={isDirty ? "rgba(0, 0, 0, 0.26)" : "#ff453b"}
+                      sx={{
+                        whiteSpace: "nowrap", // Keeps the text on a single line
+                        overflow: "hidden", // Hides overflowed text
+                        textOverflow: "ellipsis", // Adds "..." if text overflows
+                      }}
+                    >
+                      PRE APPROVAL
+                    </Typography>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => generateFHAGFE(preApprovalId)}
+                  disabled={FHAGFEloading || isDirty}
+                  variant="outlined"
+                  sx={{
+                    width: "117px",
+                    borderRadius: "999px",
+                    borderColor: "#ff453b",
+                    color: "#ff453b",
+                    fontWeight: "bold",
+                    px: 3,
+                    py: 1.2,
+                    "&:hover": {
+                      backgroundColor: "#ffe6e6",
+                      borderColor: "#ff453b",
+                    },
+                  }}
+                >
+                  {FHAGFEloading ? (
+                    <CircularProgress size={20} sx={{ color: "#ff453b" }} />
+                  ) : (
+                    <Typography fontWeight={600} color={isDirty ? "rgba(0, 0, 0, 0.26)" : "#ff453b"}>
+                      FHA/GFE
+                    </Typography>
+                  )}
+                </Button>
               </Box>
             </Grid>
           </Grid>

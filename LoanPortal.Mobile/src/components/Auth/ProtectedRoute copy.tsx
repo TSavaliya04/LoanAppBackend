@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children, redirectTo = "/auth/SignIn" }: ProtectedRout
   const user = useSessionStore((state) => state.user);
   const hasHydrated = useSessionStore((state) => state.hasHydrated);
 
-  useEffect(() => {   
+  useEffect(() => {
     if (hasHydrated && (!user || !user.email)) {
       router.replace(redirectTo);
     }

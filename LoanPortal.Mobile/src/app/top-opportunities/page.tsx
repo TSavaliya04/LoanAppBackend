@@ -66,6 +66,12 @@ export default function TopOpportunities() {
       agent.agentName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const loanProgramNames = {
+    "1": "Non QM",
+    "2": "Conventional",
+    "3": "FHA",
+  };
+
   return (
     <ProtectedRoute>
       <Box sx={{ bgcolor: "secondary.main", minHeight: "100vh", pb: 10 }}>
@@ -253,7 +259,7 @@ export default function TopOpportunities() {
                         {item.borrowerName}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Loan Program: {item.loanProgram}
+                        Loan Program: {loanProgramNames[item.loanProgram as "1" | "2" | "3"]}
                       </Typography>
                       <Typography fontWeight={600} mt={1}>
                         Agent

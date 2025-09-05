@@ -203,61 +203,6 @@
 //                       py: 1.5,
 //                     }}
 //                   >
-//                     <Typography fontWeight={600}>High Credit</Typography>
-//                     <Controller
-//                       name={`deptBreakdown.dept.${index}.highCredit`}
-//                       control={control}
-//                       render={({ field }) => (
-//                         <TextField
-//                           {...field}
-//                           onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
-//                           value={field.value ?? ""}
-//                           fullWidth
-//                           type="number"
-//                           placeholder="0.00"
-//                           size="medium"
-//                           error={!!errors.deptBreakdown?.dept?.[index]?.highCredit}
-//                           helperText={errors.deptBreakdown?.dept?.[index]?.highCredit?.message}
-//                           sx={{
-//                             maxWidth: 160,
-//                             borderRadius: 2,
-//                             "& .MuiOutlinedInput-root": {
-//                               backgroundColor: "#f7f7f7",
-//                               "& fieldset": {
-//                                 border: "none",
-//                               },
-//                               "& input::placeholder": {
-//                                 color: "#9e9e9e",
-//                                 opacity: 1,
-//                               },
-//                             },
-//                           }}
-//                           InputProps={{
-//                             startAdornment: (
-//                               <InputAdornment position="start">
-//                                 <span style={{ fontWeight: "bold", color: "black" }}>
-//                                   $
-//                                 </span>
-//                               </InputAdornment>
-//                             ),
-//                           }}
-//                         />
-//                       )}
-//                     />
-//                   </Box>
-//                 </Grid>
-
-//                 <Grid size={{xs: 12}}>
-//                   <Box
-//                     display="flex"
-//                     alignItems="center"
-//                     justifyContent="space-between"
-//                     sx={{
-//                       borderBottom: "1px solid #f0f0f0",
-//                       px: 2,
-//                       py: 1.5,
-//                     }}
-//                   >
 //                     <Typography fontWeight={600}>Monthly Payment</Typography>
 //                     <Controller
 //                       name={`deptBreakdown.dept.${index}.monthlyPayment`}
@@ -307,7 +252,7 @@
 
 //           <Box textAlign="center">
 //             <Button
-//               onClick={() => append({ debtType: "", balance: 0, highCredit: 0, monthlyPayment: 0 })}
+//               onClick={() => append({ debtType: "", balance: 0, monthlyPayment: 0 })}
 //               startIcon={<AddIcon />}
 //               sx={{
 //                 color: "#7444F5",

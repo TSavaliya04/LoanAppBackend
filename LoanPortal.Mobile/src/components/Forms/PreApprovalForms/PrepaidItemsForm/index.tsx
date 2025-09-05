@@ -14,16 +14,19 @@ import SVGs from "@/components/SVGs";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSchema";
 import { NumericFormat } from "react-number-format";
-import { usePreApprovalStore } from "@/store/usePreApprovalStore";
 
 type PrepaidItemsFormProps = {
   expanded: boolean;
   onToggle: () => void;
+  isCompleted?: boolean;
+  isDisabled?: boolean;
 };
 
 export default function PrepaidItemsForm({
   expanded,
   onToggle,
+  isCompleted,
+  isDisabled,
 }: PrepaidItemsFormProps) {
   const {
     control,
@@ -31,17 +34,38 @@ export default function PrepaidItemsForm({
     formState: { errors },
   } = useFormContext<CombinedPreApprovalFormData>();
 
-  // Values from store
-  const { annualInterestRate, hazardInsurance } = usePreApprovalStore();
-
   // Watch values from form
+  const purchasePrice = useWatch({ name: "purchaseInfo.purchasePrice" });
+  const annualInterestRate = useWatch({
+    name: "purchaseInfo.annualInterestRate",
+  });
   const loanAmount = useWatch({ name: "purchaseInfo.loanAmount" });
+  const hazardInsurance = useWatch({ name: "purchaseInfo.hazardInsurance" });
   const prepaidInterestDays = useWatch({
     name: "prepaidItems.prepaidInterestDays",
   });
   const hazardInsuranceMonths = useWatch({
     name: "prepaidItems.hazardInsuranceMonths",
   });
+  const propertyTaxMonths = useWatch({
+    name: "prepaidItems.propertyTaxMonths",
+  });
+
+  useEffect(() => {
+    if (purchasePrice > 0 && propertyTaxMonths > 0) {
+      const months =
+        propertyTaxMonths && propertyTaxMonths > 0 ? propertyTaxMonths : 12;
+      const topLevelPropertyTax = (purchasePrice * 0.0125) / 12;
+      const calPropertyTaxAmount = Math.round(topLevelPropertyTax * months);
+      const propertyTax = Math.round(calPropertyTaxAmount);
+      setValue("prepaidItems.propertyTaxAmount", propertyTax);
+      setValue("prepaidItems.propertyTaxMonths", months);
+      setValue("loanProgram.propertyTax", propertyTax);
+      setValue("loanProgram.monthlyPropertyTax", Math.round(topLevelPropertyTax));
+    } else {
+      setValue("prepaidItems.propertyTaxAmount", 0);
+    }
+  }, [purchasePrice, propertyTaxMonths, setValue]);
 
   useEffect(() => {
     if (
@@ -61,15 +85,11 @@ export default function PrepaidItemsForm({
   // Recalculate Hazard Insurance Reserves
   useEffect(() => {
     // if (hazardInsurance && hazardInsuranceMonths) {
-      const reserve = hazardInsurance * hazardInsuranceMonths;
-      setValue(
-        "prepaidItems.hazardInsuranceReserves",
-        parseFloat(reserve.toFixed(2))
-      );
-      setValue(
-        "prepaidItems.hazardInsurance",
-        hazardInsurance
-      );
+    const reserve = hazardInsurance * hazardInsuranceMonths;
+    setValue(
+      "prepaidItems.hazardInsuranceReserves",
+      parseFloat(reserve.toFixed(2))
+    );
     // }
   }, [hazardInsurance, hazardInsuranceMonths, setValue]);
 
@@ -90,13 +110,7 @@ export default function PrepaidItemsForm({
       }}
     >
       {/* Header */}
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        onClick={onToggle}
-        sx={{ cursor: "pointer" }}
-      >
+      <Box display="flex" alignItems="center" justifyContent="space-between">
         {expanded ? (
           <Typography fontWeight={600} color="primary">
             Prepaid items
@@ -121,14 +135,24 @@ export default function PrepaidItemsForm({
                   width: 40,
                   height: 40,
                   borderRadius: 2,
-                  backgroundColor: "#7444F5",
+                  backgroundColor: isCompleted
+                    ? "#1F9A00"
+                    : isDisabled
+                    ? "gray"
+                    : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 {/* <CheckIcon sx={{ color: "#fff" }} /> */}
-                <SVGs name="Prepaid_items_icon" />
+                {isCompleted ? (
+                  <SVGs name="Check_Mark_icon" />
+                ) : isDisabled ? (
+                  <SVGs name="Prepaid_items_icon" />
+                ) : (
+                  <SVGs name="Prepaid_items_icon" />
+                )}
               </Box>
               <Typography
                 sx={{ fontWeight: 500, fontSize: "20px", color: "black" }}
@@ -136,17 +160,23 @@ export default function PrepaidItemsForm({
                 Prepaid items
               </Typography>
             </Box>
-            <IconButton size="small" sx={{ color: "black" }}>
-              {/* <EditIcon fontSize="small" /> */}
-              <SVGs name="Edit_icon" />
-            </IconButton>
+            {!isDisabled && (
+              <IconButton
+                size="small"
+                sx={{ color: "black" }}
+                onClick={onToggle}
+              >
+                {/* <EditIcon fontSize="small" /> */}
+                <SVGs name="Edit_icon" />
+              </IconButton>
+            )}
           </Box>
         )}
       </Box>
 
       {/* Collapsible Content */}
       <Collapse in={expanded} timeout="auto" unmountOnExit>
-        <Box component="form" noValidate autoComplete="off" sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
             {/* Prepaid Interest */}
             <Grid size={12}>
@@ -156,7 +186,9 @@ export default function PrepaidItemsForm({
                 justifyContent="space-between"
                 gap={2}
               >
-                <Typography fontWeight={600}>Prepaid Interest</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Prepaid Interest
+                </Typography>
                 <Box display="flex" gap={1}>
                   <Controller
                     name="prepaidItems.prepaidInterestDays"
@@ -166,14 +198,13 @@ export default function PrepaidItemsForm({
                         {...field}
                         onChange={(e) =>
                           field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value)
+                            e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
                         value={field.value ?? ""}
                         fullWidth
                         type="number"
+                        inputMode="numeric"
                         placeholder="DD"
                         size="medium"
                         error={!!errors.prepaidItems?.prepaidInterestDays}
@@ -181,7 +212,7 @@ export default function PrepaidItemsForm({
                           errors.prepaidItems?.prepaidInterestDays?.message
                         }
                         sx={{
-                          width: 80,
+                          width: 60,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#f7f7f7",
@@ -199,16 +230,17 @@ export default function PrepaidItemsForm({
                         customInput={TextField}
                         fullWidth
                         value={field.value ?? ""}
+                        disabled
                         placeholder="0"
-                        onValueChange={(values) => {
+                        onValueChange={(values) =>
                           field.onChange(
                             values.floatValue === undefined
-                              ? undefined
+                              ? ""
                               : values.floatValue
-                          );
-                        }}
+                          )
+                        }
                         sx={{
-                          maxWidth: 160,
+                          maxWidth: 120,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#f7f7f7",
@@ -216,6 +248,10 @@ export default function PrepaidItemsForm({
                           },
                         }}
                         InputProps={currencyAdornment}
+                        inputProps={{
+                          inputMode: "decimal",
+                          pattern: "[0-9.,]*",
+                        }}
                         thousandSeparator=","
                         allowNegative={false}
                         error={!!errors.prepaidItems?.prepaidInterestAmount}
@@ -237,7 +273,9 @@ export default function PrepaidItemsForm({
                 justifyContent="space-between"
               >
                 <Box>
-                  <Typography fontWeight={600}>Hazard Ins</Typography>
+                  <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                    Hazard Ins
+                  </Typography>
                   <Typography variant="caption" color="text.secondary">
                     (First Year)
                   </Typography>
@@ -249,6 +287,7 @@ export default function PrepaidItemsForm({
                     <NumericFormat
                       customInput={TextField}
                       fullWidth
+                      disabled
                       value={field.value ?? ""}
                       placeholder="0"
                       onValueChange={(values) => {
@@ -259,7 +298,7 @@ export default function PrepaidItemsForm({
                         );
                       }}
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -285,7 +324,9 @@ export default function PrepaidItemsForm({
                 justifyContent="space-between"
                 gap={1}
               >
-                <Typography fontWeight={600}>Hazard ins Reserves</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Hazard ins Reserves
+                </Typography>
                 <Box display="flex" gap={1}>
                   <Controller
                     name="prepaidItems.hazardInsuranceMonths"
@@ -295,14 +336,13 @@ export default function PrepaidItemsForm({
                         {...field}
                         onChange={(e) =>
                           field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value)
+                            e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
                         value={field.value ?? ""}
                         fullWidth
                         type="number"
+                        inputMode="numeric"
                         placeholder="MM"
                         size="medium"
                         error={!!errors.prepaidItems?.hazardInsuranceMonths}
@@ -310,7 +350,7 @@ export default function PrepaidItemsForm({
                           errors.prepaidItems?.hazardInsuranceMonths?.message
                         }
                         sx={{
-                          width: 80,
+                          width: 60,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#f7f7f7",
@@ -327,17 +367,18 @@ export default function PrepaidItemsForm({
                       <NumericFormat
                         customInput={TextField}
                         fullWidth
+                        disabled
                         value={field.value ?? ""}
                         placeholder="0"
-                        onValueChange={(values) => {
+                        onValueChange={(values) =>
                           field.onChange(
                             values.floatValue === undefined
-                              ? undefined
+                              ? ""
                               : values.floatValue
-                          );
-                        }}
+                          )
+                        }
                         sx={{
-                          maxWidth: 160,
+                          maxWidth: 120,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#f7f7f7",
@@ -345,6 +386,10 @@ export default function PrepaidItemsForm({
                           },
                         }}
                         InputProps={currencyAdornment}
+                        inputProps={{
+                          inputMode: "decimal",
+                          pattern: "[0-9.,]*",
+                        }}
                         thousandSeparator=","
                         allowNegative={false}
                         error={!!errors.prepaidItems?.hazardInsuranceReserves}
@@ -366,7 +411,9 @@ export default function PrepaidItemsForm({
                 justifyContent="space-between"
                 gap={1}
               >
-                <Typography fontWeight={600}>Property Taxes</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                  Property Taxes
+                </Typography>
                 <Box display="flex" gap={1}>
                   <Controller
                     name="prepaidItems.propertyTaxMonths"
@@ -376,14 +423,13 @@ export default function PrepaidItemsForm({
                         {...field}
                         onChange={(e) =>
                           field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value)
+                            e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
                         value={field.value ?? ""}
                         fullWidth
                         type="number"
+                        inputMode="numeric"
                         placeholder="MM"
                         size="medium"
                         error={!!errors.prepaidItems?.propertyTaxMonths}
@@ -391,7 +437,7 @@ export default function PrepaidItemsForm({
                           errors.prepaidItems?.propertyTaxMonths?.message
                         }
                         sx={{
-                          width: 80,
+                          width: 60,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#f7f7f7",
@@ -408,17 +454,22 @@ export default function PrepaidItemsForm({
                       <NumericFormat
                         customInput={TextField}
                         fullWidth
+                        disabled
                         value={field.value ?? ""}
                         placeholder="0"
-                        onValueChange={(values) => {
+                        onValueChange={(values) =>
                           field.onChange(
                             values.floatValue === undefined
-                              ? undefined
+                              ? ""
                               : values.floatValue
-                          );
+                          )
+                        }
+                        inputProps={{
+                          inputMode: "decimal",
+                          pattern: "[0-9.,]*",
                         }}
                         sx={{
-                          maxWidth: 160,
+                          maxWidth: 120,
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             backgroundColor: "#f7f7f7",

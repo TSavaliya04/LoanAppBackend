@@ -77,19 +77,27 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
 
         <Grid size={{ xs: 12 }}>
           <Controller
-            name={`borrowersIncomeData.borrowerIncome.${index}.employer`}
+            name={`borrowersIncomeData.borrowerIncome.${index}.ficoScore`}
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  )
+                }
+                value={field.value ?? ""}
                 fullWidth
-                label="Employer *"
+                label="FICO Score *"
+                type="number"
+                inputMode="numeric"
                 error={
                   !!errors.borrowersIncomeData?.borrowerIncome?.[index]
-                    ?.employer
+                    ?.ficoScore
                 }
                 helperText={
-                  errors.borrowersIncomeData?.borrowerIncome?.[index]?.employer
+                  errors.borrowersIncomeData?.borrowerIncome?.[index]?.ficoScore
                     ?.message
                 }
               />
@@ -107,13 +115,12 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                 fullWidth
                 label="Monthly Income *"
                 value={field.value ?? ""}
-                onValueChange={(values) => {
+                onValueChange={(values) =>
                   field.onChange(
-                    values.floatValue === undefined
-                      ? undefined
-                      : values.floatValue
-                  );
-                }}
+                    values.floatValue === undefined ? "" : values.floatValue
+                  )
+                }
+                inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                 thousandSeparator=","
                 allowNegative={false}
                 InputProps={{
@@ -177,7 +184,7 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                         {...field}
                         fullWidth
                         select
-                        label="Dept Type *"
+                        label="Debt Type *"
                         error={
                           !!errors.borrowersIncomeData?.borrowerIncome?.[index]
                             ?.debts?.[debtIndex]?.debtType
@@ -204,11 +211,13 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                     justifyContent="space-between"
                     sx={{
                       borderBottom: "1px solid #f0f0f0",
-                      px: 2,
+                      paddingLeft: 0.5,
                       py: 1.5,
                     }}
                   >
-                    <Typography fontWeight={600}>Balance *</Typography>
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Balance *
+                    </Typography>
                     <Controller
                       name={`borrowersIncomeData.borrowerIncome.${index}.debts.${debtIndex}.balance`}
                       control={control}
@@ -218,12 +227,16 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                           fullWidth
                           value={field.value ?? ""}
                           placeholder="0"
-                          onValueChange={(values) => {
+                          onValueChange={(values) =>
                             field.onChange(
                               values.floatValue === undefined
-                                ? undefined
+                                ? ""
                                 : values.floatValue
-                            );
+                            )
+                          }
+                          inputProps={{
+                            inputMode: "decimal",
+                            pattern: "[0-9.,]*",
                           }}
                           thousandSeparator=","
                           allowNegative={false}
@@ -237,7 +250,7 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                               ?.debts?.[debtIndex]?.balance?.message
                           }
                           sx={{
-                            maxWidth: 160,
+                            maxWidth: 120,
                             borderRadius: 2,
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#f7f7f7",
@@ -274,81 +287,13 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                     justifyContent="space-between"
                     sx={{
                       borderBottom: "1px solid #f0f0f0",
-                      px: 2,
+                      paddingLeft: 0.5,
                       py: 1.5,
                     }}
                   >
-                    <Typography fontWeight={600}>High Credit *</Typography>
-                    <Controller
-                      name={`borrowersIncomeData.borrowerIncome.${index}.debts.${debtIndex}.highCredit`}
-                      control={control}
-                      render={({ field }) => (
-                        <NumericFormat
-                          customInput={TextField}
-                          fullWidth
-                          value={field.value ?? ""}
-                          placeholder="0"
-                          onValueChange={(values) => {
-                            field.onChange(
-                              values.floatValue === undefined
-                                ? undefined
-                                : values.floatValue
-                            );
-                          }}
-                          thousandSeparator=","
-                          allowNegative={false}
-                          error={
-                            !!errors.borrowersIncomeData?.borrowerIncome?.[
-                              index
-                            ]?.debts?.[debtIndex]?.highCredit
-                          }
-                          helperText={
-                            errors.borrowersIncomeData?.borrowerIncome?.[index]
-                              ?.debts?.[debtIndex]?.highCredit?.message
-                          }
-                          sx={{
-                            maxWidth: 160,
-                            borderRadius: 2,
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#f7f7f7",
-                              "& fieldset": {
-                                border: "none",
-                              },
-                              "& input::placeholder": {
-                                color: "#9e9e9e",
-                                opacity: 1,
-                              },
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <span
-                                  style={{ fontWeight: "bold", color: "black" }}
-                                >
-                                  $
-                                </span>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      )}
-                    />
-                  </Box>
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    sx={{
-                      borderBottom: "1px solid #f0f0f0",
-                      px: 2,
-                      py: 1.5,
-                    }}
-                  >
-                    <Typography fontWeight={600}>Monthly Payment *</Typography>
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Monthly Payment *
+                    </Typography>
                     <Controller
                       name={`borrowersIncomeData.borrowerIncome.${index}.debts.${debtIndex}.monthlyPayment`}
                       control={control}
@@ -358,12 +303,16 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                           fullWidth
                           value={field.value ?? ""}
                           placeholder="0"
-                          onValueChange={(values) => {
+                          onValueChange={(values) =>
                             field.onChange(
                               values.floatValue === undefined
-                                ? undefined
+                                ? ""
                                 : values.floatValue
-                            );
+                            )
+                          }
+                          inputProps={{
+                            inputMode: "decimal",
+                            pattern: "[0-9.,]*",
                           }}
                           thousandSeparator=","
                           allowNegative={false}
@@ -377,7 +326,7 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                               ?.debts?.[debtIndex]?.monthlyPayment?.message
                           }
                           sx={{
-                            maxWidth: 160,
+                            maxWidth: 120,
                             borderRadius: 2,
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#f7f7f7",
@@ -406,42 +355,6 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                     />
                   </Box>
                 </Grid>
-
-                {/* {["balance", "highCredit", "monthlyPayment"].map((fieldKey) => (
-                  <Grid size={{xs:12}} key={fieldKey}>
-                    <Controller
-                      name={`borrowersIncomeData.borrowerIncome.${index}.debts.${debtIndex}.${fieldKey}`}
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          type="number"
-                          onChange={(e) =>
-                            field.onChange(e.target.value === "" ? undefined : Number(e.target.value))
-                          }
-                          value={field.value ?? ""}
-                          label={fieldKey
-                            .replace(/([A-Z])/g, " $1")
-                            .replace(/^./, (str) => str.toUpperCase())}
-                          fullWidth
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                          }}
-                          error={
-                            !!errors.borrowersIncomeData?.borrowerIncome?.[index]?.debts?.[debtIndex]?.[
-                              fieldKey as "balance" | "highCredit" | "monthlyPayment"
-                            ]
-                          }
-                          helperText={
-                            errors.borrowersIncomeData?.borrowerIncome?.[index]?.debts?.[debtIndex]?.[
-                              fieldKey as "balance" | "highCredit" | "monthlyPayment"
-                            ]?.message
-                          }
-                        />
-                      )}
-                    />
-                  </Grid>
-                ))} */}
               </Grid>
             </Box>
           ))}
@@ -451,9 +364,8 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
               variant="outlined"
               onClick={() =>
                 appendDebt({
-                  debtType: "",
+                  debtType: "3",
                   balance: 0,
-                  highCredit: 0,
                   monthlyPayment: 0,
                 })
               }

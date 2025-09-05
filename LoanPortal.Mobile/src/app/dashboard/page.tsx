@@ -43,6 +43,7 @@ import { useGetAllTopOpportunities } from "@/api/reactQueriesHooks/useGetTopOppo
 
 type Opportunity = {
   borrowerName: string;
+  preApprovalId: string | number;
   loanProgram?: string;
   agentName?: string;
   borrowers?: { id: string | number; borrowerName: string }[];
@@ -56,8 +57,6 @@ const Dashboard = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   useEffect(() => {
     if (data) {
-      console.log(data.data);
-
       setOpportunities(data.data);
     }
   }, [data]);
@@ -338,7 +337,13 @@ const Dashboard = () => {
                     sx={{
                       minWidth: { xs: 245, sm: 250, md: 300 },
                       flexShrink: 0,
+                      cursor: "pointer",
                     }}
+                    onClick={() =>
+                      router.push(
+                        `/pre-approval?preApprovalId=${opp.preApprovalId}`
+                      )
+                    }
                   >
                     <Card
                       variant="outlined"
@@ -357,7 +362,7 @@ const Dashboard = () => {
                             color: "text.primary",
                           }}
                         >
-                          Borrower(s)
+                          Borrower
                         </Typography>
                         <Typography
                           variant="body2"
@@ -365,11 +370,11 @@ const Dashboard = () => {
                         >
                           {opp.borrowerName}
                         </Typography>
-                        {opp?.borrowers?.map((borrower, index) => (
+                        {/* {opp?.borrowers?.map((borrower) => (
                           <Typography key={borrower.id} variant="body2" sx={{ color: "text.secondary"}}>
                             {borrower.borrowerName}
                           </Typography>
-                        ))}
+                        ))} */}
                         {/* <Typography
                           variant="body2"
                           sx={{ color: "text.secondary", mb: 1.5 }}

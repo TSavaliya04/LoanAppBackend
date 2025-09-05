@@ -70,3 +70,11 @@ export const preApprovalApi = {
     return data;
   },
 };
+
+export function getpreApprovalReport(preApprovalId: string) {
+  return guardedInstance.get(`/preapproval/PreApprovalReport?preApprovalId=${preApprovalId}`);
+}
+
+export function getFHAGFEReport(preApprovalId: string) {
+  return guardedInstance.get(`/preapproval/FHAReport?preApprovalId=${preApprovalId}`);
+}

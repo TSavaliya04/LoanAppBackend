@@ -17,11 +17,15 @@ import { NumericFormat } from "react-number-format";
 type MiscFeesFormProps = {
   expanded: boolean;
   onToggle: () => void;
+  isCompleted?: boolean;
+  isDisabled?: boolean;
 };
 
 export default function MiscFeesForm({
   expanded,
   onToggle,
+  isCompleted,
+  isDisabled,
 }: MiscFeesFormProps) {
   const {
     control,
@@ -45,13 +49,7 @@ export default function MiscFeesForm({
       }}
     >
       {/* Header */}
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        onClick={onToggle}
-        sx={{ cursor: "pointer" }}
-      >
+      <Box display="flex" alignItems="center" justifyContent="space-between">
         {expanded ? (
           <Typography fontWeight={600} color="primary">
             Misc Fees
@@ -76,14 +74,24 @@ export default function MiscFeesForm({
                   width: 40,
                   height: 40,
                   borderRadius: 2,
-                  backgroundColor: "#7444F5",
+                  backgroundColor: isCompleted
+                    ? "#1F9A00"
+                    : isDisabled
+                    ? "gray"
+                    : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 {/* <CheckIcon sx={{ color: "#fff" }} /> */}
-                <SVGs name="Misc_fees_icon" />
+                {isCompleted ? (
+                  <SVGs name="Check_Mark_icon" />
+                ) : isDisabled ? (
+                  <SVGs name="Misc_fees_icon" />
+                ) : (
+                  <SVGs name="Misc_fees_icon" />
+                )}
               </Box>
               <Typography
                 sx={{ fontWeight: 500, fontSize: "20px", color: "black" }}
@@ -91,10 +99,15 @@ export default function MiscFeesForm({
                 Misc Fees
               </Typography>
             </Box>
-            <IconButton size="small" sx={{ color: "black" }}>
-              {/* <EditIcon fontSize="small" /> */}
-              <SVGs name="Edit_icon" />
-            </IconButton>
+            {!isDisabled && (
+              <IconButton
+                size="small"
+                sx={{ color: "black" }}
+                onClick={onToggle}
+              >
+                <SVGs name="Edit_icon" />
+              </IconButton>
+            )}
           </Box>
         )}
       </Box>
@@ -110,11 +123,11 @@ export default function MiscFeesForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Misc Fee 1</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Misc Fee 1</Typography>
                 <Controller
                   name="miscFees.miscFee1"
                   control={control}
@@ -124,15 +137,15 @@ export default function MiscFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -146,6 +159,7 @@ export default function MiscFeesForm({
                         },
                       }}
                       InputProps={currencyAdornment}
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
                       error={!!errors.miscFees?.miscFee1}
@@ -162,11 +176,11 @@ export default function MiscFeesForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Misc Fee 2</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Misc Fee 2</Typography>
                 <Controller
                   name="miscFees.miscFee2"
                   control={control}
@@ -176,15 +190,15 @@ export default function MiscFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -198,6 +212,7 @@ export default function MiscFeesForm({
                         },
                       }}
                       InputProps={currencyAdornment}
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
                       error={!!errors.miscFees?.miscFee2}
@@ -214,11 +229,11 @@ export default function MiscFeesForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Misc Fee 3</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Misc Fee 3</Typography>
                 <Controller
                   name="miscFees.miscFee3"
                   control={control}
@@ -228,15 +243,15 @@ export default function MiscFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -250,6 +265,7 @@ export default function MiscFeesForm({
                         },
                       }}
                       InputProps={currencyAdornment}
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
                       error={!!errors.miscFees?.miscFee3}
@@ -266,11 +282,11 @@ export default function MiscFeesForm({
                 justifyContent="space-between"
                 sx={{
                   borderBottom: "1px solid #f0f0f0",
-                  px: 2,
+                  paddingLeft: 0.5,
                   py: 1.5,
                 }}
               >
-                <Typography fontWeight={600}>Misc Fee 4</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Misc Fee 4</Typography>
                 <Controller
                   name="miscFees.miscFee4"
                   control={control}
@@ -280,15 +296,15 @@ export default function MiscFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) => {
+                      onValueChange={(values) =>
                         field.onChange(
                           values.floatValue === undefined
-                            ? undefined
+                            ? ""
                             : values.floatValue
-                        );
-                      }}
+                        )
+                      }
                       sx={{
-                        maxWidth: 160,
+                        maxWidth: 120,
                         borderRadius: 2,
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "#f7f7f7",
@@ -302,6 +318,7 @@ export default function MiscFeesForm({
                         },
                       }}
                       InputProps={currencyAdornment}
+                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
                       error={!!errors.miscFees?.miscFee4}

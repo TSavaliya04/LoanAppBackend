@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Box,
-  Button,
-  Collapse,
-  IconButton,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Collapse, IconButton, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSchema";
@@ -18,14 +12,20 @@ import { usePreApprovalStore } from "@/store/usePreApprovalStore";
 type BorrowersIncomeDataFormProps = {
   expanded: boolean;
   onToggle: () => void;
+  isCompleted?: boolean;
+  isDisabled?: boolean;
 };
 
 export default function BorrowersIncomeDataForm({
   expanded,
   onToggle,
+  isCompleted,
+  isDisabled,
 }: BorrowersIncomeDataFormProps) {
   const {
     control,
+    setValue,
+    getValues,
     formState: { errors },
   } = useFormContext<CombinedPreApprovalFormData>();
   // const setFrontEndRatio = usePreApprovalStore(
@@ -45,6 +45,15 @@ export default function BorrowersIncomeDataForm({
     control,
     name: "borrowersIncomeData.borrowerIncome",
   });
+
+  const principalAndInterest =
+    useWatch({ control, name: "loanProgram.principalAndInterest" }) ?? 0;
+  const propertyTax =
+    useWatch({ control, name: "loanProgram.propertyTax" }) ?? 0;
+  const mortgageInsurance =
+    useWatch({ control, name: "loanProgram.mortgageInsurance" }) ?? 0;
+  const associationFee =
+    useWatch({ control, name: "purchaseInfo.associationFee" }) ?? 0;
 
   // const ratioFront = useMemo(() => {
   //   let totalIncome = 0;
@@ -91,10 +100,40 @@ export default function BorrowersIncomeDataForm({
       });
     });
 
+    const monthlyHousingExpenses =
+      principalAndInterest + propertyTax + mortgageInsurance + associationFee;
+
     if (totalIncome === 0) return 0;
 
-    return parseFloat(((totalPayment / totalIncome) * 100).toFixed(2));
-  }, [borrowerIncome]);
+    return parseFloat(
+      (((monthlyHousingExpenses + totalPayment) / totalIncome) * 100).toFixed(2)
+    );
+  }, [
+    principalAndInterest,
+    propertyTax,
+    mortgageInsurance,
+    associationFee,
+    borrowerIncome,
+  ]);
+
+  useEffect(() => {
+    if (!borrowerIncome) return;
+
+    const loanProgramBorrowers = borrowerIncome.map((borrower) => {
+      const totalDebts = borrower.debts?.reduce(
+        (sum, debt) => sum + (Number(debt.monthlyPayment) || 0),
+        0
+      );
+
+      return {
+        monthlyIncome: Number(borrower.monthlyIncome) || 0,
+        debts: totalDebts,
+        ficoScore: borrower.ficoScore,
+      };
+    });
+
+    setValue("loanProgram.borrowers", loanProgramBorrowers);
+  }, [borrowerIncome, setValue]);
 
   useEffect(() => {
     setBackEndRatio(ratioBack);
@@ -102,13 +141,7 @@ export default function BorrowersIncomeDataForm({
 
   return (
     <Box sx={{ borderRadius: 4 }}>
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        onClick={onToggle}
-        sx={{ cursor: "pointer" }}
-      >
+      <Box display="flex" alignItems="center" justifyContent="space-between">
         {expanded ? (
           <Typography display="none" fontWeight={600} color="primary">
             Borrower&apos;s Income Data
@@ -133,13 +166,24 @@ export default function BorrowersIncomeDataForm({
                   width: 40,
                   height: 40,
                   borderRadius: 2,
-                  backgroundColor: "#7444F5",
+                  backgroundColor: isCompleted
+                    ? "#1F9A00"
+                    : isDisabled
+                    ? "gray"
+                    : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <SVGs name="Borrowers_income_data_icon" />
+                {/* <CheckIcon sx={{ color: "#fff" }} /> */}
+                {isCompleted ? (
+                  <SVGs name="Check_Mark_icon" />
+                ) : isDisabled ? (
+                  <SVGs name="Borrowers_income_data_icon" />
+                ) : (
+                  <SVGs name="Borrowers_income_data_icon" />
+                )}
               </Box>
               <Typography
                 sx={{ fontWeight: 500, fontSize: "20px", color: "black" }}
@@ -147,9 +191,15 @@ export default function BorrowersIncomeDataForm({
                 Borrower&apos;s Income Data
               </Typography>
             </Box>
-            <IconButton size="small" sx={{ color: "black" }}>
-              <SVGs name="Edit_icon" />
-            </IconButton>
+            {!isDisabled && (
+              <IconButton
+                size="small"
+                sx={{ color: "black" }}
+                onClick={onToggle}
+              >
+                <SVGs name="Edit_icon" />
+              </IconButton>
+            )}
           </Box>
         )}
       </Box>
@@ -170,9 +220,15 @@ export default function BorrowersIncomeDataForm({
               onClick={() =>
                 append({
                   borrowerName: "",
-                  employer: "",
+                  ficoScore: getValues("borrowerInfo.ficoScore") ?? 0,
                   monthlyIncome: 0,
-                  debts: [],
+                  debts: [
+                    {
+                      debtType: "3",
+                      balance: 0,
+                      monthlyPayment: 0,
+                    },
+                  ],
                 })
               }
               startIcon={<AddIcon />}

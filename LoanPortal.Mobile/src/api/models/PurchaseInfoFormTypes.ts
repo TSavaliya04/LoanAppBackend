@@ -7,7 +7,6 @@ export type PurchaseInfoFormData = {
   annualInterestRate: number;
   mipFundingFee?: number;
   hazardInsurance: number;
-  homeOwnerInsurance?: number; // ✅ made optional
   associationFee?: number;
   miPercent?: number;
 };
@@ -30,11 +29,6 @@ export const purchaseInfoSchema: ZodType<PurchaseInfoFormData> = z.object({
     .number({ invalid_type_error: "Hazard insurance is required" })
     .nonnegative("Must be 0 or greater"),
 
-  homeOwnerInsurance: z
-    .number()
-    .nonnegative("Must be 0 or greater")
-    .optional(), // ✅ made optional
-
   annualInterestRate: z
     .number()
     .min(0, "Must be 0 or greater")
@@ -52,10 +46,8 @@ export const purchaseInfoSchema: ZodType<PurchaseInfoFormData> = z.object({
     .optional(), // ✅ optional here too for consistency
 
   miPercent: z
-    .number()
-    .min(0, "Must be 0 or greater")
-    .max(100, "Cannot exceed 100%")
-    .optional(),
+    .number({ invalid_type_error: "MI is required" })
+    .nonnegative("Must be 0 or greater"),
 });
 
 export type PurchaseInfoSchemaType = z.infer<typeof purchaseInfoSchema>;

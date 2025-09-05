@@ -14,22 +14,28 @@ import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSchema";
 import SVGs from "@/components/SVGs";
 import { NumericFormat } from "react-number-format";
-import { usePreApprovalStore } from "@/store/usePreApprovalStore";
 
 type PurchaseInfoFormProps = {
   expanded: boolean;
   onToggle: () => void;
+  isCompleted?: boolean;
+  isDisabled?: boolean;
 };
 
 export default function PurchaseInfoForm({
   expanded,
   onToggle,
+  isCompleted,
+  isDisabled,
 }: PurchaseInfoFormProps) {
   const {
     control,
     setValue,
     formState: { errors },
   } = useFormContext<CombinedPreApprovalFormData>();
+
+  const loanProgram =
+    useWatch({ control, name: "borrowerInfo.loanProgram" }) ?? "0";
 
   const purchasePrice = useWatch({
     control,
@@ -46,59 +52,37 @@ export default function PurchaseInfoForm({
     name: "purchaseInfo.annualInterestRate",
   });
 
-  const homeOwnerInsurance = useWatch({
-    control,
-    name: "purchaseInfo.homeOwnerInsurance",
-  });
-
   const hazardInsurance = useWatch({
     control,
     name: "purchaseInfo.hazardInsurance",
   });
 
-  const associationFee = useWatch({
-    control,
-    name: "purchaseInfo.associationFee",
-  });
-
-  // Assuming these are from Zustand store
-  const { setAnnualInterestRate, setHomeOwnerInsurance, setHazardInsurance, setAssociationFee } =
-    usePreApprovalStore();
-
   useEffect(() => {
-    if (typeof annualInterestRate === "number") {
-      setAnnualInterestRate(annualInterestRate);
-    }
-  }, [annualInterestRate, setAnnualInterestRate]);
-
-  useEffect(() => {
-    if (typeof homeOwnerInsurance === "number") {
-      setHomeOwnerInsurance(homeOwnerInsurance);
-    }
-  }, [homeOwnerInsurance, setHomeOwnerInsurance]);
-
-  useEffect(() => {
-    if (typeof hazardInsurance === "number") {
-      setHazardInsurance(hazardInsurance);
-    }
-  }, [hazardInsurance, setHazardInsurance]);
-
-  useEffect(() => {
-    if (typeof associationFee === "number") {
-      setAssociationFee(associationFee);
-    }
-  }, [associationFee, setAssociationFee]);
-
-  useEffect(() => {
-    // if (typeof purchasePrice === "number" && typeof downPayment === "number") {
     if (purchasePrice > 0 && downPayment > 0) {
       const downPaymentAmount = (purchasePrice * downPayment) / 100;
       const loanAmount = purchasePrice - downPaymentAmount;
+
+      let calcmiPercent = 0;
+      if (loanProgram === "3") {
+        calcmiPercent = Math.round((loanAmount * 0.55) / 100 / 12); // no decimals
+      }
+
+      setValue("purchaseInfo.miPercent", calcmiPercent);
       setValue("purchaseInfo.loanAmount", loanAmount);
     } else {
       setValue("purchaseInfo.loanAmount", null);
     }
-  }, [purchasePrice, downPayment, setValue]);
+    // setValue("loanProgram.price", purchasePrice);
+    // setValue("loanProgram.interestRate", annualInterestRate);
+    // setValue("loanProgram.downPaymentPercentage", downPayment);
+  }, [loanProgram, purchasePrice, downPayment, annualInterestRate, setValue]);
+
+  useEffect(() => {
+    if (hazardInsurance > 0) {
+      setValue("prepaidItems.hazardInsurance", hazardInsurance * 12);
+      setValue("loanProgram.hazardInsurance", hazardInsurance);
+    }
+  }, [hazardInsurance, setValue]);
 
   return (
     <Box
@@ -108,13 +92,7 @@ export default function PurchaseInfoForm({
         padding: expanded ? "15px" : "0px",
       }}
     >
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        onClick={onToggle}
-        sx={{ cursor: "pointer" }}
-      >
+      <Box display="flex" alignItems="center" justifyContent="space-between">
         {expanded ? (
           <Typography fontWeight={600} color="primary">
             Purchase info
@@ -139,14 +117,24 @@ export default function PurchaseInfoForm({
                   width: 40,
                   height: 40,
                   borderRadius: 2,
-                  backgroundColor: "#7444F5",
+                  backgroundColor: isCompleted
+                    ? "#1F9A00"
+                    : isDisabled
+                    ? "gray"
+                    : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 {/* <CheckIcon sx={{ color: "#fff" }} /> */}
-                <SVGs name="Purchase_info_icon" />
+                {isCompleted ? (
+                  <SVGs name="Check_Mark_icon" />
+                ) : isDisabled ? (
+                  <SVGs name="Purchase_info_icon" />
+                ) : (
+                  <SVGs name="Purchase_info_icon" />
+                )}
               </Box>
               <Typography
                 sx={{ fontWeight: 500, fontSize: "20px", color: "black" }}
@@ -154,10 +142,15 @@ export default function PurchaseInfoForm({
                 Purchase info
               </Typography>
             </Box>
-            <IconButton size="small" sx={{ color: "black" }}>
-              {/* <EditIcon fontSize="small" /> */}
-              <SVGs name="Edit_icon" />
-            </IconButton>
+            {!isDisabled && (
+              <IconButton
+                size="small"
+                sx={{ color: "black" }}
+                onClick={onToggle}
+              >
+                <SVGs name="Edit_icon" />
+              </IconButton>
+            )}
           </Box>
         )}
       </Box>
@@ -175,13 +168,12 @@ export default function PurchaseInfoForm({
                     fullWidth
                     label="Purchase Price *"
                     value={field.value ?? ""}
-                    onValueChange={(values) => {
+                    onValueChange={(values) =>
                       field.onChange(
-                        values.floatValue === undefined
-                          ? undefined
-                          : values.floatValue
-                      );
-                    }}
+                        values.floatValue === undefined ? "" : values.floatValue
+                      )
+                    }
+                    inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                     thousandSeparator=","
                     allowNegative={false}
                     error={!!errors.purchaseInfo?.purchasePrice}
@@ -189,28 +181,6 @@ export default function PurchaseInfoForm({
                   />
                 )}
               />
-              {/* <Controller
-                name="purchaseInfo.purchasePrice"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === ""
-                          ? undefined
-                          : Number(e.target.value)
-                      )
-                    }
-                    value={field.value ?? ""}
-                    fullWidth
-                    label="Purchase Price *"
-                    type="number"
-                    error={!!errors.purchaseInfo?.purchasePrice}
-                    helperText={errors.purchaseInfo?.purchasePrice?.message}
-                  />
-                )}
-              /> */}
             </Grid>
             <Grid size={{ xs: 6 }}>
               <Controller
@@ -221,15 +191,14 @@ export default function PurchaseInfoForm({
                     {...field}
                     onChange={(e) =>
                       field.onChange(
-                        e.target.value === ""
-                          ? undefined
-                          : Number(e.target.value)
+                        e.target.value === "" ? "" : Number(e.target.value)
                       )
                     }
                     value={field.value ?? ""}
                     fullWidth
                     label="Down Payment *"
                     type="number"
+                    inputMode="numeric"
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">%</InputAdornment>
@@ -252,13 +221,12 @@ export default function PurchaseInfoForm({
                     fullWidth
                     label="Loan Amount *"
                     value={field.value ?? ""}
-                    onValueChange={(values) => {
+                    onValueChange={(values) =>
                       field.onChange(
-                        values.floatValue === undefined
-                          ? undefined
-                          : values.floatValue
-                      );
-                    }}
+                        values.floatValue === undefined ? "" : values.floatValue
+                      )
+                    }
+                    disabled
                     thousandSeparator=","
                     allowNegative={false}
                     error={!!errors.purchaseInfo?.loanAmount}
@@ -275,52 +243,24 @@ export default function PurchaseInfoForm({
                   <NumericFormat
                     customInput={TextField}
                     fullWidth
-                    label="Annual Int. rate *"
+                    label="Interest Rate *"
                     value={field.value ?? ""}
-                    onValueChange={(values) => {
+                    onValueChange={(values) =>
                       field.onChange(
-                        values.floatValue === undefined
-                          ? undefined
-                          : values.floatValue
-                      );
-                    }}
+                        values.floatValue === undefined ? "" : values.floatValue
+                      )
+                    }
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">%</InputAdornment>
                       ),
                     }}
+                    inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                     thousandSeparator=","
                     allowNegative={false}
                     error={!!errors.purchaseInfo?.annualInterestRate}
                     helperText={
                       errors.purchaseInfo?.annualInterestRate?.message
-                    }
-                  />
-                )}
-              />
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              <Controller
-                name="purchaseInfo.homeOwnerInsurance"
-                control={control}
-                render={({ field }) => (
-                  <NumericFormat
-                    customInput={TextField}
-                    fullWidth
-                    label="Home Owner Ins."
-                    value={field.value ?? ""}
-                    onValueChange={(values) => {
-                      field.onChange(
-                        values.floatValue === undefined
-                          ? undefined
-                          : values.floatValue
-                      );
-                    }}
-                    thousandSeparator=","
-                    allowNegative={false}
-                    error={!!errors.purchaseInfo?.homeOwnerInsurance}
-                    helperText={
-                      errors.purchaseInfo?.homeOwnerInsurance?.message
                     }
                   />
                 )}
@@ -336,15 +276,14 @@ export default function PurchaseInfoForm({
                     {...field}
                     onChange={(e) =>
                       field.onChange(
-                        e.target.value === ""
-                          ? undefined
-                          : Number(e.target.value)
+                        e.target.value === "" ? "" : Number(e.target.value)
                       )
                     }
                     value={field.value ?? ""}
                     fullWidth
                     label="MIP/funding Fee"
                     type="number"
+                    inputMode="numeric"
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">%</InputAdornment>
@@ -366,13 +305,12 @@ export default function PurchaseInfoForm({
                     fullWidth
                     label="Hazard Insurance *"
                     value={field.value ?? ""}
-                    onValueChange={(values) => {
+                    onValueChange={(values) =>
                       field.onChange(
-                        values.floatValue === undefined
-                          ? undefined
-                          : values.floatValue
-                      );
-                    }}
+                        values.floatValue === undefined ? "" : values.floatValue
+                      )
+                    }
+                    inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                     thousandSeparator=","
                     allowNegative={false}
                     error={!!errors.purchaseInfo?.hazardInsurance}
@@ -392,13 +330,12 @@ export default function PurchaseInfoForm({
                     fullWidth
                     label="Association Fee *"
                     value={field.value ?? ""}
-                    onValueChange={(values) => {
+                    onValueChange={(values) =>
                       field.onChange(
-                        values.floatValue === undefined
-                          ? undefined
-                          : values.floatValue
-                      );
-                    }}
+                        values.floatValue === undefined ? "" : values.floatValue
+                      )
+                    }
+                    inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                     thousandSeparator=","
                     allowNegative={false}
                     error={!!errors.purchaseInfo?.associationFee}
@@ -412,24 +349,19 @@ export default function PurchaseInfoForm({
                 name="purchaseInfo.miPercent"
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    onChange={(e) =>
+                  <NumericFormat
+                    customInput={TextField}
+                    fullWidth
+                    label="MI *"
+                    value={field.value ?? ""}
+                    onValueChange={(values) =>
                       field.onChange(
-                        e.target.value === ""
-                          ? undefined
-                          : Number(e.target.value)
+                        values.floatValue === undefined ? "" : values.floatValue
                       )
                     }
-                    value={field.value ?? ""}
-                    fullWidth
-                    label="MI"
-                    type="number"
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">%</InputAdornment>
-                      ),
-                    }}
+                    inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
+                    thousandSeparator=","
+                    allowNegative={false}
                     error={!!errors.purchaseInfo?.miPercent}
                     helperText={errors.purchaseInfo?.miPercent?.message}
                   />

@@ -3,11 +3,11 @@ import { ZodType, z } from "zod";
 export type BorrowerInfoFormData = {
   borrowerName: string;
   coBorrowerName?: string;
-  ficoScore: number;
+  ficoScore?: number;
   coBorrowerFicoScore?: number;
-  borrowerCellNumber: string;
+  borrowerCellNumber?: string;
   coBorrowerCellNumber?: string;
-  borrowerEmail: string;
+  borrowerEmail?: string;
   loanProgram: string;
   propertyType: string;
   occupancyStatus: string;
@@ -29,7 +29,8 @@ export const borrowerInfoSchema: ZodType<BorrowerInfoFormData> = z.object({
   ficoScore: z
     .number({ invalid_type_error: "FICO Score must be a number" })
     .min(300, "FICO Score must be at least 300")
-    .max(850, "FICO Score must be at most 850"),
+    .max(850, "FICO Score must be at most 850")
+    .optional(),
 
   coBorrowerFicoScore: z
     .number({ invalid_type_error: "Co-Borrower FICO Score must be a number" })
@@ -40,8 +41,8 @@ export const borrowerInfoSchema: ZodType<BorrowerInfoFormData> = z.object({
   borrowerCellNumber: z
     .string()
     .trim()
-    .min(1, "Borrower phone is required")
-    .max(10, "Borrower phone must not exceed 10 digits"),
+    .max(10, "Borrower phone must not exceed 10 digits")
+    .optional(),
 
   coBorrowerCellNumber: z
     .string()
@@ -52,8 +53,9 @@ export const borrowerInfoSchema: ZodType<BorrowerInfoFormData> = z.object({
   borrowerEmail: z
     .string()
     .trim()
-    .min(1, "Email is required")
-    .email("Invalid email address"),
+    .email("Invalid email address")
+    .optional()
+    .or(z.literal("")),
 
   loanProgram: z.string().trim().min(1, "Loan program is required"),
   propertyType: z.string().trim().min(1, "Property type is required"),

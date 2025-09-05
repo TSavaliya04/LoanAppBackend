@@ -3,7 +3,9 @@ import React from "react";
 
 export const SVGLIST = {
   EditIcon: "Edit_icon",
+  CheckMarkIcon: "Check_Mark_icon",
   RightArrowIcon: "Right_arrow_icon",
+  ResetIcon: "Reset_icon",
   BorrowerInfoIcon: "Borrower_info_icon",
   PurchaseInfoIcon: "Purchase_info_icon",
   LenderFeesIcon: "Lender_fees_icon",
@@ -57,6 +59,25 @@ const SVGs = ({ name }: Props) => {
       </svg>
     );
   }
+  if (name == SVGLIST.CheckMarkIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={16}
+        height={12}
+        viewBox="0 0 14 10"
+        fill="none"
+      >
+        <path
+          d="M1 5L4.99529 9L13 1"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
   if (name == SVGLIST.RightArrowIcon) {
     return (
       <svg
@@ -66,20 +87,20 @@ const SVGs = ({ name }: Props) => {
         viewBox="0 0 24 25"
         fill="none"
       >
-        <g clip-path="url(#clip0_1796_14860)">
+        <g clipPath="url(#clip0_1796_14860)">
           <path
             d="M4 12.6762H19.75"
             stroke="white"
-            stroke-width="2"
-            stroke-miterlimit="10"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeMiterlimit="10"
+            strokeLinecap="round"
           />
           <path
             d="M16.4 16.5362L19.83 13.1062C20.07 12.8662 20.07 12.4862 19.83 12.2462L16.4 8.81619"
             stroke="white"
-            stroke-width="2"
-            stroke-miterlimit="10"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeMiterlimit="10"
+            strokeLinecap="round"
           />
         </g>
         <defs>
@@ -92,6 +113,23 @@ const SVGs = ({ name }: Props) => {
             />
           </clipPath>
         </defs>
+      </svg>
+    );
+  }
+  if (name == SVGLIST.ResetIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
       </svg>
     );
   }

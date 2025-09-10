@@ -127,5 +127,24 @@ namespace LoanPortal.API.Controllers.Authentication
                 return StatusCode(500, ErrorResponse<string>(500, ex.Message));
             }
         }
+
+        [AllowAnonymous]
+        [HttpPost("user/GetNewToken")]
+        public async Task<IActionResult> GetNewToken(string refreshToken)
+        {
+            try
+            {
+                var result = await _userService.GetNewToken(refreshToken);
+                return Ok(SuccessResponse(data: result, message: "New token generated successfully."));
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(400, ErrorResponse<GetNewTokenResponse>(error: ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<GetNewTokenResponse>(500, ex.Message));
+            }
+        }
     }
 }

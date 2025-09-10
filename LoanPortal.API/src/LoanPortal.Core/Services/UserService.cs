@@ -292,5 +292,25 @@ namespace LoanPortal.Core.Services
                 throw;
             }
         }
+
+        public async Task<GetNewTokenResponse> GetNewToken(string refreshToken)
+        {
+            try
+            {
+                var (response, userId) = await _firebaseAuthService.GetNewTokenAsync(refreshToken);
+                var user = await _userRepository.GetUserByFirebaseId(userId);
+
+                response.User = UserHelper.MaptoUserDTO(user);
+                return response;
+            }
+            catch (ValidationException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }

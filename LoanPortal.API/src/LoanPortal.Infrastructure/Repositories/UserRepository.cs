@@ -100,5 +100,18 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<UserEntity> GetUserByFirebaseId(string firebaseId)
+        {
+            try
+            {
+                return await _collection.Find(u => u.FirebaseId == firebaseId).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.GetUserByFirebaseId -> " + ex.Message);
+                throw;
+            }
+        }
     }
 }

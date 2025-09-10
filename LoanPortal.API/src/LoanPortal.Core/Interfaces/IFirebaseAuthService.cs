@@ -1,5 +1,6 @@
 using FirebaseAdmin.Auth;
 using System.Threading.Tasks;
+using LoanPortal.Core.Entities;
 
 namespace LoanPortal.Core.Interfaces
 {
@@ -10,5 +11,6 @@ namespace LoanPortal.Core.Interfaces
         Task<string> VerifyIdTokenAsync(string idToken);
         Task SetCustomUserClaimsAsync(string uid, Dictionary<string, object> claims);
         Task<string> GeneratePasswordResetLinkAsync(string email);
+        Task<(GetNewTokenResponse Response, string UserId)> GetNewTokenAsync(string refreshToken);
     }
 } 

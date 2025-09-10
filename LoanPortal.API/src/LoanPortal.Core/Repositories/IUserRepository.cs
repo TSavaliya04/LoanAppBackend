@@ -16,5 +16,6 @@ namespace LoanPortal.Core.Repositories
         Task<UserEntity> GetUserById(Guid id);
         Task UpdateUserProfileAsync(Guid id, UserEntity doc);
         Task<UserEntity> GetUserByUserName(string userName);
+        Task<UserEntity> GetUserByFirebaseId(string firebaseId);
     }
 }

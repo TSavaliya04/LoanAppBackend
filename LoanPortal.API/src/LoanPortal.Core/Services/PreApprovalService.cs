@@ -382,6 +382,8 @@ public class PreApprovalService : IPreApprovalService
         
         estClosingCost.DiscountFeePercent = lenderFees.DiscountFeePercentage;
         estClosingCost.DiscountFee = lenderFees.DiscountFee;
+        estClosingCost.OriginationFeePercent = lenderFees.LoanOriginationFeePercentage;
+        estClosingCost.OriginationFee = lenderFees.LoanOriginationFee;
         estClosingCost.AppraisalFee = lenderFees.AppraisalFee;
         estClosingCost.PrepaidInterestDays = prepaidItems.PrepaidInterestDays;
         estClosingCost.PrepaidInterest = prepaidItems.PrepaidInterestAmount;
@@ -397,6 +399,7 @@ public class PreApprovalService : IPreApprovalService
         estClosingCost.TotalEstSettlementCharges = new[]
         {
             estClosingCost.DiscountFee,
+            estClosingCost.OriginationFee,
             estClosingCost.AppraisalFee,
             estClosingCost.PrepaidInterest,
             estClosingCost.HazInsPremium,

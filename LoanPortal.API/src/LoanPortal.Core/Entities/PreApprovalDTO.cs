@@ -266,6 +266,8 @@ namespace LoanPortal.Core.Entities
     {
         public decimal DiscountFeePercent { get; set; }
         public decimal DiscountFee { get; set; }
+        public decimal OriginationFeePercent { get; set; }
+        public decimal OriginationFee { get; set; }
         public int PrepaidInterestDays { get; set; }
         public decimal PrepaidInterest { get; set; }
         public decimal HazInsPremium { get; set; }

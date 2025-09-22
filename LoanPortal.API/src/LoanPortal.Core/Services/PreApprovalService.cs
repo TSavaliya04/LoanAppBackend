@@ -354,8 +354,8 @@ public class PreApprovalService : IPreApprovalService
             report.PILoanAmount = (decimal)MonthlyPILoanAmount;
             report.PropertyTax = preApproval.LoanProgram.MonthlyPropertyTax.Value;
             report.HazardInsurancePremium = preApproval.PurchaseInfo.HazardInsurance.Value;
-            report.CoverageRate = preApproval.LoanProgram.AnnualMIPRate.Value;
-            report.MortgageInsurance = ((report.SalePrice * report.CoverageRate) / 100) / 12;
+            report.CoverageRate = preApproval.PurchaseInfo.MipFundingFee;
+            report.MortgageInsurance = preApproval.PurchaseInfo.MiPercent.Value;
             report.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
             report.OtherFinancedItems = otherFinancedItem;
             report.HOADues = preApproval.PurchaseInfo.AssociationFee.Value;

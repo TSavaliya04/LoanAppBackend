@@ -97,7 +97,8 @@ namespace LoanPortal.Core.Helper
                 JobTitle = entity.JobTitle,
                 Address = entity.Address,
                 Profile = entity.Profile,
-                CompanyName = entity.CompanyName
+                CompanyName = entity.CompanyName,
+                NMLS = entity.NMLS,
             };
         }
 

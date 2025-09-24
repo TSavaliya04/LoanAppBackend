@@ -26,6 +26,7 @@ namespace LoanPortal.Core.Entities
         public string? Address { get; set; }
         public string? Profile { get; set; }
         public string? CompanyName { get; set; }
+        public string? NMLS { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -69,6 +70,10 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("companyName")]
         public string CompanyName { get; set; }
+
+        [BsonElement("nmls")]
+        public string? NMLS { get; set; }
+
     }
 
     public class UpdateProfileRequest

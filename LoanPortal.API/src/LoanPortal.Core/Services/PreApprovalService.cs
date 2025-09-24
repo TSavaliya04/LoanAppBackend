@@ -288,7 +288,7 @@ public class PreApprovalService : IPreApprovalService
         try
         {              
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
-            UserEntity user = await _userRepository.GetUserById(_loginUserDetails.UserID);
+            UserDTO agent = UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
             decimal purchasePrice = preApproval.LoanProgram.Price.Value;
             decimal downPercent = preApproval.PurchaseInfo.DownPayment;
             decimal downAmount = (purchasePrice * downPercent) / 100;
@@ -306,8 +306,9 @@ public class PreApprovalService : IPreApprovalService
                 LoanProgram = preApproval.LoanProgram.LoanProgram,
                 PropertyType = preApproval.BorrowerInfo.PropertyType,
                 Borrowers = borrowers,
-                LendingCompany = user.CompanyName,
+                LendingCompany = agent.CompanyName,
                 OccupancyStatus = preApproval.BorrowerInfo.OccupancyStatus,
+                AgentInfo = agent
             };
         }
         catch (Exception ex)

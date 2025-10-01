@@ -180,17 +180,18 @@ namespace LoanPortal.Core.Services
                 var updateEntity = new UserEntity
                 {
                     Id = existingUser.Id,
-                    FirstName = existingUser.FirstName,
-                    LastName = existingUser.LastName,
+                    FirstName = request.FirstName ?? existingUser.FirstName,
+                    LastName = request.LastName ?? existingUser.LastName,
                     Email = existingUser.Email,
-                    Phone = existingUser.Phone,
+                    Phone = request.Phone ?? existingUser.Phone,
                     IsActive = existingUser.IsActive,
                     FirebaseId = existingUser.FirebaseId,
                     CreatedAt = existingUser.CreatedAt,
-                    Address = request.Address,
-                    Profile = url.Split("?")[0],
-                    JobTitle = request.JobTitle,
-                    CompanyName = request.CompanyName,
+                    Address = request.Address ?? existingUser.Address,
+                    Profile = !string.IsNullOrEmpty(url) ? url.Split("?")[0] : existingUser.Profile,
+                    JobTitle = request.JobTitle ?? existingUser.JobTitle,
+                    CompanyName = request.CompanyName ?? existingUser.CompanyName,
+                    NMLS = request.NMLS ?? existingUser.NMLS,
                     UpdatedAt = DateTime.UtcNow
                 };
 

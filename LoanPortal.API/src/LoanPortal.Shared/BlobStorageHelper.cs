@@ -30,12 +30,14 @@ namespace LoanPortal.Shared
         {
             try
             {
+                string token = "sp=racwdli&st=2025-10-01T17:14:14Z&se=2026-10-02T01:29:14Z&sv=2024-11-04&sr=c&sig=tbTUGvn1%2F7uCyUtIvk8coOlzS9RD%2FGKBtdNyVxLR33Q%3D";
                 string contentType = getContentType(fileName.Substring(fileName.LastIndexOf(".") + 1));
                 if (!_blobStorageSettings.Containers.TryGetValue(containerKey, out var containerConfig))
                 {
                     throw new ArgumentException($"Container configuration for key '{containerKey}' not found.");
                 }
-                BlobClient blobClient = getBlobClient(_blobStorageSettings.StorageAccountName, fileName, containerConfig.ContainerName, _blobStorageSettings.SharedAccessSignature);
+                //BlobClient blobClient = getBlobClient(_blobStorageSettings.StorageAccountName, fileName, containerConfig.ContainerName, _blobStorageSettings.SharedAccessSignature);
+                BlobClient blobClient = getBlobClient("loansnstuff", fileName, "profilepictures", token);
                 await blobClient.UploadAsync(content, new BlobHttpHeaders
                 {
                     ContentType = contentType

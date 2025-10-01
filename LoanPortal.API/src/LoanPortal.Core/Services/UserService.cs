@@ -6,6 +6,7 @@ using LoanPortal.Core.Repositories;
 using LoanPortal.Shared;
 using LoanPortal.Shared.Constants;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.Numerics;
@@ -218,7 +219,9 @@ namespace LoanPortal.Core.Services
         {
             try
             {
+                string token = "sp=racwdli&st=2025-10-01T17:14:14Z&se=2026-10-02T01:29:14Z&sv=2024-11-04&sr=c&sig=tbTUGvn1%2F7uCyUtIvk8coOlzS9RD%2FGKBtdNyVxLR33Q%3D"; 
                 var user = await _userRepository.GetUserById(_loginUserDetails.UserID);
+                user.Profile = user.Profile + "?" + token;
                 if (user == null)
                 {
                     throw new ValidationException($"User not found.");

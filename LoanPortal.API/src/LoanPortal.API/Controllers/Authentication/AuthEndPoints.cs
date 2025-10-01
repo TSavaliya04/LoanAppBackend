@@ -73,11 +73,11 @@ namespace LoanPortal.API.Controllers.Authentication
         }
 
         [HttpGet("user/GetUserProfile")]
-        public async Task<IActionResult> GetUserProfile(Guid id)
+        public async Task<IActionResult> GetUserProfile()
         {
             try
             {
-                var result = await _userService.GetUserProfile(id);
+                var result = await _userService.GetUserProfile();
                 return Ok(SuccessResponse(result));
             }
             catch (ValidationException ex)

@@ -214,14 +214,14 @@ namespace LoanPortal.Core.Services
             }
         }
 
-        public async Task<UserDTO> GetUserProfile(Guid userId)
+        public async Task<UserDTO> GetUserProfile()
         {
             try
             {
-                var user = await _userRepository.GetUserById(userId);
+                var user = await _userRepository.GetUserById(_loginUserDetails.UserID);
                 if (user == null)
                 {
-                    throw new ValidationException($"User with ID {userId} not found.");
+                    throw new ValidationException($"User not found.");
                 }
                 return UserHelper.MaptoUserDTO(user);
             }

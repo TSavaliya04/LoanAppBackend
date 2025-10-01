@@ -232,6 +232,7 @@ namespace LoanPortal.Core.Entities
         public int LoanProgram { get; set; }
         public int PropertyType { get; set; }
         public int OccupancyStatus { get; set; }
+        public string AgentName { get; set; }
         public UserDTO AgentInfo { get; set; }
     }
 

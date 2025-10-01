@@ -308,6 +308,7 @@ public class PreApprovalService : IPreApprovalService
                 Borrowers = borrowers,
                 LendingCompany = agent.CompanyName,
                 OccupancyStatus = preApproval.BorrowerInfo.OccupancyStatus,
+                AgentName = preApproval.LenderFees.AgentName,
                 AgentInfo = agent
             };
         }

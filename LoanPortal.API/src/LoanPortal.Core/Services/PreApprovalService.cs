@@ -289,6 +289,13 @@ public class PreApprovalService : IPreApprovalService
         {              
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             UserDTO agent = UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
+            
+            if(agent != null && !string.IsNullOrEmpty(agent.Profile))
+            {
+                string token = "sp=racwdli&st=2025-10-01T17:14:14Z&se=2026-10-02T01:29:14Z&sv=2024-11-04&sr=c&sig=tbTUGvn1%2F7uCyUtIvk8coOlzS9RD%2FGKBtdNyVxLR33Q%3D";
+                agent.Profile = agent.Profile + "?" + token;
+            }
+
             decimal purchasePrice = preApproval.LoanProgram.Price.Value;
             decimal downPercent = preApproval.PurchaseInfo.DownPayment;
             decimal downAmount = (purchasePrice * downPercent) / 100;

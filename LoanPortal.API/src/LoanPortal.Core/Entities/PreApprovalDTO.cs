@@ -108,9 +108,9 @@ namespace LoanPortal.Core.Entities
 
         [BsonIgnore]
         public Guid PreApprovalId { get; set; }
-        public decimal? MiscFee1 { get; set; }
-        public decimal? MiscFee2 { get; set; }
-        public decimal? MiscFee3 { get; set; }
+        public decimal? EarnestMoneyDeposit { get; set; }
+        public decimal? SellerCredit { get; set; }
+        public decimal? LenderCredit { get; set; }
         public decimal? MiscFee4 { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -283,6 +283,10 @@ namespace LoanPortal.Core.Entities
         public decimal TotalEstSettlementCharges { get; set; }
         public decimal DownPayment { get; set; }
         public decimal TotalEstFundToClose { get; set; }
+        public decimal? EarnestMoneyDeposit { get; set; }
+        public decimal? SellerCredit { get; set; }
+        public decimal? LenderCredit { get; set; }
+        public decimal? MiscFee4 { get; set; }
         //public decimal NotaryFee { get; set; }
         //public decimal LoanOriginationFees { get; set; }
         //public decimal UnderWritingFee { get; set; }

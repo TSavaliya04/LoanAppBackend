@@ -386,6 +386,7 @@ public class PreApprovalService : IPreApprovalService
         LoanProgramDTO loanProgram = preApproval.LoanProgram;
         PrepaidItemsDTO prepaidItems = preApproval.PrepaidItems;
         PurchaseInfoDTO purchaseInfo = preApproval.PurchaseInfo;
+        MiscFeesDTO miscFees = preApproval.MiscFees;
 
         EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO();
         
@@ -403,7 +404,10 @@ public class PreApprovalService : IPreApprovalService
         estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxAmount;
         estClosingCost.EscrowFees = lenderFees.EscrowFees;
         estClosingCost.TitleInsurance = lenderFees.TitleFees.Value;
-
+        estClosingCost.EarnestMoneyDeposit = miscFees.EarnestMoneyDeposit;
+        estClosingCost.LenderCredit = miscFees.LenderCredit;
+        estClosingCost.SellerCredit = miscFees.SellerCredit;
+        estClosingCost.MiscFee4 = estClosingCost.MiscFee4;
        
         estClosingCost.TotalEstSettlementCharges = new[]
         {
@@ -418,8 +422,16 @@ public class PreApprovalService : IPreApprovalService
             estClosingCost.TitleInsurance,
         }.Sum();
 
+        decimal miscFeesSum = (decimal)new[]
+        {
+            estClosingCost.MiscFee4,
+            estClosingCost.EarnestMoneyDeposit,
+            estClosingCost.SellerCredit,
+            estClosingCost.LenderCredit
+        }.Sum();
+
         estClosingCost.DownPayment = report.DownPaymentAmount;
-        estClosingCost.TotalEstFundToClose = estClosingCost.TotalEstSettlementCharges + report.DownPaymentAmount;
+        estClosingCost.TotalEstFundToClose = (estClosingCost.TotalEstSettlementCharges + report.DownPaymentAmount) - (miscFeesSum);
         return estClosingCost;
     }
     

@@ -532,9 +532,9 @@ namespace LoanPortal.Tests.Services
             var miscFees = new MiscFeesDTO
             {
                 PreApprovalId = preApprovalId,
-                MiscFee1 = 1000,
-                MiscFee2 = 200,
-                MiscFee3 = 50
+                EarnestMoneyDeposit = 1000,
+                SellerCredit = 200,
+                LenderCredit = 50
             };
 
             var preApproval = new PreApprovalDocument
@@ -551,9 +551,9 @@ namespace LoanPortal.Tests.Services
             // Assert
             Assert.NotNull(result);
             Assert.NotEqual(Guid.Empty, result.Id);
-            Assert.Equal(1000, result.MiscFee1);
-            Assert.Equal(200, result.MiscFee2);
-            Assert.Equal(50, result.MiscFee3);
+            Assert.Equal(1000, result.EarnestMoneyDeposit);
+            Assert.Equal(200, result.SellerCredit);
+            Assert.Equal(50, result.LenderCredit);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
         }
 

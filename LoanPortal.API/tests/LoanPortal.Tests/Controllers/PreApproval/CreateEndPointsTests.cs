@@ -132,9 +132,9 @@ namespace LoanPortal.Tests.Controllers.PreApproval
         {
             var miscFees = new MiscFeesDTO
             {
-                MiscFee1 = 500,
-                MiscFee2 = 50,
-                MiscFee3 = 20,
+                EarnestMoneyDeposit = 500,
+                SellerCredit = 50,
+                LenderCredit = 20,
                 MiscFee4 = 100
             };
 

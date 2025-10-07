@@ -24,12 +24,12 @@ jobs:
 
       - name: Build, tag, and push Docker image
         env:
-          ECR_REGISTRY: 11223344.dkr.ecr.us-east-2.amazonaws.com
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker build -t $IMAGE .
+          docker build -t $IMAGE ./LoanPortal.API
           docker push $IMAGE
           # Optional: push latest tag
           docker tag $IMAGE $ECR_REGISTRY/$ECR_REPOSITORY:latest

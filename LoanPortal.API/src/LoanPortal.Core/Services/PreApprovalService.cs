@@ -268,14 +268,17 @@ public class PreApprovalService : IPreApprovalService
             var userId = _loginUserDetails.UserID;
             var topOpportunities = await _preApprovalRepository.GetAllAsync(userId);
 
-            return topOpportunities.Select(doc => new TopOpportunityDTO
-            {
-                PreApprovalId = doc.Id,
-                BorrowerName = doc.BorrowerInfo?.BorrowerName,
-                LoanProgram = doc.BorrowerInfo?.LoanProgram,
-                AgentName = doc.LenderFees?.AgentName,
-                Borrowers = doc.BorrowerIncomes?.ToList()
-            }).ToList();
+            return topOpportunities
+                .OrderByDescending(doc => doc.CreatedAt)
+                .Select(doc => new TopOpportunityDTO
+                {
+                    PreApprovalId = doc.Id,
+                    BorrowerName = doc.BorrowerInfo?.BorrowerName,
+                    LoanProgram = doc.BorrowerInfo?.LoanProgram,
+                    AgentName = doc.LenderFees?.AgentName,
+                    Borrowers = doc.BorrowerIncomes?.ToList(),
+                    CreatedAt = doc.CreatedAt
+                }).ToList();
         }
         catch (Exception ex)
         {

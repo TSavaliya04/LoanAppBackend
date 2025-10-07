@@ -29,28 +29,37 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          # Build Docker image from folder with Dockerfile
           docker build -t $IMAGE ./LoanPortal.API
           docker push $IMAGE
-          # Optional: push latest tag
-          docker tag $IMAGE $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Install jq (for parsing JSON)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
 
       - name: Deploy stack via Portainer API
         env:
           PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
           PORTAINER_ACCESS_TOKEN: ${{ secrets.PORTAINER_ACCESS_TOKEN }}
           STACK_NAME: ${{ secrets.STACK_NAME }}
-          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
+          # Get stack ID from Portainer
           STACK_ID=$(curl -s -H "Authorization: Bearer $PORTAINER_ACCESS_TOKEN" \
             $PORTAINER_URL/api/stacks | jq -r ".[] | select(.Name==\"$STACK_NAME\") | .Id")
+
+          if [ -z "$STACK_ID" ]; then
+            echo "ERROR: Stack $STACK_NAME not found in Portainer"
+            exit 1
+          fi
 
           # Replace ${repo} and ${tag} in docker-compose.yml
           COMPOSE_CONTENT=$(sed "s|\${repo}|$ECR_REPOSITORY|g; s|\${tag}|$IMAGE_TAG|g" docker-compose.yml | sed ':a;N;$!ba;s/\n/\\n/g')
 
-          # Update stack
+          # Update stack in Portainer
           curl -s -X PUT \
             -H "Authorization: Bearer $PORTAINER_ACCESS_TOKEN" \
             -H "Content-Type: application/json" \

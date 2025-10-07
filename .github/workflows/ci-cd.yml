@@ -1,0 +1,58 @@
+name: CI/CD Deployment with Portainer
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image
+        env:
+          ECR_REGISTRY: 11223344.dkr.ecr.us-east-2.amazonaws.com
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker build -t $IMAGE .
+          docker push $IMAGE
+          # Optional: push latest tag
+          docker tag $IMAGE $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Deploy stack via Portainer API
+        env:
+          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+          PORTAINER_ACCESS_TOKEN: ${{ secrets.PORTAINER_ACCESS_TOKEN }}
+          STACK_NAME: ${{ secrets.STACK_NAME }}
+          ECR_REGISTRY: 11223344.dkr.ecr.us-east-2.amazonaws.com
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          STACK_ID=$(curl -s -H "Authorization: Bearer $PORTAINER_ACCESS_TOKEN" \
+            $PORTAINER_URL/api/stacks | jq -r ".[] | select(.Name==\"$STACK_NAME\") | .Id")
+
+          # Replace ${repo} and ${tag} in docker-compose.yml
+          COMPOSE_CONTENT=$(sed "s|\${repo}|$ECR_REPOSITORY|g; s|\${tag}|$IMAGE_TAG|g" docker-compose.yml | sed ':a;N;$!ba;s/\n/\\n/g')
+
+          # Update stack
+          curl -s -X PUT \
+            -H "Authorization: Bearer $PORTAINER_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"prune\": true, \"stackFileContent\": \"$COMPOSE_CONTENT\"}" \
+            $PORTAINER_URL/api/stacks/$STACK_ID?endpointId=1

@@ -51,4 +51,4 @@ jobs:
             -H "Authorization: Bearer $PORTAINER_ACCESS_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"prune\": true, \"stackFileContent\": \"$COMPOSE_CONTENT\"}" \
-            $PORTAINER_URL/api/stacks/$STACK_ID?endpointId=1
+            $PORTAINER_URL/api/stacks/$STACK_ID?endpointId=3

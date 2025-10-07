@@ -1,4 +1,4 @@
-name: CI/CD Deployment with Portainer
+name: CI/CD Deployment with Portainer-ce
 
 on:
   push:

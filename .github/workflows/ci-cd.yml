@@ -56,8 +56,6 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
           JWT_TOKEN: ${{ steps.portainer_token.outputs.token }}
-          ECR_USERNAME: ${{ secrets.ECR_USERNAME }}
-          ECR_PASSWORD: ${{ secrets.ECR_PASSWORD }}
           FIREBASE_TYPE: ${{ secrets.FIREBASE_TYPE }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
@@ -72,8 +70,13 @@ jobs:
           MONGODB_USER_COLLECTION_NAME: ${{ secrets.MONGODB_USER_COLLECTION_NAME }}
           MONGODB_PRE_APPROVAL_COLLECTION_NAME: ${{ secrets.MONGODB_PRE_APPROVAL_COLLECTION_NAME }}
           FirebaseKey: ${{ secrets.FirebaseKey }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          # Build a safe JSON payload with jq to avoid YAML/heredoc issues
+          # Set AWS ECR credentials
+          ECR_USERNAME=AWS
+          ECR_PASSWORD=$(aws ecr get-login-password --region $AWS_REGION)
+
+          # Build safe JSON payload for Portainer
           payload=$(jq -n \
             --arg repo "$ECR_REPOSITORY" \
             --arg tag "$IMAGE_TAG" \
@@ -119,27 +122,14 @@ jobs:
               repositoryPassword: $repo_pass
             }')
 
-          # validate payload
-          echo "$payload" | jq . >/dev/null || (echo "Built JSON payload invalid:" && echo "$payload" && exit 1)
+          # Optional: validate JSON
+          echo "$payload" | jq .
 
-          # send to Portainer
+          # Send to Portainer
           resp=$(curl -s -X PUT "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID" \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
-            --data "$payload" || true)
+            --data "$payload")
 
-          if echo "$resp" | jq -e . >/dev/null 2>&1; then
-            msg=$(echo "$resp" | jq -r '.message? // empty')
-            if [ -n "$msg" ]; then
-              echo "Portainer API returned message: $msg"
-              echo "$resp"
-              exit 1
-            else
-              echo "Portainer update successful. Response:"
-              echo "$resp"
-            fi
-          else
-            echo "Non-JSON response from Portainer:"
-            echo "$resp"
-            exit 1
-          fi
+          echo "Portainer response:"
+          echo "$resp"

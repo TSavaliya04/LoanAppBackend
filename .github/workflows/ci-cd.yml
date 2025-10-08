@@ -1,4 +1,4 @@
-name: CI/CD Deployment with Portainer Auto JWT Token
+name: CI/CD Deployment with Portainer Auto JWT Token Generation
 
 on:
   push:

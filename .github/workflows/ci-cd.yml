@@ -1,16 +1,17 @@
-name: CI/CD Deployment with Portainer (Auto JWT)
+name: Deploy to Portainer via ECR
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -19,46 +20,38 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push Docker image
+      - name: Build, Tag, and Push image to ECR
         env:
-          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker build -t $IMAGE ./LoanPortal.API
-          docker push $IMAGE
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG --platform linux/amd64 .
+          docker push $ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Generate JWT token from Portainer
-        id: portainer_token
-        env:
-          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
-          PORTAINER_USERNAME: ${{ secrets.PORTAINER_USERNAME }}
-          PORTAINER_PASSWORD: ${{ secrets.PORTAINER_PASSWORD }}
-        run: |
-          TOKEN=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -d "{\"username\": \"$PORTAINER_USERNAME\", \"password\": \"$PORTAINER_PASSWORD\"}" \
-            $PORTAINER_URL/api/auth | jq -r '.jwt')
-          if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
-            echo "Failed to get Portainer token" && exit 1
-          fi
-          echo "token=$TOKEN" >> $GITHUB_OUTPUT
-
-      - name: Deploy stack via Portainer API
+      - name: Deploy to Portainer
         env:
           PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
           PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
+          PORTAINER_USERNAME: ${{ secrets.PORTAINER_USERNAME }}
+          PORTAINER_PASSWORD: ${{ secrets.PORTAINER_PASSWORD }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
-          JWT_TOKEN: ${{ steps.portainer_token.outputs.token }}
         run: |
-          COMPOSE_CONTENT=$(sed "s|\${repo}|$ECR_REPOSITORY|g; s|\${tag}|$IMAGE_TAG|g" docker-compose.yml | sed ':a;N;$!ba;s/\n/\\n/g')
-          curl -s -X PUT \
+          echo "Getting JWT token..."
+          JWT_TOKEN=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"username\": \"$PORTAINER_USERNAME\", \"password\": \"$PORTAINER_PASSWORD\"}" \
+            $PORTAINER_URL/api/auth | jq -r '.jwt')
+
+          echo "Preparing compose file..."
+          COMPOSE_CONTENT=$(sed "s|\${repo}|$ECR_REPOSITORY|g; s|\${tag}|$IMAGE_TAG|g" docker-compose.yml | jq -Rs .)
+
+          echo "Updating stack in Portainer..."
+          curl -s -X PUT "$PORTAINER_URL/api/stacks/${PORTAINER_STACK_ID}?endpointId=3" \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"prune\": true, \"stackFileContent\": \"$COMPOSE_CONTENT\"}" \
-            $PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=3
+            -d "{\"prune\": true, \"stackFileContent\": $COMPOSE_CONTENT}"

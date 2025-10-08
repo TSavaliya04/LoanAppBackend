@@ -70,13 +70,7 @@ jobs:
           MONGODB_USER_COLLECTION_NAME: ${{ secrets.MONGODB_USER_COLLECTION_NAME }}
           MONGODB_PRE_APPROVAL_COLLECTION_NAME: ${{ secrets.MONGODB_PRE_APPROVAL_COLLECTION_NAME }}
           FirebaseKey: ${{ secrets.FirebaseKey }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          # Set AWS ECR credentials
-          ECR_USERNAME=AWS
-          ECR_PASSWORD=$(aws ecr get-login-password --region $AWS_REGION)
-
-          # Build safe JSON payload for Portainer
           payload=$(jq -n \
             --arg repo "$ECR_REPOSITORY" \
             --arg tag "$IMAGE_TAG" \
@@ -94,8 +88,6 @@ jobs:
             --arg mongo_user_col "$MONGODB_USER_COLLECTION_NAME" \
             --arg mongo_pre_col "$MONGODB_PRE_APPROVAL_COLLECTION_NAME" \
             --arg firebase_key "$FirebaseKey" \
-            --arg repo_user "$ECR_USERNAME" \
-            --arg repo_pass "$ECR_PASSWORD" \
             '{
               env: [
                 {name: "repo", value: $repo},
@@ -116,20 +108,12 @@ jobs:
                 {name: "FirebaseKey", value: $firebase_key}
               ],
               prune: true,
-              pullImage: true,
-              repositoryAuthentication: true,
-              repositoryUsername: $repo_user,
-              repositoryPassword: $repo_pass
+              pullImage: true
             }')
 
-          # Optional: validate JSON
           echo "$payload" | jq .
 
-          # Send to Portainer
-          resp=$(curl -s -X PUT "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID" \
+          curl -s -X PUT "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID" \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
-            --data "$payload")
-
-          echo "Portainer response:"
-          echo "$resp"
+            --data "$payload"

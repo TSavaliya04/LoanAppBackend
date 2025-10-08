@@ -73,33 +73,73 @@ jobs:
           MONGODB_PRE_APPROVAL_COLLECTION_NAME: ${{ secrets.MONGODB_PRE_APPROVAL_COLLECTION_NAME }}
           FirebaseKey: ${{ secrets.FirebaseKey }}
         run: |
-          curl -s -X PUT "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID" \
+          # Build a safe JSON payload with jq to avoid YAML/heredoc issues
+          payload=$(jq -n \
+            --arg repo "$ECR_REPOSITORY" \
+            --arg tag "$IMAGE_TAG" \
+            --arg fb_type "$FIREBASE_TYPE" \
+            --arg fb_project "$FIREBASE_PROJECT_ID" \
+            --arg fb_client_email "$FIREBASE_CLIENT_EMAIL" \
+            --arg fb_client_id "$FIREBASE_CLIENT_ID" \
+            --arg fb_auth_uri "$FIREBASE_AUTH_URI" \
+            --arg fb_token_uri "$FIREBASE_TOKEN_URI" \
+            --arg fb_auth_provider_cert_url "$FIREBASE_AUTH_PROVIDER_CERT_URL" \
+            --arg fb_client_cert_url "$FIREBASE_CLIENT_CERT_URL" \
+            --arg allowed_origins "$AllowedOrigins" \
+            --arg mongo_conn "$MONGODB_CONNECTION_STRING" \
+            --arg mongo_db "$MONGODB_DATABASE_NAME" \
+            --arg mongo_user_col "$MONGODB_USER_COLLECTION_NAME" \
+            --arg mongo_pre_col "$MONGODB_PRE_APPROVAL_COLLECTION_NAME" \
+            --arg firebase_key "$FirebaseKey" \
+            --arg repo_user "$ECR_USERNAME" \
+            --arg repo_pass "$ECR_PASSWORD" \
+            '{
+              env: [
+                {name: "repo", value: $repo},
+                {name: "tag", value: $tag},
+                {name: "FIREBASE_TYPE", value: $fb_type},
+                {name: "FIREBASE_PROJECT_ID", value: $fb_project},
+                {name: "FIREBASE_CLIENT_EMAIL", value: $fb_client_email},
+                {name: "FIREBASE_CLIENT_ID", value: $fb_client_id},
+                {name: "FIREBASE_AUTH_URI", value: $fb_auth_uri},
+                {name: "FIREBASE_TOKEN_URI", value: $fb_token_uri},
+                {name: "FIREBASE_AUTH_PROVIDER_CERT_URL", value: $fb_auth_provider_cert_url},
+                {name: "FIREBASE_CLIENT_CERT_URL", value: $fb_client_cert_url},
+                {name: "AllowedOrigins", value: $allowed_origins},
+                {name: "MONGODB_CONNECTION_STRING", value: $mongo_conn},
+                {name: "MONGODB_DATABASE_NAME", value: $mongo_db},
+                {name: "MONGODB_USER_COLLECTION_NAME", value: $mongo_user_col},
+                {name: "MONGODB_PRE_APPROVAL_COLLECTION_NAME", value: $mongo_pre_col},
+                {name: "FirebaseKey", value: $firebase_key}
+              ],
+              prune: true,
+              pullImage: true,
+              repositoryAuthentication: true,
+              repositoryUsername: $repo_user,
+              repositoryPassword: $repo_pass
+            }')
+
+          # validate payload
+          echo "$payload" | jq . >/dev/null || (echo "Built JSON payload invalid:" && echo "$payload" && exit 1)
+
+          # send to Portainer
+          resp=$(curl -s -X PUT "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID" \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
-            -d @- <<EOF
-{
-  "env": [
-    { "name": "repo", "value": "$ECR_REPOSITORY" },
-    { "name": "tag", "value": "$IMAGE_TAG" },
-    { "name": "FIREBASE_TYPE", "value": "$FIREBASE_TYPE" },
-    { "name": "FIREBASE_PROJECT_ID", "value": "$FIREBASE_PROJECT_ID" },
-    { "name": "FIREBASE_CLIENT_EMAIL", "value": "$FIREBASE_CLIENT_EMAIL" },
-    { "name": "FIREBASE_CLIENT_ID", "value": "$FIREBASE_CLIENT_ID" },
-    { "name": "FIREBASE_AUTH_URI", "value": "$FIREBASE_AUTH_URI" },
-    { "name": "FIREBASE_TOKEN_URI", "value": "$FIREBASE_TOKEN_URI" },
-    { "name": "FIREBASE_AUTH_PROVIDER_CERT_URL", "value": "$FIREBASE_AUTH_PROVIDER_CERT_URL" },
-    { "name": "FIREBASE_CLIENT_CERT_URL", "value": "$FIREBASE_CLIENT_CERT_URL" },
-    { "name": "AllowedOrigins", "value": "$AllowedOrigins" },
-    { "name": "MONGODB_CONNECTION_STRING", "value": "$MONGODB_CONNECTION_STRING" },
-    { "name": "MONGODB_DATABASE_NAME", "value": "$MONGODB_DATABASE_NAME" },
-    { "name": "MONGODB_USER_COLLECTION_NAME", "value": "$MONGODB_USER_COLLECTION_NAME" },
-    { "name": "MONGODB_PRE_APPROVAL_COLLECTION_NAME", "value": "$MONGODB_PRE_APPROVAL_COLLECTION_NAME" },
-    { "name": "FirebaseKey", "value": "$FirebaseKey" }
-  ],
-  "prune": true,
-  "pullImage": true,
-  "repositoryAuthentication": true,
-  "repositoryUsername": "$ECR_USERNAME",
-  "repositoryPassword": "$ECR_PASSWORD"
-}
-EOF
+            --data "$payload" || true)
+
+          if echo "$resp" | jq -e . >/dev/null 2>&1; then
+            msg=$(echo "$resp" | jq -r '.message? // empty')
+            if [ -n "$msg" ]; then
+              echo "Portainer API returned message: $msg"
+              echo "$resp"
+              exit 1
+            else
+              echo "Portainer update successful. Response:"
+              echo "$resp"
+            fi
+          else
+            echo "Non-JSON response from Portainer:"
+            echo "$resp"
+            exit 1
+          fi

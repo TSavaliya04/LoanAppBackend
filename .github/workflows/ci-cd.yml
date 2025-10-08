@@ -73,32 +73,33 @@ jobs:
           MONGODB_PRE_APPROVAL_COLLECTION_NAME: ${{ secrets.MONGODB_PRE_APPROVAL_COLLECTION_NAME }}
           FirebaseKey: ${{ secrets.FirebaseKey }}
         run: |
-          curl -s -X PUT \
+          curl -s -X PUT "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID" \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{
-                  \"env\": [
-                    { \"name\": \"repo\", \"value\": \"$ECR_REPOSITORY\" },
-                    { \"name\": \"tag\", \"value\": \"$IMAGE_TAG\" },
-                    { \"name\": \"FIREBASE_TYPE\", \"value\": \"$FIREBASE_TYPE\" },
-                    { \"name\": \"FIREBASE_PROJECT_ID\", \"value\": \"$FIREBASE_PROJECT_ID\" },
-                    { \"name\": \"FIREBASE_CLIENT_EMAIL\", \"value\": \"$FIREBASE_CLIENT_EMAIL\" },
-                    { \"name\": \"FIREBASE_CLIENT_ID\", \"value\": \"$FIREBASE_CLIENT_ID\" },
-                    { \"name\": \"FIREBASE_AUTH_URI\", \"value\": \"$FIREBASE_AUTH_URI\" },
-                    { \"name\": \"FIREBASE_TOKEN_URI\", \"value\": \"$FIREBASE_TOKEN_URI\" },
-                    { \"name\": \"FIREBASE_AUTH_PROVIDER_CERT_URL\", \"value\": \"$FIREBASE_AUTH_PROVIDER_CERT_URL\" },
-                    { \"name\": \"FIREBASE_CLIENT_CERT_URL\", \"value\": \"$FIREBASE_CLIENT_CERT_URL\" },
-                    { \"name\": \"AllowedOrigins\", \"value\": \"$AllowedOrigins\" },
-                    { \"name\": \"MONGODB_CONNECTION_STRING\", \"value\": \"$MONGODB_CONNECTION_STRING\" },
-                    { \"name\": \"MONGODB_DATABASE_NAME\", \"value\": \"$MONGODB_DATABASE_NAME\" },
-                    { \"name\": \"MONGODB_USER_COLLECTION_NAME\", \"value\": \"$MONGODB_USER_COLLECTION_NAME\" },
-                    { \"name\": \"MONGODB_PRE_APPROVAL_COLLECTION_NAME\", \"value\": \"$MONGODB_PRE_APPROVAL_COLLECTION_NAME\" },
-                    { \"name\": \"FirebaseKey\", \"value\": \"$FirebaseKey\" }
-                  ],
-                  \"prune\": true,
-                  \"pullImage\": true,
-                  \"repositoryAuthentication\": true,
-                  \"repositoryUsername\": \"$ECR_USERNAME\",
-                  \"repositoryPassword\": \"$ECR_PASSWORD\"
-                }" \
-            "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID"
+            -d @- <<EOF
+{
+  "env": [
+    { "name": "repo", "value": "$ECR_REPOSITORY" },
+    { "name": "tag", "value": "$IMAGE_TAG" },
+    { "name": "FIREBASE_TYPE", "value": "$FIREBASE_TYPE" },
+    { "name": "FIREBASE_PROJECT_ID", "value": "$FIREBASE_PROJECT_ID" },
+    { "name": "FIREBASE_CLIENT_EMAIL", "value": "$FIREBASE_CLIENT_EMAIL" },
+    { "name": "FIREBASE_CLIENT_ID", "value": "$FIREBASE_CLIENT_ID" },
+    { "name": "FIREBASE_AUTH_URI", "value": "$FIREBASE_AUTH_URI" },
+    { "name": "FIREBASE_TOKEN_URI", "value": "$FIREBASE_TOKEN_URI" },
+    { "name": "FIREBASE_AUTH_PROVIDER_CERT_URL", "value": "$FIREBASE_AUTH_PROVIDER_CERT_URL" },
+    { "name": "FIREBASE_CLIENT_CERT_URL", "value": "$FIREBASE_CLIENT_CERT_URL" },
+    { "name": "AllowedOrigins", "value": "$AllowedOrigins" },
+    { "name": "MONGODB_CONNECTION_STRING", "value": "$MONGODB_CONNECTION_STRING" },
+    { "name": "MONGODB_DATABASE_NAME", "value": "$MONGODB_DATABASE_NAME" },
+    { "name": "MONGODB_USER_COLLECTION_NAME", "value": "$MONGODB_USER_COLLECTION_NAME" },
+    { "name": "MONGODB_PRE_APPROVAL_COLLECTION_NAME", "value": "$MONGODB_PRE_APPROVAL_COLLECTION_NAME" },
+    { "name": "FirebaseKey", "value": "$FirebaseKey" }
+  ],
+  "prune": true,
+  "pullImage": true,
+  "repositoryAuthentication": true,
+  "repositoryUsername": "$ECR_USERNAME",
+  "repositoryPassword": "$ECR_PASSWORD"
+}
+EOF

@@ -1,4 +1,4 @@
-name: CI/CD Deployment with Portainer Auto JWT Token Generation
+name: CI/CD Deployment with Portainer Auto JWT Token
 
 on:
   push:
@@ -48,20 +48,46 @@ jobs:
           fi
           echo "token=$TOKEN" >> $GITHUB_OUTPUT
 
-      - name: Deploy stack via Portainer API
+      - name: Deploy stack via Portainer API (git/redeploy)
         env:
           PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
           PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
+          ENDPOINT_ID: 3
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
           JWT_TOKEN: ${{ steps.portainer_token.outputs.token }}
+          ECR_USERNAME: ${{ secrets.ECR_USERNAME }}
+          ECR_PASSWORD: ${{ secrets.ECR_PASSWORD }}
+          # Add all other env variables here if needed
         run: |
-          # Safely encode docker-compose.yml to JSON string
-          COMPOSE_CONTENT=$(jq -Rs . < <(sed "s|\${repo}|$ECR_REPOSITORY|g; s|\${tag}|$IMAGE_TAG|g" docker-compose.yml))
-
-          # Update stack and force Portainer to pull latest image
           curl -s -X PUT \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"prune\": true, \"pullImage\": true, \"stackFileContent\": $COMPOSE_CONTENT}" \
-            "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=3"
+            -d "{
+                  \"env\": [
+                    { \"name\": \"repo\", \"value\": \"$ECR_REPOSITORY\" },
+                    { \"name\": \"tag\", \"value\": \"$IMAGE_TAG\" },
+                    { \"name\": \"FIREBASE_TYPE\", \"value\": \"$FIREBASE_TYPE\" },
+                    { \"name\": \"FIREBASE_PROJECT_ID\", \"value\": \"$FIREBASE_PROJECT_ID\" },
+                    { \"name\": \"FIREBASE_PRIVATE_KEY_ID\", \"value\": \"$FIREBASE_PRIVATE_KEY_ID\" },
+                    { \"name\": \"FIREBASE_CLIENT_EMAIL\", \"value\": \"$FIREBASE_CLIENT_EMAIL\" },
+                    { \"name\": \"FIREBASE_CLIENT_ID\", \"value\": \"$FIREBASE_CLIENT_ID\" },
+                    { \"name\": \"FIREBASE_AUTH_URI\", \"value\": \"$FIREBASE_AUTH_URI\" },
+                    { \"name\": \"FIREBASE_TOKEN_URI\", \"value\": \"$FIREBASE_TOKEN_URI\" },
+                    { \"name\": \"FIREBASE_AUTH_PROVIDER_CERT_URL\", \"value\": \"$FIREBASE_AUTH_PROVIDER_CERT_URL\" },
+                    { \"name\": \"FIREBASE_CLIENT_CERT_URL\", \"value\": \"$FIREBASE_CLIENT_CERT_URL\" },
+                    { \"name\": \"AllowedOrigins\", \"value\": \"$AllowedOrigins\" },
+                    { \"name\": \"MONGODB_CONNECTION_STRING\", \"value\": \"$MONGODB_CONNECTION_STRING\" },
+                    { \"name\": \"MONGODB_DATABASE_NAME\", \"value\": \"$MONGODB_DATABASE_NAME\" },
+                    { \"name\": \"MONGODB_USER_COLLECTION_NAME\", \"value\": \"$MONGODB_USER_COLLECTION_NAME\" },
+                    { \"name\": \"MONGODB_PRE_APPROVAL_COLLECTION_NAME\", \"value\": \"$MONGODB_PRE_APPROVAL_COLLECTION_NAME\" },
+                    { \"name\": \"FirebaseKey\", \"value\": \"$FirebaseKey\" },
+                    { \"name\": \"FIREBASE_PRIVATE_KEY\", \"value\": \"$FIREBASE_PRIVATE_KEY\" }
+                  ],
+                  \"prune\": true,
+                  \"pullImage\": true,
+                  \"repositoryAuthentication\": true,
+                  \"repositoryUsername\": \"$ECR_USERNAME\",
+                  \"repositoryPassword\": \"$ECR_PASSWORD\"
+                }" \
+            "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID/git/redeploy?endpointId=$ENDPOINT_ID"

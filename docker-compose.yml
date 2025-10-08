@@ -1,4 +1,3 @@
-so we have everything right in payload ? although can you please verify once using below docker-compose for reference
 version: '3.9'
 
 services:

@@ -467,7 +467,15 @@ public class PreApprovalService : IPreApprovalService
         PrepaidItemsDTO prePaid = preApproval.PrepaidItems;
         quote.Prepaids = (prePaid.PrepaidInterestAmount + prePaid.HazardInsurance + prePaid.HazardInsuranceReserves + prePaid.PropertyTaxAmount);
         
-        quote.TotalRequired = quote.DownPayment + quote.ClosingCosts + quote.Prepaids;
+        MiscFeesDTO miscFees = preApproval.MiscFees;
+        quote.SellerCredit = miscFees.SellerCredit.Value;
+        quote.LenderCredit = miscFees.LenderCredit.Value;
+        quote.EarnestMoneyDeposit = miscFees.EarnestMoneyDeposit.Value;
+        quote.MiscFee4 = miscFees.MiscFee4.Value;
+        decimal miscFeesSum = (quote.SellerCredit + quote.LenderCredit + quote.EarnestMoneyDeposit + quote.MiscFee4);
+
+        quote.TotalRequired = (quote.DownPayment + quote.ClosingCosts + quote.Prepaids) - miscFeesSum;
+
         return quote;
     }
 

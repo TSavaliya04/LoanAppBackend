@@ -278,8 +278,12 @@ namespace LoanPortal.Core.Entities
         public decimal MonthlyTotal { get; set; }         
         public decimal DownPayment { get; set; }          
         public decimal ClosingCosts { get; set; }        
-        public decimal Prepaids { get; set; }             
-        public decimal TotalRequired { get; set; }        
+        public decimal Prepaids { get; set; }
+        public decimal TotalRequired { get; set; }
+        public decimal SellerCredit { get; set; }
+        public decimal LenderCredit { get; set; }
+        public decimal EarnestMoneyDeposit { get; set; }
+        public decimal MiscFee4 { get; set; }
     }
 
 

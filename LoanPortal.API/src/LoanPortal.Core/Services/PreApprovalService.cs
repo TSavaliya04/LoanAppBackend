@@ -437,7 +437,86 @@ public class PreApprovalService : IPreApprovalService
         estClosingCost.TotalEstFundToClose = (estClosingCost.TotalEstSettlementCharges + report.DownPaymentAmount) - (miscFeesSum);
         return estClosingCost;
     }
-    
+
+    public async Task<QuickQuote> GetQuickQuote(Guid preApprovalId)
+    {
+        PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
+
+        QuickQuote quote = new QuickQuote();
+        quote.HomeValue = preApproval.LoanProgram.Price.Value;
+        quote.InterestRate = preApproval.LoanProgram.InterestRate;
+        decimal downPercent = preApproval.PurchaseInfo.DownPayment;
+        quote.DownPaymentPercent = downPercent;
+
+        decimal purchasePrice = preApproval.LoanProgram.Price.Value;
+        decimal downAmount = (purchasePrice * downPercent) / 100;
+        decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
+        decimal totalLoanAmount = (purchasePrice - downAmount) + otherFinancedItem;
+        double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount, quote.InterestRate, preApproval.LoanProgram.Term);
+        quote.PrincipalAndInterest = (decimal)monthlyPI;
+
+        quote.PropertyTax = preApproval.LoanProgram.MonthlyPropertyTax.Value;
+        quote.HazardInsurance = preApproval.PurchaseInfo.HazardInsurance.Value;
+        quote.MortgageInsurance = preApproval.PurchaseInfo.MiPercent.Value;
+        quote.HoaFee = preApproval.PurchaseInfo.AssociationFee.Value;
+        quote.MonthlyTotal = (decimal)(quote.PrincipalAndInterest + quote.PropertyTax + quote.PropertyTax + quote.HazardInsurance + quote.MortgageInsurance + quote.MortgageInsurance + quote.HoaFee);
+
+        quote.DownPayment = downAmount;
+        quote.ClosingCosts = GetClosingCostForQuickQuote(preApproval);
+
+        PrepaidItemsDTO prePaid = preApproval.PrepaidItems;
+        quote.Prepaids = (prePaid.PrepaidInterestAmount + prePaid.HazardInsurance + prePaid.HazardInsuranceReserves + prePaid.PropertyTaxAmount);
+        
+        quote.TotalRequired = quote.DownPayment + quote.ClosingCosts + quote.Prepaids;
+        return quote;
+    }
+
+    public decimal GetClosingCostForQuickQuote(PreApprovalDocument preApproval)
+    {
+        LenderFeesDTO lenderFees = preApproval.LenderFees;
+        LoanProgramDTO loanProgram = preApproval.LoanProgram;
+        PrepaidItemsDTO prepaidItems = preApproval.PrepaidItems;
+        PurchaseInfoDTO purchaseInfo = preApproval.PurchaseInfo;
+        MiscFeesDTO miscFees = preApproval.MiscFees;
+
+        EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO();
+        estClosingCost.DiscountFee = lenderFees.DiscountFee;
+        estClosingCost.OriginationFee = lenderFees.LoanOriginationFee;
+        estClosingCost.AppraisalFee = lenderFees.AppraisalFee;
+        estClosingCost.PrepaidInterest = prepaidItems.PrepaidInterestAmount;
+        estClosingCost.HazInsPremium = prepaidItems.HazardInsurance;
+        estClosingCost.HazInsReserve = prepaidItems.HazardInsuranceReserves;
+        estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxAmount;
+        estClosingCost.EscrowFees = lenderFees.EscrowFees;
+        estClosingCost.TitleInsurance = lenderFees.TitleFees.Value;
+
+        estClosingCost.TotalEstSettlementCharges = new[]
+        {
+            estClosingCost.DiscountFee,
+            estClosingCost.OriginationFee,
+            estClosingCost.AppraisalFee,
+            estClosingCost.PrepaidInterest,
+            estClosingCost.HazInsPremium,
+            estClosingCost.HazInsReserve,
+            estClosingCost.PpdPropTaxes,
+            estClosingCost.EscrowFees,
+            estClosingCost.TitleInsurance,
+        }.Sum();
+
+        decimal miscFeesSum = (decimal)new[]
+        {
+            estClosingCost.MiscFee4,
+            estClosingCost.EarnestMoneyDeposit,
+            estClosingCost.SellerCredit,
+            estClosingCost.LenderCredit
+        }.Sum();
+
+        decimal downPercent = preApproval.PurchaseInfo.DownPayment;
+        decimal purchasePrice = preApproval.LoanProgram.Price.Value;
+        decimal downAmount = (purchasePrice * downPercent) / 100;
+        return (estClosingCost.TotalEstSettlementCharges + downAmount) - (miscFeesSum);
+    }
+
     private async Task<T> CreateOrUpdateEntity<T>(
         T entity,
         Guid? id,

@@ -265,6 +265,25 @@ namespace LoanPortal.Core.Entities
     }
 
     [BsonIgnoreExtraElements]
+    public class QuickQuote
+    {
+        public decimal HomeValue { get; set; }            
+        public decimal InterestRate { get; set; }         
+        public decimal DownPaymentPercent { get; set; }   
+        public decimal PrincipalAndInterest { get; set; } 
+        public decimal PropertyTax { get; set; }         
+        public decimal HazardInsurance { get; set; }      
+        public decimal MortgageInsurance { get; set; }    
+        public decimal? HoaFee { get; set; }             
+        public decimal MonthlyTotal { get; set; }         
+        public decimal DownPayment { get; set; }          
+        public decimal ClosingCosts { get; set; }        
+        public decimal Prepaids { get; set; }             
+        public decimal TotalRequired { get; set; }        
+    }
+
+
+    [BsonIgnoreExtraElements]
     public class EstimatedClosingCostDTO
     {
         public decimal DiscountFeePercent { get; set; }

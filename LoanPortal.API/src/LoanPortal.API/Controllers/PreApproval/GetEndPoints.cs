@@ -77,5 +77,19 @@ namespace LoanPortal.API.Controllers.PreApproval
                 return StatusCode(500, ErrorResponse<FHAReport>(500, ex.Message));
             }
         }
+
+        [HttpGet("preapproval/QuickQuote")]
+        public async Task<IActionResult> QuickQuote([FromQuery] Guid preApprovalId)
+        {
+            try
+            {
+                var result = await _preApprovalService.GetQuickQuote(preApprovalId);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<FHAReport>(500, ex.Message));
+            }
+        }
     }
 }

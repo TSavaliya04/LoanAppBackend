@@ -21,5 +21,6 @@ namespace LoanPortal.Core.Interfaces
         public Task<List<TopOpportunityDTO>> GetTopOpportunities();
         public Task<PreApprovalReport> GetPreApprovalReport(Guid preApprovalId);
         public Task<FHAReport> GetFHAReport(Guid preApprovalId);
+        public Task<QuickQuote> GetQuickQuote(Guid preApprovalId);
     }
 }

@@ -156,7 +156,6 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             var borrowerIncome = new BorrowerIncomeDTO
             {
                 BorrowerName = "John Doe",
-                Employer = "ABC Company",
                 MonthlyIncome = 8000,
             };
 

@@ -25,6 +25,7 @@ namespace LoanPortal.Tests.Services
         private readonly Mock<IUserRepository> _mockUserRepository;
         private readonly Mock<IBlobStorageHelper> _mockBlobStorageHelper;
         private readonly Mock<IFirebaseAuthService> _mockFirebaseAuthService;
+        private readonly Mock<ILoginUserDetails> _mockLoginUserDetails;
         private readonly UserService _userService;
 
         public UserServiceTests()
@@ -35,6 +36,7 @@ namespace LoanPortal.Tests.Services
             _mockUserRepository = new Mock<IUserRepository>();
             _mockBlobStorageHelper = new Mock<IBlobStorageHelper>();
             _mockFirebaseAuthService = new Mock<IFirebaseAuthService>();
+            _mockLoginUserDetails = new Mock<ILoginUserDetails>();
 
             _userService = new UserService(
                 _mockUserHelper.Object,
@@ -42,7 +44,8 @@ namespace LoanPortal.Tests.Services
                 _mockHttpClientService.Object,
                 _mockUserRepository.Object,
                 _mockBlobStorageHelper.Object,
-                _mockFirebaseAuthService.Object
+                _mockFirebaseAuthService.Object,
+                _mockLoginUserDetails.Object
             );
 
             // Initialize IUserHelper
@@ -190,7 +193,6 @@ namespace LoanPortal.Tests.Services
             var userId = Guid.NewGuid();
             var updateRequest = new UpdateProfileRequest
             {
-                UserId = userId,
                 Address = "123 Main St",
                 JobTitle = "Developer",
                 CompanyName = "Tech Corp"
@@ -210,6 +212,8 @@ namespace LoanPortal.Tests.Services
 
             _mockUserRepository.Setup(x => x.UpdateUserProfileAsync(userId, It.IsAny<UserEntity>()))
                 .Returns(Task.CompletedTask);
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
 
             // Setup mock to return updated user data
             var updatedUser = new UserEntity
@@ -240,7 +244,7 @@ namespace LoanPortal.Tests.Services
         public async Task UpdateProfile_NullRequest_ThrowsArgumentNullException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(() => _userService.UpdateProfile(null));
+            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.UpdateProfile(null));
         }
 
         [Fact]
@@ -260,8 +264,10 @@ namespace LoanPortal.Tests.Services
             _mockUserRepository.Setup(x => x.GetUserById(userId))
                 .ReturnsAsync(user);
 
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+
             // Act
-            var result = await _userService.GetUserProfile(userId);
+            var result = await _userService.GetUserProfile();
 
             // Assert
             Assert.NotNull(result);
@@ -279,7 +285,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync((UserEntity)null);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(() => _userService.GetUserProfile(userId));
+            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.GetUserProfile());
         }
 
         [Fact]

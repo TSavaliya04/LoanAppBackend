@@ -211,7 +211,6 @@ namespace LoanPortal.Tests.Controllers.Authentication
         {
             var updateRequest = new UpdateProfileRequest
             {
-                UserId = Guid.NewGuid(),
                 Address = "123 Main St",
                 JobTitle = "Software Engineer",
                 CompanyName = "Tech Corp"
@@ -219,7 +218,6 @@ namespace LoanPortal.Tests.Controllers.Authentication
 
             var expectedUser = new UserDTO
             {
-                Id = updateRequest.UserId,
                 Address = updateRequest.Address,
                 JobTitle = updateRequest.JobTitle,
                 CompanyName = updateRequest.CompanyName
@@ -257,7 +255,6 @@ namespace LoanPortal.Tests.Controllers.Authentication
         {
             var updateRequest = new UpdateProfileRequest
             {
-                UserId = Guid.Empty,
                 Address = "123 Main St"
             };
 
@@ -277,12 +274,11 @@ namespace LoanPortal.Tests.Controllers.Authentication
         {
             var updateRequest = new UpdateProfileRequest
             {
-                UserId = Guid.NewGuid(),
                 Address = "123 Main St"
             };
 
             _mockUserService.Setup(x => x.UpdateProfile(updateRequest))
-                .ThrowsAsync(new ValidationException($"User with ID {updateRequest.UserId} does not exist"));
+                .ThrowsAsync(new ValidationException($"User does not exist"));
 
             var result = await _controller.UpdateProfile(updateRequest);
 
@@ -306,10 +302,10 @@ namespace LoanPortal.Tests.Controllers.Authentication
                 Email = "john.doe@example.com"
             };
 
-            _mockUserService.Setup(x => x.GetUserProfile(userId))
+            _mockUserService.Setup(x => x.GetUserProfile())
                 .ReturnsAsync(expectedUser);
 
-            var result = await _controller.GetUserProfile(userId);
+            var result = await _controller.GetUserProfile();
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
@@ -321,10 +317,10 @@ namespace LoanPortal.Tests.Controllers.Authentication
         public async Task GetUserProfile_InvalidId_ReturnsBadRequest()
         {
             var userId = Guid.NewGuid();
-            _mockUserService.Setup(x => x.GetUserProfile(userId))
+            _mockUserService.Setup(x => x.GetUserProfile())
                 .ThrowsAsync(new ValidationException("User not found"));
 
-            var result = await _controller.GetUserProfile(userId);
+            var result = await _controller.GetUserProfile();
 
             var badRequestResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(400, badRequestResult.StatusCode);
@@ -336,10 +332,10 @@ namespace LoanPortal.Tests.Controllers.Authentication
         public async Task GetUserProfile_EmptyId_ReturnsBadRequest()
         {
             var userId = Guid.Empty;
-            _mockUserService.Setup(x => x.GetUserProfile(userId))
+            _mockUserService.Setup(x => x.GetUserProfile())
                 .ThrowsAsync(new ValidationException("Invalid user ID"));
 
-            var result = await _controller.GetUserProfile(userId);
+            var result = await _controller.GetUserProfile();
 
             var badRequestResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(400, badRequestResult.StatusCode);

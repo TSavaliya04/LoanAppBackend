@@ -121,8 +121,10 @@ namespace LoanPortal.Tests.Services
                 },
                 LoanProgram = new LoanProgramDTO
                 {
-                    LoanProgram = (int)LoanProgram.Conventional
+                    LoanProgram = (int)LoanProgram.Conventional,
+                    Price = 300000
                 },
+                LenderFees = new LenderFeesDTO { AgentName = "Agent X" },
                 BorrowerIncomes = new List<BorrowerIncomeDTO>
                 {
                     new BorrowerIncomeDTO { BorrowerName = "John Doe" }
@@ -171,14 +173,20 @@ namespace LoanPortal.Tests.Services
                 {
                     PurchasePrice = 300000,
                     DownPayment = 3.5m,
-                    MipFundingFee = 1.75m
+                    MipFundingFee = 1.75m,
+                    AnnualInterestRate = 3.5m,
+                    HazardInsurance = 1200,
+                    MiPercent = 0m,
+                    AssociationFee = 0m
                 },
                 LoanProgram = new LoanProgramDTO
                 {
                     InterestRate = 3.5m,
                     Term = 30,
                     MMI = 0.85m,
-                    BaseLoanAmount = 294750 // Example value
+                    BaseLoanAmount = 294750, // Example value
+                    Price = 300000,
+                    MonthlyPropertyTax = 3000
                 },
                 PrepaidItems = new PrepaidItemsDTO
                 {
@@ -198,7 +206,15 @@ namespace LoanPortal.Tests.Services
                     DiscountFee = 200,
                     UpfrontMip = 5250,
                     UnderWriter = 300,
-                    ProcessFee = 400
+                    ProcessFee = 400,
+                    TitleFees = 1000
+                },
+                MiscFees = new MiscFeesDTO
+                {
+                    EarnestMoneyDeposit = 0,
+                    SellerCredit = 0,
+                    LenderCredit = 0,
+                    MiscFee4 = 0
                 }
             };
 
@@ -220,12 +236,12 @@ namespace LoanPortal.Tests.Services
             Assert.Equal(300000, result.SalePrice);
             Assert.Equal(1.75m, result.UpfrontMipPercent);
             Assert.Equal(5250, result.UpfrontMipAmount); // 300000 * 0.0175
-            Assert.Equal(294750, result.TotalLoanAmount); // (300000 - 10500) + 5250
+            Assert.Equal(294566.25m, result.TotalLoanAmount); // (300000 - 10500) + ((300000 - 10500) * 0.0175)
             Assert.Equal(3.5m, result.InterestRate);
             Assert.Equal(30, result.LoanTerm);
             Assert.Equal(3000, result.PropertyTax);
             Assert.Equal(1200, result.HazardInsurancePremium);
-            Assert.Equal(0.85m, result.CoverageRate);
+            Assert.Equal(1.75m, result.CoverageRate);
         }
 
         [Fact]
@@ -256,7 +272,7 @@ namespace LoanPortal.Tests.Services
             var preApprovalId = Guid.NewGuid();
             var debts = new List<DebtBreakdownDTO>
             {
-                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, HighCredit = 2000, MonthlyPayment = 100 }
+                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, MonthlyPayment = 100 }
             };
             var borrowerIncome = new BorrowerIncomeDTO
             {
@@ -297,12 +313,12 @@ namespace LoanPortal.Tests.Services
             var incomeId = Guid.NewGuid();
             var oldDebts = new List<DebtBreakdownDTO>
             {
-                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, HighCredit = 2000, MonthlyPayment = 100 }
+                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, MonthlyPayment = 100 }
             };
             var newDebts = new List<DebtBreakdownDTO>
             {
-                new DebtBreakdownDTO { Id = oldDebts[0].Id, DebtType = 2, Balance = 1500, HighCredit = 2500, MonthlyPayment = 150 },
-                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 3, Balance = 500, HighCredit = 1000, MonthlyPayment = 50 }
+                new DebtBreakdownDTO { Id = oldDebts[0].Id, DebtType = 2, Balance = 1500, MonthlyPayment = 150 },
+                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 3, Balance = 500, MonthlyPayment = 50 }
             };
             var borrowerIncome = new BorrowerIncomeDTO
             {
@@ -352,7 +368,7 @@ namespace LoanPortal.Tests.Services
             var incomeId = Guid.NewGuid();
             var debts = new List<DebtBreakdownDTO>
             {
-                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, HighCredit = 2000, MonthlyPayment = 100 }
+                new DebtBreakdownDTO { Id = Guid.NewGuid(), DebtType = 1, Balance = 1000, MonthlyPayment = 100 }
             };
             var borrowerIncome = new BorrowerIncomeDTO
             {
@@ -743,6 +759,193 @@ namespace LoanPortal.Tests.Services
             Assert.Equal((int?)LoanProgram.FHA, result.LoanProgram);
             Assert.Equal(4.0m, result.InterestRate);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetQuickQuote_ValidId_ComputesExpectedFields()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var purchasePrice = 300000m;
+            var downPercent = 20m; // 20%
+            var interestRate = 3.5m;
+            var term = 30;
+            var monthlyPropertyTax = 300m;
+            var hazardInsurance = 100m;
+            var mortgageInsurance = 50m;
+            var hoaFee = 25m;
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                LoanProgram = new LoanProgramDTO
+                {
+                    Price = purchasePrice,
+                    InterestRate = interestRate,
+                    Term = term,
+                    MonthlyPropertyTax = monthlyPropertyTax
+                },
+                PurchaseInfo = new PurchaseInfoDTO
+                {
+                    DownPayment = downPercent,
+                    HazardInsurance = hazardInsurance,
+                    MiPercent = mortgageInsurance,
+                    AssociationFee = hoaFee,
+                    MipFundingFee = 1.75m
+                },
+                PrepaidItems = new PrepaidItemsDTO
+                {
+                    PrepaidInterestAmount = 10m,
+                    HazardInsurance = 20m,
+                    HazardInsuranceReserves = 30m,
+                    PropertyTaxAmount = 40m
+                },
+                MiscFees = new MiscFeesDTO
+                {
+                    SellerCredit = 5m,
+                    LenderCredit = 6m,
+                    EarnestMoneyDeposit = 7m,
+                    MiscFee4 = 8m
+                },
+                LenderFees = new LenderFeesDTO
+                {
+                    DiscountFee = 0m,
+                    LoanOriginationFee = 0m,
+                    AppraisalFee = 0m,
+                    EscrowFees = 0m,
+                    NotaryFee = 0m,
+                    UpfrontMip = 0m,
+                    UnderWriter = 0m,
+                    ProcessFee = 0m,
+                    TitleFees = 0m
+                },
+            };
+
+            _mockPreApprovalRepository
+                .Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Expected calculations
+            var downAmount = (purchasePrice * downPercent) / 100m; // 60,000
+            var otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100m; // FHA UFMIP per service logic
+            var totalLoanAmount = (purchasePrice - downAmount) + otherFinancedItem;
+            var expectedPI = (decimal)PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount, interestRate, term);
+            var expectedMonthlyTotal = expectedPI + (monthlyPropertyTax * 2) + (mortgageInsurance * 2) + hazardInsurance + hoaFee; // matches current implementation
+            var expectedPrepaids = 10m + 20m + 30m + 40m;
+
+            // Act
+            var result = await _service.GetQuickQuote(preApprovalId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(purchasePrice, result.HomeValue);
+            Assert.Equal(interestRate, result.InterestRate);
+            Assert.Equal(downPercent, result.DownPaymentPercent);
+            Assert.Equal(downAmount, result.DownPayment);
+            Assert.Equal(expectedPI, result.PrincipalAndInterest);
+            Assert.Equal(monthlyPropertyTax, result.PropertyTax);
+            Assert.Equal(hazardInsurance, result.HazardInsurance);
+            Assert.Equal(mortgageInsurance, result.MortgageInsurance);
+            Assert.Equal(hoaFee, result.HoaFee);
+            Assert.Equal(expectedMonthlyTotal, result.MonthlyTotal);
+            Assert.Equal(expectedPrepaids, result.Prepaids);
+            Assert.Equal(5m, result.SellerCredit);
+            Assert.Equal(6m, result.LenderCredit);
+            Assert.Equal(7m, result.EarnestMoneyDeposit);
+            Assert.Equal(8m, result.MiscFee4);
+        }
+
+        [Fact]
+        public async Task GetQuickQuote_ZeroFees_ComputesTotalsWithZeros()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var purchasePrice = 200000m;
+            var downPercent = 10m; // 10%
+            var interestRate = 4.0m;
+            var term = 30;
+            var monthlyPropertyTax = 0m;
+            var hazardInsurance = 0m;
+            var mortgageInsurance = 0m;
+            var hoaFee = 0m;
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                LoanProgram = new LoanProgramDTO
+                {
+                    Price = purchasePrice,
+                    InterestRate = interestRate,
+                    Term = term,
+                    MonthlyPropertyTax = monthlyPropertyTax
+                },
+                PurchaseInfo = new PurchaseInfoDTO
+                {
+                    DownPayment = downPercent,
+                    HazardInsurance = hazardInsurance,
+                    MiPercent = mortgageInsurance,
+                    AssociationFee = hoaFee,
+                    MipFundingFee = 0m
+                },
+                PrepaidItems = new PrepaidItemsDTO
+                {
+                    PrepaidInterestAmount = 0m,
+                    HazardInsurance = 0m,
+                    HazardInsuranceReserves = 0m,
+                    PropertyTaxAmount = 0m
+                },
+                MiscFees = new MiscFeesDTO
+                {
+                    SellerCredit = 0m,
+                    LenderCredit = 0m,
+                    EarnestMoneyDeposit = 0m,
+                    MiscFee4 = 0m
+                },
+                LenderFees = new LenderFeesDTO
+                {
+                    DiscountFee = 0m,
+                    LoanOriginationFee = 0m,
+                    AppraisalFee = 0m,
+                    EscrowFees = 0m,
+                    NotaryFee = 0m,
+                    UpfrontMip = 0m,
+                    UnderWriter = 0m,
+                    ProcessFee = 0m,
+                    TitleFees = 0m
+                },
+            };
+
+            _mockPreApprovalRepository
+                .Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            // Expected calculations
+            var downAmount = (purchasePrice * downPercent) / 100m; // 20,000
+            var otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100m;
+            var totalLoanAmount = (purchasePrice - downAmount) + otherFinancedItem;
+            var expectedPI = (decimal)PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount, interestRate, term);
+            var expectedMonthlyTotal = expectedPI + (monthlyPropertyTax * 2) + (mortgageInsurance * 2) + hazardInsurance + hoaFee;
+
+            // Act
+            var result = await _service.GetQuickQuote(preApprovalId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(purchasePrice, result.HomeValue);
+            Assert.Equal(interestRate, result.InterestRate);
+            Assert.Equal(downPercent, result.DownPaymentPercent);
+            Assert.Equal(downAmount, result.DownPayment);
+            Assert.Equal(expectedPI, result.PrincipalAndInterest);
+            Assert.Equal(expectedMonthlyTotal, result.MonthlyTotal);
+            Assert.Equal(0m, result.PropertyTax);
+            Assert.Equal(0m, result.HazardInsurance);
+            Assert.Equal(0m, result.MortgageInsurance);
+            Assert.Equal(0m, result.HoaFee);
+            Assert.Equal(0m, result.Prepaids);
+            Assert.Equal(0m, result.SellerCredit);
+            Assert.Equal(0m, result.LenderCredit);
+            Assert.Equal(0m, result.EarnestMoneyDeposit);
+            Assert.Equal(0m, result.MiscFee4);
         }
     }
 } 

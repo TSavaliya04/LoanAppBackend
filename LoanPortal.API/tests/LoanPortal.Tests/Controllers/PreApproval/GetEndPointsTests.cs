@@ -170,5 +170,43 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             var response = Assert.IsType<ApiResponse<FHAReport>>(statusCodeResult.Value);
             Assert.False(response.Success);
         }
+
+        [Fact]
+        public async Task QuickQuote_ValidId_ReturnsOkResult()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var expectedQuote = new QuickQuote();
+            _mockPreApprovalService.Setup(x => x.GetQuickQuote(preApprovalId))
+                .ReturnsAsync(expectedQuote);
+
+            // Act
+            var result = await _controller.QuickQuote(preApprovalId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<QuickQuote>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedQuote, response.Data);
+        }
+
+        [Fact]
+        public async Task QuickQuote_Exception_ReturnsInternalServerError()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            _mockPreApprovalService.Setup(x => x.GetQuickQuote(preApprovalId))
+                .ThrowsAsync(new Exception());
+
+            // Act
+            var result = await _controller.QuickQuote(preApprovalId);
+
+            // Assert
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<FHAReport>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Request Failed.", response.Message);
+        }
     }
 } 

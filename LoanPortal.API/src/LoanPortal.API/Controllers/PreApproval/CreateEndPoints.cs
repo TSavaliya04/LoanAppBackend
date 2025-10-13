@@ -191,5 +191,26 @@ namespace LoanPortal.API.Controllers.PreApproval
                 return StatusCode(500, ErrorResponse<LoanProgramDTO>(500, ex.Message));
             }
         }
+
+        [HttpPost("preapproval/ClonePreApproval")]
+        public async Task<IActionResult> ClonePreApproval([FromQuery] Guid PreApprovalId)
+        {
+            try
+            {
+                await _preApprovalService.ClonePreApproval(PreApprovalId);
+                var result = true;
+                return Ok(SuccessResponse(result));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(
+                    ErrorResponse<LoanProgramDTO>(404, ex.Message)
+                );
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<LoanProgramDTO>(500, ex.Message));
+            }
+        }
     }
 }

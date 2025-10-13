@@ -224,5 +224,55 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             Assert.True(response.Success);
             Assert.Equal(loanProgram, response.Data);
         }
+
+        [Fact]
+        public async Task ClonePreApproval_ValidId_ReturnsOkTrue()
+        {
+            var preApprovalId = Guid.NewGuid();
+
+            _mockPreApprovalService
+                .Setup(x => x.ClonePreApproval(preApprovalId))
+                .Returns(Task.CompletedTask);
+
+            var result = await _controller.ClonePreApproval(preApprovalId);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<bool>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.True(response.Data);
+        }
+
+        [Fact]
+        public async Task ClonePreApproval_NotFound_ReturnsNotFound()
+        {
+            var preApprovalId = Guid.NewGuid();
+
+            _mockPreApprovalService
+                .Setup(x => x.ClonePreApproval(preApprovalId))
+                .ThrowsAsync(new Core.Exceptions.NotFoundException("Not found"));
+
+            var result = await _controller.ClonePreApproval(preApprovalId);
+
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<LoanProgramDTO>>(notFoundResult.Value);
+            Assert.False(response.Success);
+        }
+
+        [Fact]
+        public async Task ClonePreApproval_Exception_ReturnsInternalServerError()
+        {
+            var preApprovalId = Guid.NewGuid();
+
+            _mockPreApprovalService
+                .Setup(x => x.ClonePreApproval(preApprovalId))
+                .ThrowsAsync(new Exception("boom"));
+
+            var result = await _controller.ClonePreApproval(preApprovalId);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<LoanProgramDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+        }
     }
 } 

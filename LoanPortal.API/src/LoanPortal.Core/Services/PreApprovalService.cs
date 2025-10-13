@@ -598,4 +598,20 @@ public class PreApprovalService : IPreApprovalService
         }
         return getValue(document);
     }
+
+    public async Task ClonePreApproval(Guid preApprovalId)
+    {
+        try
+        {
+            PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
+            
+            PreApprovalDocument clonedPreApproval = preApproval;
+            clonedPreApproval.Id = Guid.NewGuid();
+            clonedPreApproval.CreatedAt = DateTime.UtcNow;
+            await _preApprovalRepository.InsertAsync(clonedPreApproval);
+        }
+        catch (Exception ex) { 
+        }
+    }
+
 }

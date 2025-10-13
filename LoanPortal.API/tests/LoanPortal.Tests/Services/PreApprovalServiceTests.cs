@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Exceptions;
 using LoanPortal.Core.Helper;
@@ -759,6 +759,61 @@ namespace LoanPortal.Tests.Services
             Assert.Equal((int?)LoanProgram.FHA, result.LoanProgram);
             Assert.Equal(4.0m, result.InterestRate);
             _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ClonePreApproval_ValidId_InsertsClonedWithNewId()
+        {
+            // Arrange
+            var originalId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var originalCreatedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = originalId,
+                UserId = userId,
+                CreatedAt = originalCreatedAt,
+                BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Jane Doe" }
+            };
+
+            _mockPreApprovalRepository
+                .Setup(x => x.GetByIdAsync(originalId))
+                .ReturnsAsync(preApproval);
+
+            PreApprovalDocument insertedDoc = null;
+            _mockPreApprovalRepository
+                .Setup(x => x.InsertAsync(It.IsAny<PreApprovalDocument>()))
+                .Callback<PreApprovalDocument>(d => insertedDoc = d)
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _service.ClonePreApproval(originalId);
+
+            // Assert
+            _mockPreApprovalRepository.Verify(x => x.InsertAsync(It.IsAny<PreApprovalDocument>()), Times.Once);
+            Assert.NotNull(insertedDoc);
+            Assert.NotEqual(originalId, insertedDoc.Id);
+            Assert.Equal(userId, insertedDoc.UserId);
+            Assert.NotEqual(originalCreatedAt, insertedDoc.CreatedAt);
+            Assert.NotNull(insertedDoc.BorrowerInfo);
+            Assert.Equal("Jane Doe", insertedDoc.BorrowerInfo.BorrowerName);
+        }
+
+        [Fact]
+        public async Task ClonePreApproval_NotFound_DoesNotInsertAndDoesNotThrow()
+        {
+            // Arrange
+            var missingId = Guid.NewGuid();
+            _mockPreApprovalRepository
+                .Setup(x => x.GetByIdAsync(missingId))
+                .ReturnsAsync((PreApprovalDocument)null);
+
+            // Act
+            await _service.ClonePreApproval(missingId);
+
+            // Assert
+            _mockPreApprovalRepository.Verify(x => x.InsertAsync(It.IsAny<PreApprovalDocument>()), Times.Never);
         }
 
         [Fact]

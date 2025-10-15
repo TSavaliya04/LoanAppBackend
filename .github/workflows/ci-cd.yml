@@ -1,4 +1,4 @@
-name: CI/CD Deployment with Portainer Auto JWT Token
+name: CI/CD Deployment to Portainer
 
 on:
   push:
@@ -9,9 +9,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # Step 1: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -19,10 +21,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to ECR
+      # Step 3: Login to ECR
+      - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push Docker image
+      # Step 4: Build, tag, and push Docker image
+      - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
@@ -32,7 +36,8 @@ jobs:
           docker build -t $IMAGE ./LoanPortal.API
           docker push $IMAGE
 
-      - name: Generate JWT token from Portainer
+      # Step 5: Generate Portainer JWT token
+      - name: Generate Portainer token
         id: portainer_token
         env:
           PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
@@ -43,77 +48,25 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"username\": \"$PORTAINER_USERNAME\", \"password\": \"$PORTAINER_PASSWORD\"}" \
             $PORTAINER_URL/api/auth | jq -r '.jwt')
-          if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
             echo "Failed to get Portainer token" && exit 1
           fi
           echo "token=$TOKEN" >> $GITHUB_OUTPUT
 
-      - name: Deploy stack via Portainer API (manual stack)
+      # Step 6: Update Portainer stack (manual stack) with latest image
+      - name: Update Portainer stack
         env:
           PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
           PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
           ENDPOINT_ID: 3
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
           JWT_TOKEN: ${{ steps.portainer_token.outputs.token }}
-          FIREBASE_TYPE: ${{ secrets.FIREBASE_TYPE }}
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-          FIREBASE_CLIENT_ID: ${{ secrets.FIREBASE_CLIENT_ID }}
-          FIREBASE_AUTH_URI: ${{ secrets.FIREBASE_AUTH_URI }}
-          FIREBASE_TOKEN_URI: ${{ secrets.FIREBASE_TOKEN_URI }}
-          FIREBASE_AUTH_PROVIDER_CERT_URL: ${{ secrets.FIREBASE_AUTH_PROVIDER_CERT_URL }}
-          FIREBASE_CLIENT_CERT_URL: ${{ secrets.FIREBASE_CLIENT_CERT_URL }}
-          AllowedOrigins: ${{ secrets.AllowedOrigins }}
-          MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
-          MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
-          MONGODB_USER_COLLECTION_NAME: ${{ secrets.MONGODB_USER_COLLECTION_NAME }}
-          MONGODB_PRE_APPROVAL_COLLECTION_NAME: ${{ secrets.MONGODB_PRE_APPROVAL_COLLECTION_NAME }}
-          FirebaseKey: ${{ secrets.FirebaseKey }}
         run: |
-          payload=$(jq -n \
-            --arg repo "$ECR_REPOSITORY" \
-            --arg tag "$IMAGE_TAG" \
-            --arg fb_type "$FIREBASE_TYPE" \
-            --arg fb_project "$FIREBASE_PROJECT_ID" \
-            --arg fb_client_email "$FIREBASE_CLIENT_EMAIL" \
-            --arg fb_client_id "$FIREBASE_CLIENT_ID" \
-            --arg fb_auth_uri "$FIREBASE_AUTH_URI" \
-            --arg fb_token_uri "$FIREBASE_TOKEN_URI" \
-            --arg fb_auth_provider_cert_url "$FIREBASE_AUTH_PROVIDER_CERT_URL" \
-            --arg fb_client_cert_url "$FIREBASE_CLIENT_CERT_URL" \
-            --arg allowed_origins "$AllowedOrigins" \
-            --arg mongo_conn "$MONGODB_CONNECTION_STRING" \
-            --arg mongo_db "$MONGODB_DATABASE_NAME" \
-            --arg mongo_user_col "$MONGODB_USER_COLLECTION_NAME" \
-            --arg mongo_pre_col "$MONGODB_PRE_APPROVAL_COLLECTION_NAME" \
-            --arg firebase_key "$FirebaseKey" \
-            '{
-              env: [
-                {name: "repo", value: $repo},
-                {name: "tag", value: $tag},
-                {name: "FIREBASE_TYPE", value: $fb_type},
-                {name: "FIREBASE_PROJECT_ID", value: $fb_project},
-                {name: "FIREBASE_CLIENT_EMAIL", value: $fb_client_email},
-                {name: "FIREBASE_CLIENT_ID", value: $fb_client_id},
-                {name: "FIREBASE_AUTH_URI", value: $fb_auth_uri},
-                {name: "FIREBASE_TOKEN_URI", value: $fb_token_uri},
-                {name: "FIREBASE_AUTH_PROVIDER_CERT_URL", value: $fb_auth_provider_cert_url},
-                {name: "FIREBASE_CLIENT_CERT_URL", value: $fb_client_cert_url},
-                {name: "AllowedOrigins", value: $allowed_origins},
-                {name: "MONGODB_CONNECTION_STRING", value: $mongo_conn},
-                {name: "MONGODB_DATABASE_NAME", value: $mongo_db},
-                {name: "MONGODB_USER_COLLECTION_NAME", value: $mongo_user_col},
-                {name: "MONGODB_PRE_APPROVAL_COLLECTION_NAME", value: $mongo_pre_col},
-                {name: "FirebaseKey", value: $firebase_key}
-              ],
-              prune: true,
-              pullImage: true
-            }')
-
-          echo "$payload" | jq .
-
           curl -s -X PUT "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID" \
             -H "Authorization: Bearer $JWT_TOKEN" \
             -H "Content-Type: application/json" \
-            --data "$payload"
+            -d "{
+                  \"pullImage\": true,
+                  \"prune\": true,
+                  \"image\": \"${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG\"
+                }"

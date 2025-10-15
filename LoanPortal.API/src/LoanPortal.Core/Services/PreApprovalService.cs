@@ -459,9 +459,11 @@ public class PreApprovalService : IPreApprovalService
         quote.HazardInsurance = preApproval.PurchaseInfo.HazardInsurance.Value;
         quote.MortgageInsurance = preApproval.PurchaseInfo.MiPercent.Value;
         quote.HoaFee = preApproval.PurchaseInfo.AssociationFee.Value;
-        quote.MonthlyTotal = (decimal)(quote.PrincipalAndInterest + quote.PropertyTax + quote.PropertyTax + quote.HazardInsurance + quote.MortgageInsurance + quote.MortgageInsurance + quote.HoaFee);
+        quote.MonthlyTotal = (decimal)(quote.PrincipalAndInterest + quote.PropertyTax + quote.HazardInsurance + quote.MortgageInsurance + quote.HoaFee);
 
-        quote.ClosingCosts = (GetEstClosingCost(preApproval,new FHAReport())).TotalEstSettlementCharges;
+        //quote.ClosingCosts = (GetEstClosingCost(preApproval,new FHAReport())).TotalEstSettlementCharges;
+        LenderFeesDTO lenderFees = preApproval.LenderFees;
+        quote.ClosingCosts = (decimal)(lenderFees.LoanOriginationFee + lenderFees.DiscountFee + lenderFees.UpfrontMip + lenderFees.AppraisalFee + lenderFees.EscrowFees + lenderFees.TitleFees + lenderFees.ThirdPartyLenderFee);
         quote.DownPayment = downAmount;
 
         PrepaidItemsDTO prePaid = preApproval.PrepaidItems;

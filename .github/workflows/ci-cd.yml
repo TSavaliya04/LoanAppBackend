@@ -53,25 +53,20 @@ jobs:
           fi
           echo "token=$TOKEN" >> $GITHUB_OUTPUT
 
-      # ✅ Step 6: Corrected stack update (only required fix)
-      - name: Update Portainer stack
+      # ✅ Step 6: Redeploy manually created stack (correct fix)
+      - name: Redeploy Portainer stack
         env:
           PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
           PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
           ENDPOINT_ID: 3
-          IMAGE_TAG: ${{ github.sha }}
           JWT_TOKEN: ${{ steps.portainer_token.outputs.token }}
-          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
         run: |
-          curl -s -X PUT "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID?endpointId=$ENDPOINT_ID" \
-            -H "Authorization: Bearer $JWT_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{
-                  \"pullImage\": true,
-                  \"prune\": true,
-                  \"env\": [
-                    {\"name\": \"repo\", \"value\": \"$ECR_REPOSITORY\"},
-                    {\"name\": \"tag\", \"value\": \"$IMAGE_TAG\"}
-                  ]
-                }"
+          echo "Triggering redeploy for manually created stack..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID/redeploy?endpointId=$ENDPOINT_ID" \
+            -H "Authorization: Bearer $JWT_TOKEN")
+
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "❌ Redeploy failed (HTTP $RESPONSE)" && exit 1
+          fi
+          echo "✅ Stack redeploy triggered successfully!"

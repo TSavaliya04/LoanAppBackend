@@ -447,6 +447,7 @@ public class PreApprovalService : IPreApprovalService
         quote.InterestRate = preApproval.LoanProgram.InterestRate;
         decimal downPercent = preApproval.PurchaseInfo.DownPayment;
         quote.DownPaymentPercent = downPercent;
+        quote.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
 
         decimal purchasePrice = preApproval.LoanProgram.Price.Value;
         decimal downAmount = (purchasePrice * downPercent) / 100;

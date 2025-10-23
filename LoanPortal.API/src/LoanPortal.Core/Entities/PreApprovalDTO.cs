@@ -269,7 +269,8 @@ namespace LoanPortal.Core.Entities
     {
         public decimal HomeValue { get; set; }            
         public decimal InterestRate { get; set; }         
-        public decimal DownPaymentPercent { get; set; }   
+        public decimal DownPaymentPercent { get; set; }
+        public decimal LoanProgram { get; set; }
         public decimal PrincipalAndInterest { get; set; } 
         public decimal PropertyTax { get; set; }         
         public decimal HazardInsurance { get; set; }      

@@ -277,7 +277,8 @@ public class PreApprovalService : IPreApprovalService
                     LoanProgram = doc.BorrowerInfo?.LoanProgram,
                     AgentName = doc.LenderFees?.AgentName,
                     Borrowers = doc.BorrowerIncomes?.ToList(),
-                    CreatedAt = doc.CreatedAt
+                    CreatedAt = doc.CreatedAt,
+                    isLoanProgramFilled = doc.LastSubmittedFormNo == (int)FormType.LoanProgram
                 }).ToList();
         }
         catch (Exception ex)

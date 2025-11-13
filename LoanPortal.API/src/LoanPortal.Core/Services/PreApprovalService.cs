@@ -341,8 +341,8 @@ public class PreApprovalService : IPreApprovalService
             decimal downAmount = (purchasePrice * downPercent) / 100;
             decimal upFront = preApproval.PurchaseInfo.MipFundingFee;
             decimal upFrontAmount = (purchasePrice * upFront) / 100;
-            decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
-            decimal totalLoanAmount = (purchasePrice - downAmount) + otherFinancedItem;
+            //decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
+            decimal totalLoanAmount = purchasePrice - downAmount;
 
             decimal interestRate = preApproval.PurchaseInfo.AnnualInterestRate;
             int loanTerm = preApproval.LoanProgram.Term;
@@ -370,7 +370,6 @@ public class PreApprovalService : IPreApprovalService
             report.CoverageRate = preApproval.PurchaseInfo.MipFundingFee;
             report.MortgageInsurance = preApproval.PurchaseInfo.MiPercent.Value;
             report.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
-            report.OtherFinancedItems = otherFinancedItem;
             report.HOADues = preApproval.PurchaseInfo.AssociationFee.Value;
             report.TotalMonthlyPayment = (report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues);
             
@@ -452,8 +451,8 @@ public class PreApprovalService : IPreApprovalService
 
         decimal purchasePrice = preApproval.LoanProgram.Price.Value;
         decimal downAmount = (purchasePrice * downPercent) / 100;
-        decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
-        decimal totalLoanAmount = (purchasePrice - downAmount) + otherFinancedItem;
+        //decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
+        decimal totalLoanAmount = purchasePrice - downAmount;
         double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount, quote.InterestRate, preApproval.LoanProgram.Term);
         quote.PrincipalAndInterest = (decimal)monthlyPI;
 

@@ -346,7 +346,8 @@ public class PreApprovalService : IPreApprovalService
 
             decimal interestRate = preApproval.PurchaseInfo.AnnualInterestRate;
             int loanTerm = preApproval.LoanProgram.Term;
-            double MonthlyPILoanAmount = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount, interestRate, loanTerm);
+            decimal UPMIPAmount = totalLoanAmount * (preApproval.LoanProgram.UPMIPRate.Value / 100);
+            double MonthlyPILoanAmount = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount + UPMIPAmount, interestRate, loanTerm);
 
             decimal realEstateTaxes = preApproval.PrepaidItems.PropertyTaxAmount;
             decimal MMI = preApproval.LoanProgram.MMI.Value;
@@ -453,7 +454,8 @@ public class PreApprovalService : IPreApprovalService
         decimal downAmount = (purchasePrice * downPercent) / 100;
         //decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
         decimal totalLoanAmount = purchasePrice - downAmount;
-        double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount, quote.InterestRate, preApproval.LoanProgram.Term);
+        decimal UPMIPAmount = totalLoanAmount * (preApproval.LoanProgram.UPMIPRate.Value / 100);
+        double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount + UPMIPAmount, quote.InterestRate, preApproval.LoanProgram.Term);
         quote.PrincipalAndInterest = (decimal)monthlyPI;
 
         quote.PropertyTax = preApproval.LoanProgram.MonthlyPropertyTax.Value;

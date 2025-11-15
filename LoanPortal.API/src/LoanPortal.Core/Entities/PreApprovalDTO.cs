@@ -201,6 +201,7 @@ namespace LoanPortal.Core.Entities
         public decimal? MonthlyPropertyTax { get; set; }
         public decimal? HazardInsurance { get; set; }
         public decimal? MortgageInsurance { get; set; }
+        public decimal? HoaFee { get; set; }
         public decimal? MonthlyTotal { get; set; }
         public decimal? AnnualMIPRate { get; set; }
         public DateTime? CreatedAt { get; set; }

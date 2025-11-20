@@ -306,6 +306,7 @@ namespace LoanPortal.Core.Entities
         public decimal PpdPropTaxes { get; set; }
         public decimal EscrowFees { get; set; }
         public decimal TitleInsurance { get; set; }
+        public decimal ThirdPartyLenderFee { get; set; }
         public decimal AppraisalFee { get; set; }
         public decimal TotalEstSettlementCharges { get; set; }
         public decimal DownPayment { get; set; }

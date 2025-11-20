@@ -375,7 +375,7 @@ public class PreApprovalService : IPreApprovalService
             report.TotalMonthlyPayment = (report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues);
             
             EstimatedClosingCostDTO costDto = GetEstClosingCost(preApproval, report);
-            report.estimatedClosingCost = costDto;
+            report.estimatedClosingCost = costDto;   
             return report;
         }             
         catch (Exception ex)
@@ -408,6 +408,7 @@ public class PreApprovalService : IPreApprovalService
         estClosingCost.PpdPropTaxes = prepaidItems.PropertyTaxAmount;
         estClosingCost.EscrowFees = lenderFees.EscrowFees;
         estClosingCost.TitleInsurance = lenderFees.TitleFees.Value;
+        estClosingCost.ThirdPartyLenderFee = lenderFees.ThirdPartyLenderFee.Value;
         estClosingCost.EarnestMoneyDeposit = miscFees.EarnestMoneyDeposit;
         estClosingCost.LenderCredit = miscFees.LenderCredit;
         estClosingCost.SellerCredit = miscFees.SellerCredit;
@@ -424,6 +425,7 @@ public class PreApprovalService : IPreApprovalService
             estClosingCost.PpdPropTaxes,
             estClosingCost.EscrowFees,
             estClosingCost.TitleInsurance,
+            estClosingCost.ThirdPartyLenderFee
         }.Sum();
 
         decimal miscFeesSum = (decimal)new[]

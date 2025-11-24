@@ -87,6 +87,11 @@ namespace LoanPortal.Infrastructure.Services
                 throw new Exception($"Failed to get refresh token: {ex.Message}", ex);
             }
         }
+
+        public async Task UpdateUserAsync(string uid, UserRecordArgs args)
+        {
+            await FirebaseAuth.DefaultInstance.UpdateUserAsync(args);
+        }
     }
 
 } 

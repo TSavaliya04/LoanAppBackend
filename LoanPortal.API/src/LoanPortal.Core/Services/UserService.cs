@@ -202,6 +202,35 @@ namespace LoanPortal.Core.Services
                 // Update the user document
                 await _userRepository.UpdateUserProfileAsync(_loginUserDetails.UserID, updateEntity);
 
+                // Update Firebase user if phone or display name changed
+                bool shouldUpdateFirebase = false;
+                var firebaseUpdateArgs = new UserRecordArgs
+                {
+                    Uid = existingUser.FirebaseId
+                };
+
+                // Check if display name changed
+                string newDisplayName = $"{updateEntity.FirstName} {updateEntity.LastName}";
+                string oldDisplayName = $"{existingUser.FirstName} {existingUser.LastName}";
+                if (newDisplayName != oldDisplayName)
+                {
+                    firebaseUpdateArgs.DisplayName = newDisplayName;
+                    shouldUpdateFirebase = true;
+                }
+
+                // Check if phone changed
+                if (!string.IsNullOrEmpty(updateEntity.Phone) && updateEntity.Phone != existingUser.Phone)
+                {
+                    string formattedPhone = updateEntity.Phone.Replace(" ", "");
+                    firebaseUpdateArgs.PhoneNumber = "+" + formattedPhone;
+                    shouldUpdateFirebase = true;
+                }
+
+                if (shouldUpdateFirebase)
+                {
+                    await _firebaseAuthService.UpdateUserAsync(existingUser.FirebaseId, firebaseUpdateArgs);
+                }
+
                 // Return updated user data
                 return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
             }

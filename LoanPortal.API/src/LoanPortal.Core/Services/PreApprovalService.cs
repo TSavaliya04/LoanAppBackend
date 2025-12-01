@@ -621,4 +621,39 @@ public class PreApprovalService : IPreApprovalService
         }
     }
 
+    public async Task SavePreApproval(PreApprovalDTO preApproval)
+    {
+        try
+        {
+            var preApprovalDocument = new PreApprovalDocument
+            {
+                Id = preApproval.Id ?? Guid.NewGuid(),
+                UserId = preApproval.UserId,
+                CreatedAt = preApproval.CreatedAt ?? DateTime.UtcNow,
+                UpdatedAt = preApproval.UpdatedAt ?? DateTime.UtcNow,
+                LastSubmittedFormNo = preApproval.LastSubmittedFormNo ?? 0,
+                BorrowerInfo = preApproval.BorrowerInfo,
+                PurchaseInfo = preApproval.PurchaseInfo,
+                LenderFees = preApproval.LenderFees,
+                PrepaidItems = preApproval.PrepaidItems,
+                MiscFees = preApproval.MiscFees,
+                BorrowerIncomes = preApproval.BorrowerIncomes,
+                DebtBreakdowns = preApproval.DebtBreakdowns,
+                LoanProgram = preApproval.LoanProgram
+            };
+
+            if (preApproval.Id.HasValue && preApproval.Id != Guid.Empty)
+            {
+                await _preApprovalRepository.UpdateAsync(preApprovalDocument.Id, preApprovalDocument);
+            }
+            else
+            {
+                await _preApprovalRepository.InsertAsync(preApprovalDocument);
+            }
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
+    }
 }

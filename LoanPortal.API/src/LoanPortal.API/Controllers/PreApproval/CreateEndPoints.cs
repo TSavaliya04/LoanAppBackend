@@ -133,7 +133,7 @@ namespace LoanPortal.API.Controllers.PreApproval
         }
 
         [HttpPost("preapproval/BorrowerIncomeData")]
-        public async Task<IActionResult> BorrowerIncome([FromBody] List<BorrowerIncomeDTO>  borrowerIncomeDTOs)
+        public async Task<IActionResult> BorrowerIncome([FromBody] List<BorrowerIncomeDTO> borrowerIncomeDTOs)
         {
             try
             {
@@ -183,7 +183,7 @@ namespace LoanPortal.API.Controllers.PreApproval
             catch (NotFoundException ex)
             {
                 return NotFound(
-                    ErrorResponse<LoanProgramDTO>(404, ex.Message) 
+                    ErrorResponse<LoanProgramDTO>(404, ex.Message)
                 );
             }
             catch (Exception ex)
@@ -198,6 +198,27 @@ namespace LoanPortal.API.Controllers.PreApproval
             try
             {
                 await _preApprovalService.ClonePreApproval(PreApprovalId);
+                var result = true;
+                return Ok(SuccessResponse(result));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(
+                    ErrorResponse<LoanProgramDTO>(404, ex.Message)
+                );
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<LoanProgramDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpPost("preapproval/SavePreApproval")]
+        public async Task<IActionResult> SavePreApproval([FromBody] PreApprovalDTO preApproval)
+        {
+            try
+            {
+                await _preApprovalService.SavePreApproval(preApproval);
                 var result = true;
                 return Ok(SuccessResponse(result));
             }

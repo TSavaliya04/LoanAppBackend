@@ -12,7 +12,7 @@ namespace LoanPortal.Core.Entities
     public class BorrowerInfoDTO
     {
         public Guid? Id { get; set; }
-        
+
         [BsonIgnore]
         public Guid? PreApprovalId { get; set; }
         public string BorrowerName { get; set; }
@@ -29,13 +29,13 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
-    [BsonIgnoreExtraElements]
-    public class PreApprovalDTO
-    {
-        public Guid? Id { get; set; }
-        public Guid UserId { get; set; }
-        public DateTime? CreatedAt { get; set; }
-    }
+    //[BsonIgnoreExtraElements]
+    //public class PreApprovalDTO
+    //{
+    //    public Guid? Id { get; set; }
+    //    public Guid UserId { get; set; }
+    //    public DateTime? CreatedAt { get; set; }
+    //}
 
     [BsonIgnoreExtraElements]
     public class PurchaseInfoDTO
@@ -60,7 +60,7 @@ namespace LoanPortal.Core.Entities
     public class LenderFeesDTO
     {
         public Guid? Id { get; set; }
-        
+
         [BsonIgnore]
         public Guid PreApprovalId { get; set; }
         public string AgentName { get; set; }
@@ -129,7 +129,7 @@ namespace LoanPortal.Core.Entities
     {
         public Guid? Id { get; set; }
 
-        [BsonIgnore] 
+        [BsonIgnore]
         public Guid PreApprovalId { get; set; }
         public string BorrowerName { get; set; }
         public int? FicoScore { get; set; }
@@ -142,7 +142,7 @@ namespace LoanPortal.Core.Entities
     [BsonIgnoreExtraElements]
     public class W2DTO
     {
-        public Guid Id {  get; set; }
+        public Guid Id { get; set; }
         public decimal? Amount { get; set; }
         public int? TaxYear { get; set; }
         public DateTime? CreatedAt { get; set; }
@@ -153,7 +153,7 @@ namespace LoanPortal.Core.Entities
     public class DebtBreakdownDTO
     {
         public Guid? Id { get; set; }
-        
+
         [BsonIgnore]
         public Guid PreApprovalId { get; set; }
         public int DebtType { get; set; }
@@ -194,7 +194,7 @@ namespace LoanPortal.Core.Entities
         public decimal? DownPaymentPercentage { get; set; }
         public decimal? ClearingCart { get; set; }
         public decimal? PropertyTax { get; set; }
-        public decimal? TotalNeededToClear{ get; set; }
+        public decimal? TotalNeededToClear { get; set; }
         public List<LoanProgramBorrowerIncomeDTO> Borrowers { get; set; }
         public decimal? CombinedMonthlyIncome { get; set; }
         public decimal? PrincipalAndInterest { get; set; }
@@ -216,8 +216,8 @@ namespace LoanPortal.Core.Entities
         public int? LoanProgram { get; set; }
         public string? AgentName { get; set; }
         public DateTime? CreatedAt { get; set; }
-        public bool? isLoanProgramFilled { get; set; } 
-        public List<BorrowerIncomeDTO> Borrowers { get; set;}
+        public bool? isLoanProgramFilled { get; set; }
+        public List<BorrowerIncomeDTO> Borrowers { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -269,18 +269,18 @@ namespace LoanPortal.Core.Entities
     [BsonIgnoreExtraElements]
     public class QuickQuote
     {
-        public decimal HomeValue { get; set; }            
-        public decimal InterestRate { get; set; }         
+        public decimal HomeValue { get; set; }
+        public decimal InterestRate { get; set; }
         public decimal DownPaymentPercent { get; set; }
         public decimal LoanProgram { get; set; }
-        public decimal PrincipalAndInterest { get; set; } 
-        public decimal PropertyTax { get; set; }         
-        public decimal HazardInsurance { get; set; }      
-        public decimal MortgageInsurance { get; set; }    
-        public decimal? HoaFee { get; set; }             
-        public decimal MonthlyTotal { get; set; }         
-        public decimal DownPayment { get; set; }          
-        public decimal ClosingCosts { get; set; }        
+        public decimal PrincipalAndInterest { get; set; }
+        public decimal PropertyTax { get; set; }
+        public decimal HazardInsurance { get; set; }
+        public decimal MortgageInsurance { get; set; }
+        public decimal? HoaFee { get; set; }
+        public decimal MonthlyTotal { get; set; }
+        public decimal DownPayment { get; set; }
+        public decimal ClosingCosts { get; set; }
         //public decimal Prepaids { get; set; }
         public decimal TotalRequired { get; set; }
         public decimal SellerCredit { get; set; }
@@ -378,11 +378,56 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("borrowerIncomes")]
         public List<BorrowerIncomeDTO> BorrowerIncomes { get; set; }
-        
+
         [BsonElement("debtBreakdowns")]
         public List<DebtBreakdownDTO> DebtBreakdowns { get; set; }
 
         [BsonElement("loanProgram")]
         public LoanProgramDTO LoanProgram { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class PreApprovalDTO
+    {
+        [BsonId]
+        //[BsonRepresentation(BsonType.String)]
+        public Guid? Id { get; set; }
+
+        [BsonElement("userId")]
+        //[BsonRepresentation(BsonType.String)]
+        public Guid UserId { get; set; }
+
+        [BsonElement("createdAt")]
+        public DateTime? CreatedAt { get; set; }
+
+        [BsonElement("updatedAt")]
+        public DateTime? UpdatedAt { get; set; }
+
+        [BsonElement("lastSubmittedFormNo")]
+        public int? LastSubmittedFormNo { get; set; }
+
+        [BsonElement("borrowerInfo")]
+        public BorrowerInfoDTO? BorrowerInfo { get; set; }
+
+        [BsonElement("purchaseInfo")]
+        public PurchaseInfoDTO? PurchaseInfo { get; set; }
+
+        [BsonElement("lenderFees")]
+        public LenderFeesDTO? LenderFees { get; set; }
+
+        [BsonElement("prepaidItems")]
+        public PrepaidItemsDTO? PrepaidItems { get; set; }
+
+        [BsonElement("miscFees")]
+        public MiscFeesDTO? MiscFees { get; set; }
+
+        [BsonElement("borrowerIncomes")]
+        public List<BorrowerIncomeDTO>? BorrowerIncomes { get; set; }
+
+        [BsonElement("debtBreakdowns")]
+        public List<DebtBreakdownDTO>? DebtBreakdowns { get; set; }
+
+        [BsonElement("loanProgram")]
+        public LoanProgramDTO? LoanProgram { get; set; }
     }
 }

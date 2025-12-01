@@ -23,5 +23,6 @@ namespace LoanPortal.Core.Interfaces
         public Task<FHAReport> GetFHAReport(Guid preApprovalId);
         public Task<QuickQuote> GetQuickQuote(Guid preApprovalId);
         public Task ClonePreApproval(Guid preApprovalId);
+        public Task SavePreApproval(PreApprovalDTO preApproval);
     }
 }

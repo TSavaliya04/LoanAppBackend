@@ -628,7 +628,7 @@ public class PreApprovalService : IPreApprovalService
             var preApprovalDocument = new PreApprovalDocument
             {
                 Id = preApproval.Id ?? Guid.NewGuid(),
-                UserId = preApproval.UserId,
+                UserId = _loginUserDetails.UserID,
                 CreatedAt = preApproval.CreatedAt ?? DateTime.UtcNow,
                 UpdatedAt = preApproval.UpdatedAt ?? DateTime.UtcNow,
                 LastSubmittedFormNo = preApproval.LastSubmittedFormNo ?? 0,

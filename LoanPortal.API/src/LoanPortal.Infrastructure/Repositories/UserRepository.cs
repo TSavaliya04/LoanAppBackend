@@ -113,5 +113,40 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<List<UserEntity>> GetUsersActiveInRange(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.And(
+                    Builders<UserEntity>.Filter.Gte(u => u.LastLoginDate, startDate),
+                    Builders<UserEntity>.Filter.Lt(u => u.LastLoginDate, endDate)
+                );
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.GetUsersActiveInRange -> " + ex.Message);
+                throw;
+            }
+        }
+
+        public async Task UpdateUserLoginActivity(Guid userId, DateTime loginTime)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(u => u.Id, userId);
+                var update = Builders<UserEntity>.Update
+                    .Set(u => u.LastLoginDate, loginTime);
+                    //.Push(u => u.LoginHistory, loginTime);
+
+                await _collection.UpdateOneAsync(filter, update);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.UpdateUserLoginActivity -> " + ex.Message);
+                throw;
+            }
+        }
     }
 }

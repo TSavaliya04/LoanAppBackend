@@ -158,7 +158,7 @@ public class PreApprovalService : IPreApprovalService
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)
     {
         var document = await _preApprovalRepository.GetByIdAsync(id);
-        if (document?.BorrowerInfo == null)
+        if (document?.Id == null || document.Id == Guid.Empty)
             throw new NotFoundException($"Pre Approval with ID {id} was not found.");
         return document;
     }

@@ -297,6 +297,14 @@ namespace LoanPortal.Core.Services
                     { "UserName", user.FirstName + " " + user.LastName },
                 };
 
+                if (user.Id == IConstants.AdminId)
+                {
+                    claims["isAdmin"] = true;
+                }
+
+                // Track login activity
+                await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);
+
                 await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
                 return UserHelper.MaptoUserDTO(user);
             }

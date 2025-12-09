@@ -87,6 +87,7 @@ builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<IUserHelper, UserHelper>();
 builder.Services.AddSingleton<IBlobStorageHelper, BlobStorageHelper>();
 builder.Services.AddScoped<IFirebaseAuthService, FirebaseAuthService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

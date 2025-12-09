@@ -74,6 +74,14 @@ namespace LoanPortal.Core.Entities
         [BsonElement("nmls")]
         public string? NMLS { get; set; }
 
+        [BsonElement("lastLoginDate")]
+        public DateTime? LastLoginDate { get; set; }
+
+        //[BsonElement("loginHistory")]
+        //public List<DateTime> LoginHistory { get; set; } = new List<DateTime>();
+
+        //[BsonElement("isAdmin")]
+        //public bool IsAdmin { get; set; } = false;
     }
 
     public class UpdateProfileRequest

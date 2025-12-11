@@ -43,6 +43,20 @@ namespace LoanPortal.Infrastructure.Repositories
             await _collection.ReplaceOneAsync(filter, doc);
         }
 
+        public async Task DeleteAsync(Guid id)
+        {
+            try
+            {
+                var filter = Builders<PreApprovalDocument>.Filter.Eq(p => p.Id, id);
+                await _collection.DeleteOneAsync(filter);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in PreApprovalRepository.DeleteAsync: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<List<PreApprovalDocument>> GetAllAsync(Guid userId)
         {
             try

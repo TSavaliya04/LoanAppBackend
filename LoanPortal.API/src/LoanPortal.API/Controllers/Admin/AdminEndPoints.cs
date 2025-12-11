@@ -88,6 +88,31 @@ namespace LoanPortal.API.Controllers.Admin
             }
         }
 
+        [HttpPost("admin/GetUsers")]
+        public async Task<IActionResult> GetUsers([FromBody] List<Guid> userIds)
+        {
+            try
+            {
+                // Check if user is admin
+                if (!IsAdmin())
+                {
+                    return StatusCode(403, ErrorResponse<List<UserDTO>>(403, "Access denied. Admin privileges required."));
+                }
+
+                if (userIds == null || userIds.Count == 0)
+                {
+                    return BadRequest(ErrorResponse<List<UserDTO>>(400, "User IDs list cannot be empty."));
+                }
+
+                var result = await _adminService.GetUsers(userIds);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<List<UserDTO>>(500, ex.Message));
+            }
+        }
+
         private bool IsAdmin()
         {
             return _loginUserDetails.UserID == LoanPortal.Shared.Constants.IConstants.AdminId;

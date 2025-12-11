@@ -218,7 +218,27 @@ namespace LoanPortal.API.Controllers.PreApproval
         {
             try
             {
-                await _preApprovalService.SavePreApproval(preApproval);
+                var result = await _preApprovalService.SavePreApproval(preApproval);
+                return Ok(SuccessResponse(result));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(
+                    ErrorResponse<LoanProgramDTO>(404, ex.Message)
+                );
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<LoanProgramDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpDelete("preapproval/DeletePreApproval")]
+        public async Task<IActionResult> DeletePreApproval([FromQuery] Guid preApprovalId)
+        {
+            try
+            {
+                await _preApprovalService.DeletePreApproval(preApprovalId);
                 var result = true;
                 return Ok(SuccessResponse(result));
             }

@@ -13,6 +13,7 @@ namespace LoanPortal.Core.Repositories
         Task<PreApprovalDocument> GetByIdAsync(Guid id);
         Task InsertAsync(PreApprovalDocument doc);
         Task UpdateAsync(Guid id, PreApprovalDocument doc);
+        Task DeleteAsync(Guid id);
         Task<List<PreApprovalDocument>> GetAllAsync(Guid userId);
     }
 }

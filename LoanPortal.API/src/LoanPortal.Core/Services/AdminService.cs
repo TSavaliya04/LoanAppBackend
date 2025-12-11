@@ -1,4 +1,5 @@
 using LoanPortal.Core.Entities;
+using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
 
@@ -62,6 +63,17 @@ namespace LoanPortal.Core.Services
                 ActiveUsers = today.ActiveUsers,
                 Date = DateTime.UtcNow.Date
             };
+        }
+
+        public async Task<List<UserDTO>> GetUsers(List<Guid> userIds)
+        {
+            if (userIds == null || userIds.Count == 0)
+            {
+                return new List<UserDTO>();
+            }
+
+            var users = await _userRepository.GetUsersByIds(userIds);
+            return users.Select(user => UserHelper.MaptoUserDTO(user)).ToList();
         }
     }
 }

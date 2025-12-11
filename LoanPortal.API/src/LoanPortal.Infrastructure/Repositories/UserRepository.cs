@@ -148,5 +148,19 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<List<UserEntity>> GetUsersByIds(List<Guid> userIds)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.In(u => u.Id, userIds);
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.GetUsersByIds -> " + ex.Message);
+                throw;
+            }
+        }
     }
 }

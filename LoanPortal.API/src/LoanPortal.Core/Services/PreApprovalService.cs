@@ -621,7 +621,7 @@ public class PreApprovalService : IPreApprovalService
         }
     }
 
-    public async Task SavePreApproval(PreApprovalDTO preApproval)
+    public async Task<PreApprovalDocument> SavePreApproval(PreApprovalDTO preApproval)
     {
         try
         {
@@ -650,6 +650,20 @@ public class PreApprovalService : IPreApprovalService
             {
                 await _preApprovalRepository.InsertAsync(preApprovalDocument);
             }
+
+            return preApprovalDocument;
+        }
+        catch (Exception e) 
+        {
+            throw;
+        }
+    }
+
+    public async Task DeletePreApproval(Guid preApprovalId)
+    {
+        try
+        {
+            await _preApprovalRepository.DeleteAsync(preApprovalId);
         }
         catch (Exception e)
         {

@@ -345,6 +345,23 @@ namespace LoanPortal.Core.Services
                 var user = await _userRepository.GetUserByFirebaseId(userId);
 
                 response.User = UserHelper.MaptoUserDTO(user);
+                var claims = new Dictionary<string, object>()
+                {
+                    { "UserId", user.Id },
+                    { "Phone", user.Phone },
+                    { "Email", user.Email },
+                    { "UserName", user.FirstName + " " + user.LastName },
+                };
+
+                if (user.Id == IConstants.AdminId)
+                {
+                    claims["isAdmin"] = true;
+                }
+
+                await _firebaseAuthService.SetCustomUserClaimsAsync(userId, claims);
+                // Track login activity
+                //await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);
+
                 return response;
             }
             catch (ValidationException ex)

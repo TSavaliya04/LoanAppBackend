@@ -396,7 +396,7 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("userId")]
         //[BsonRepresentation(BsonType.String)]
-        public Guid UserId { get; set; }
+        public Guid? UserId { get; set; }
 
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }

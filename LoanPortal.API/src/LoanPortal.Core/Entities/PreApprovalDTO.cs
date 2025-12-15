@@ -22,9 +22,6 @@ namespace LoanPortal.Core.Entities
         public string? BorrowerCellNumber { get; set; }
         public string? CoBorrowerCellNumber { get; set; }
         public string? BorrowerEmail { get; set; }
-        public int LoanProgram { get; set; }
-        public int PropertyType { get; set; }
-        public int OccupancyStatus { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -52,6 +49,10 @@ namespace LoanPortal.Core.Entities
         public decimal? HazardInsurance { get; set; }
         public decimal? AssociationFee { get; set; }
         public decimal? MiPercent { get; set; }
+        public int LoanProgram { get; set; }
+        public int PropertyType { get; set; }
+        public int OccupancyStatus { get; set; }
+
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

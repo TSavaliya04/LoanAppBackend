@@ -274,7 +274,7 @@ public class PreApprovalService : IPreApprovalService
                 {
                     PreApprovalId = doc.Id,
                     BorrowerName = doc.BorrowerInfo?.BorrowerName,
-                    LoanProgram = doc.BorrowerInfo?.LoanProgram,
+                    LoanProgram = doc.PurchaseInfo?.LoanProgram,
                     AgentName = doc.LenderFees?.AgentName,
                     Borrowers = doc.BorrowerIncomes?.ToList(),
                     CreatedAt = doc.CreatedAt,
@@ -315,10 +315,10 @@ public class PreApprovalService : IPreApprovalService
                 DownPaymentAmount = downAmount,
                 PurchasePrice = purchasePrice,
                 LoanProgram = preApproval.LoanProgram.LoanProgram,
-                PropertyType = preApproval.BorrowerInfo.PropertyType,
+                PropertyType = preApproval.PurchaseInfo.PropertyType,
                 Borrowers = borrowers,
                 LendingCompany = agent.CompanyName,
-                OccupancyStatus = preApproval.BorrowerInfo.OccupancyStatus,
+                OccupancyStatus = preApproval.PurchaseInfo.OccupancyStatus,
                 AgentName = preApproval.LenderFees.AgentName,
                 AgentInfo = agent
             };
@@ -370,7 +370,7 @@ public class PreApprovalService : IPreApprovalService
             report.HazardInsurancePremium = preApproval.PurchaseInfo.HazardInsurance.Value;
             report.CoverageRate = preApproval.PurchaseInfo.MipFundingFee;
             report.MortgageInsurance = preApproval.PurchaseInfo.MiPercent.Value;
-            report.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
+            report.LoanProgram = preApproval.PurchaseInfo.LoanProgram;
             report.HOADues = preApproval.PurchaseInfo.AssociationFee.Value;
             report.TotalMonthlyPayment = (report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues);
             
@@ -450,7 +450,7 @@ public class PreApprovalService : IPreApprovalService
         quote.InterestRate = preApproval.LoanProgram.InterestRate;
         decimal downPercent = preApproval.PurchaseInfo.DownPayment;
         quote.DownPaymentPercent = downPercent;
-        quote.LoanProgram = preApproval.BorrowerInfo.LoanProgram;
+        quote.LoanProgram = preApproval.PurchaseInfo.LoanProgram;
 
         decimal purchasePrice = preApproval.LoanProgram.Price.Value;
         decimal downAmount = (purchasePrice * downPercent) / 100;

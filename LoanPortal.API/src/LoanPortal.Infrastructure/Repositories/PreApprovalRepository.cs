@@ -57,6 +57,20 @@ namespace LoanPortal.Infrastructure.Repositories
             }
         }
 
+        public async Task DeleteManyAsync(List<Guid> ids)
+        {
+            try
+            {
+                var filter = Builders<PreApprovalDocument>.Filter.In(p => p.Id, ids);
+                await _collection.DeleteManyAsync(filter);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in PreApprovalRepository.DeleteManyAsync: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<List<PreApprovalDocument>> GetAllAsync(Guid userId)
         {
             try

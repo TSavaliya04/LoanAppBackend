@@ -234,11 +234,11 @@ namespace LoanPortal.API.Controllers.PreApproval
         }
 
         [HttpDelete("preapproval/DeletePreApproval")]
-        public async Task<IActionResult> DeletePreApproval([FromQuery] Guid preApprovalId)
+        public async Task<IActionResult> DeletePreApproval([FromBody] List<Guid> preApprovalIds)
         {
             try
             {
-                await _preApprovalService.DeletePreApproval(preApprovalId);
+                await _preApprovalService.DeletePreApproval(preApprovalIds);
                 var result = true;
                 return Ok(SuccessResponse(result));
             }

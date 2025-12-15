@@ -659,11 +659,14 @@ public class PreApprovalService : IPreApprovalService
         }
     }
 
-    public async Task DeletePreApproval(Guid preApprovalId)
+    public async Task DeletePreApproval(List<Guid> preApprovalIds)
     {
         try
         {
-            await _preApprovalRepository.DeleteAsync(preApprovalId);
+            if (preApprovalIds == null || !preApprovalIds.Any())
+                throw new ValidationException("PreApproval IDs cannot be null or empty");
+
+            await _preApprovalRepository.DeleteManyAsync(preApprovalIds);
         }
         catch (Exception e)
         {

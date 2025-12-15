@@ -24,6 +24,6 @@ namespace LoanPortal.Core.Interfaces
         public Task<QuickQuote> GetQuickQuote(Guid preApprovalId);
         public Task ClonePreApproval(Guid preApprovalId);
         public Task<PreApprovalDocument> SavePreApproval(PreApprovalDTO preApproval);
-        public Task DeletePreApproval(Guid preApprovalId);
+        public Task DeletePreApproval(List<Guid> preApprovalIds);
     }
 }

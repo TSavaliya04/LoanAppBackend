@@ -52,21 +52,3 @@ jobs:
             echo "Failed to get Portainer token" && exit 1
           fi
           echo "token=$TOKEN" >> $GITHUB_OUTPUT
-
-      # ✅ Step 6: Redeploy manually created stack (correct fix)
-      - name: Redeploy Portainer stack
-        env:
-          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
-          PORTAINER_STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
-          ENDPOINT_ID: 3
-          JWT_TOKEN: ${{ steps.portainer_token.outputs.token }}
-        run: |
-          echo "Triggering redeploy for manually created stack..."
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-            "$PORTAINER_URL/api/stacks/$PORTAINER_STACK_ID/redeploy?endpointId=$ENDPOINT_ID" \
-            -H "Authorization: Bearer $JWT_TOKEN")
-
-          if [ "$RESPONSE" -ne 200 ]; then
-            echo "❌ Redeploy failed (HTTP $RESPONSE)" && exit 1
-          fi
-          echo "✅ Stack redeploy triggered successfully!"

@@ -233,25 +233,5 @@ namespace LoanPortal.API.Controllers.PreApproval
             }
         }
 
-        [HttpDelete("preapproval/DeletePreApproval")]
-        public async Task<IActionResult> DeletePreApproval([FromBody] List<Guid> preApprovalIds)
-        {
-            try
-            {
-                await _preApprovalService.DeletePreApproval(preApprovalIds);
-                var result = true;
-                return Ok(SuccessResponse(result));
-            }
-            catch (NotFoundException ex)
-            {
-                return NotFound(
-                    ErrorResponse<LoanProgramDTO>(404, ex.Message)
-                );
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ErrorResponse<LoanProgramDTO>(500, ex.Message));
-            }
-        }
     }
 }

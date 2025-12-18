@@ -726,4 +726,20 @@ public class PreApprovalService : IPreApprovalService
             throw;
         }
     }
+
+    public async Task<PreApprovalDocument> UpdateApplicationStatus(Guid id, int status)
+    {
+        try
+        {
+            var preApprovalDoc = await _preApprovalRepository.GetByIdAsync(id);
+            preApprovalDoc.Status = status;
+
+            await _preApprovalRepository.UpdateAsync(id, preApprovalDoc);
+            return preApprovalDoc;
+        }
+        catch(Exception e)
+        {
+            throw;
+        }
+    }
 }

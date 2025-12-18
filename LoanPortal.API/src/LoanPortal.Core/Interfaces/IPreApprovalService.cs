@@ -18,7 +18,9 @@ namespace LoanPortal.Core.Interfaces
         public Task<PreApprovalDocument> GetPreApproval(Guid id);
         //public Task<List<DebtBreakdownDTO>> CreateDebtBreakdown(List<DebtBreakdownDTO> debtDtos);
         public Task<LoanProgramDTO> CreateLoanProgram(LoanProgramDTO loanProgramDto);
-        public Task<List<TopOpportunityDTO>> GetTopOpportunities();
+        public Task<List<TopOpportunityDTO>> GetPreApprovalsList();
+        public Task<List<TopOpportunityDTO>> GetInEscrowList();
+        public Task<List<TopOpportunityDTO>> GetTBDsList();
         public Task<PreApprovalReport> GetPreApprovalReport(Guid preApprovalId);
         public Task<FHAReport> GetFHAReport(Guid preApprovalId);
         public Task<QuickQuote> GetQuickQuote(Guid preApprovalId);

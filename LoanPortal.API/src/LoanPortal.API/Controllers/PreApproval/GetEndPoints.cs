@@ -36,12 +36,40 @@ namespace LoanPortal.API.Controllers.PreApproval
             }
         }
 
-        [HttpGet("preapproval/TopOpportunities")]
-        public async Task<IActionResult> GetTopOpportunities()
+        [HttpGet("preapproval/GetPreApprovalsList")]
+        public async Task<IActionResult> GetPreApprovalsList()
         {
             try
             {
-                var result = await _preApprovalService.GetTopOpportunities();
+                var result = await _preApprovalService.GetPreApprovalsList();
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<TopOpportunityDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpGet("preapproval/GetInEscrowList")]
+        public async Task<IActionResult> GetInEscrowList()
+        {
+            try
+            {
+                var result = await _preApprovalService.GetInEscrowList();
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<TopOpportunityDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpGet("preapproval/GetTBDsList")]
+        public async Task<IActionResult> GetTBDsList()
+        {
+            try
+            {
+                var result = await _preApprovalService.GetTBDsList();
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)

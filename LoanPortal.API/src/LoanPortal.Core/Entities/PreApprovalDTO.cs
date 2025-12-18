@@ -363,6 +363,9 @@ namespace LoanPortal.Core.Entities
         [BsonElement("lastSubmittedFormNo")]
         public int LastSubmittedFormNo { get; set; }
 
+        [BsonElement("status")]
+        public int Status { get; set; }
+
         [BsonElement("borrowerInfo")]
         public BorrowerInfoDTO BorrowerInfo { get; set; }
 
@@ -407,6 +410,9 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("lastSubmittedFormNo")]
         public int? LastSubmittedFormNo { get; set; }
+
+        [BsonElement("status")]
+        public int Status { get; set; }
 
         [BsonElement("borrowerInfo")]
         public BorrowerInfoDTO? BorrowerInfo { get; set; }

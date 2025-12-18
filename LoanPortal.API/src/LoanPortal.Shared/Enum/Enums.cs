@@ -19,6 +19,13 @@ namespace LoanPortal.Shared.Enum
         FHA = 3
     }
 
+    public enum ApplicationStatus
+    {
+        PreApproval = 1,
+        InEscrow = 2,
+        TBD = 3
+    }
+
     public enum OccupancyStatus
     {
         OwnerOccupied = 1,

@@ -261,12 +261,64 @@ public class PreApprovalService : IPreApprovalService
         return document.LoanProgram;
     }
 
-    public async Task<List<TopOpportunityDTO>> GetTopOpportunities()
+    public async Task<List<TopOpportunityDTO>> GetPreApprovalsList()
     {
         try
         {
             var userId = _loginUserDetails.UserID;
-            var topOpportunities = await _preApprovalRepository.GetAllAsync(userId);
+            var topOpportunities = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 1);
+
+            return topOpportunities
+                .OrderByDescending(doc => doc.CreatedAt)
+                .Select(doc => new TopOpportunityDTO
+                {
+                    PreApprovalId = doc.Id,
+                    BorrowerName = doc.BorrowerInfo?.BorrowerName,
+                    LoanProgram = doc.PurchaseInfo?.LoanProgram,
+                    AgentName = doc.LenderFees?.AgentName,
+                    Borrowers = doc.BorrowerIncomes?.ToList(),
+                    CreatedAt = doc.CreatedAt,
+                    isLoanProgramFilled = doc.LastSubmittedFormNo == (int)FormType.LoanProgram
+                }).ToList();
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+    }
+
+    public async Task<List<TopOpportunityDTO>> GetInEscrowList()
+    {
+        try
+        {
+            var userId = _loginUserDetails.UserID;
+            var topOpportunities = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 2);
+
+            return topOpportunities
+                .OrderByDescending(doc => doc.CreatedAt)
+                .Select(doc => new TopOpportunityDTO
+                {
+                    PreApprovalId = doc.Id,
+                    BorrowerName = doc.BorrowerInfo?.BorrowerName,
+                    LoanProgram = doc.PurchaseInfo?.LoanProgram,
+                    AgentName = doc.LenderFees?.AgentName,
+                    Borrowers = doc.BorrowerIncomes?.ToList(),
+                    CreatedAt = doc.CreatedAt,
+                    isLoanProgramFilled = doc.LastSubmittedFormNo == (int)FormType.LoanProgram
+                }).ToList();
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+    }
+
+    public async Task<List<TopOpportunityDTO>> GetTBDsList()
+    {
+        try
+        {
+            var userId = _loginUserDetails.UserID;
+            var topOpportunities = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 3);
 
             return topOpportunities
                 .OrderByDescending(doc => doc.CreatedAt)
@@ -632,6 +684,7 @@ public class PreApprovalService : IPreApprovalService
                 CreatedAt = preApproval.CreatedAt ?? DateTime.UtcNow,
                 UpdatedAt = preApproval.UpdatedAt ?? DateTime.UtcNow,
                 LastSubmittedFormNo = preApproval.LastSubmittedFormNo ?? 0,
+                Status = preApproval.Status,
                 BorrowerInfo = preApproval.BorrowerInfo,
                 PurchaseInfo = preApproval.PurchaseInfo,
                 LenderFees = preApproval.LenderFees,

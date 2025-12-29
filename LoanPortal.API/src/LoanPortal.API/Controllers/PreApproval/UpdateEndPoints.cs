@@ -18,7 +18,7 @@ namespace LoanPortal.API.Controllers.PreApproval
             _preApprovalService = preApprovalService;
         }
 
-        [HttpGet("preapproval/UpdateApplicationStatus")]
+        [HttpPut("preapproval/UpdateApplicationStatus")]
         public async Task<IActionResult> UpdateApplicationStatus([FromQuery] Guid id, int status)
         {
             try

@@ -396,30 +396,20 @@ namespace LoanPortal.Core.Entities
     [BsonIgnoreExtraElements]
     public class PreApprovalDTO
     {
-        [BsonId]
-        //[BsonRepresentation(BsonType.String)]
         public Guid? Id { get; set; }
 
-        [BsonElement("userId")]
-        //[BsonRepresentation(BsonType.String)]
         public Guid? UserId { get; set; }
 
-        [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
 
-        [BsonElement("updatedAt")]
         public DateTime? UpdatedAt { get; set; }
 
-        [BsonElement("lastSubmittedFormNo")]
         public int? LastSubmittedFormNo { get; set; }
 
-        [BsonElement("lastSubmittedScenarioNo")]
         public int? LastSubmittedScenarioNo { get; set; }
 
-        [BsonElement("Status")]
         public int Status { get; set; }
 
-        [BsonElement("Scenarios")]
         public List<ScenarioDTO> Scenarios { get; set; }
     }
 }

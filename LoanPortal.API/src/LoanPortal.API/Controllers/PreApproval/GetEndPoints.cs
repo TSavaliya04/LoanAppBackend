@@ -79,11 +79,11 @@ namespace LoanPortal.API.Controllers.PreApproval
         }
 
         [HttpGet("preapproval/PreApprovalReport")]
-        public async Task<IActionResult> PreApprovalReport([FromQuery] Guid preApprovalId)
+        public async Task<IActionResult> PreApprovalReport([FromQuery] Guid preApprovalId, Guid scenarioId)
         {
             try
             {
-                var result = await _preApprovalService.GetPreApprovalReport(preApprovalId);
+                var result = await _preApprovalService.GetPreApprovalReport(preApprovalId, scenarioId);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
@@ -93,11 +93,11 @@ namespace LoanPortal.API.Controllers.PreApproval
         }
 
         [HttpGet("preapproval/FHAReport")]
-        public async Task<IActionResult> GetFHAReport([FromQuery] Guid preApprovalId)
+        public async Task<IActionResult> GetFHAReport([FromQuery] Guid preApprovalId, Guid scenarioId)
         {
             try
             {
-                var result = await _preApprovalService.GetFHAReport(preApprovalId);
+                var result = await _preApprovalService.GetFHAReport(preApprovalId, scenarioId);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
@@ -107,11 +107,11 @@ namespace LoanPortal.API.Controllers.PreApproval
         }
 
         [HttpGet("preapproval/QuickQuote")]
-        public async Task<IActionResult> QuickQuote([FromQuery] Guid preApprovalId)
+        public async Task<IActionResult> QuickQuote([FromQuery] Guid preApprovalId, Guid scenarioId)
         {
             try
             {
-                var result = await _preApprovalService.GetQuickQuote(preApprovalId);
+                var result = await _preApprovalService.GetQuickQuote(preApprovalId, scenarioId);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)

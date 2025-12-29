@@ -27,6 +27,7 @@ namespace LoanPortal.Core.Entities
         public string? Profile { get; set; }
         public string? CompanyName { get; set; }
         public string? NMLS { get; set; }
+        public DateTime? LastLoginDate { get; set; }
     }
 
     [BsonIgnoreExtraElements]

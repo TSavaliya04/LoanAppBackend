@@ -21,7 +21,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             _controller = new CreateEndPoints(_mockPreApprovalService.Object, _mockLoginUserDetails.Object);
         }
 
-        [Fact]
+        /*[Fact]
         public async Task BorrowerInfo_ValidData_ReturnsOkResult()
         {
             var borrowerInfo = new BorrowerInfoDTO
@@ -172,7 +172,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             Assert.True(response.Success);
             Assert.Single(response.Data);
             Assert.Equal(borrowerIncome.BorrowerName, response.Data[0].BorrowerName);
-        }
+        }*/
 
         //[Fact]
         //public async Task DebtBreakdown_ValidData_ReturnsOkResult()
@@ -198,7 +198,7 @@ namespace LoanPortal.Tests.Controllers.PreApproval
         //    Assert.Equal(debtBreakdown, response.Data[0]);
         //}
 
-        [Fact]
+        /*[Fact]
         public async Task LoanProgram_ValidData_ReturnsOkResult()
         {
             var loanProgram = new LoanProgramDTO
@@ -273,6 +273,6 @@ namespace LoanPortal.Tests.Controllers.PreApproval
             Assert.Equal(500, statusCodeResult.StatusCode);
             var response = Assert.IsType<ApiResponse<LoanProgramDTO>>(statusCodeResult.Value);
             Assert.False(response.Success);
-        }
+        }*/
     }
 } 

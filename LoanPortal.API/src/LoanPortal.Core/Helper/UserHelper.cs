@@ -99,6 +99,7 @@ namespace LoanPortal.Core.Helper
                 Profile = entity.Profile,
                 CompanyName = entity.CompanyName,
                 NMLS = entity.NMLS,
+                LastLoginDate = entity.LastLoginDate,
             };
         }
 

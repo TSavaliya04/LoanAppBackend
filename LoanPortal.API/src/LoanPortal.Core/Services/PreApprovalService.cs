@@ -275,7 +275,7 @@ public class PreApprovalService : IPreApprovalService
                 {
                     PreApprovalId = doc.Id,
                     BorrowerName = doc.Scenarios.First().BorrowerInfo?.BorrowerName,
-                    LoanProgram = doc.Scenarios != null && doc.Scenarios.Any(s => s.PurchaseInfo?.LoanProgram != null) ? string.Join("/",doc.Scenarios.Where(s => s.PurchaseInfo?.LoanProgram != null).Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())): "N/A",
+                    LoanProgram = string.Join("/", doc.Scenarios.Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())),
                     AgentName = doc.Scenarios.First().LenderFees?.AgentName,
                     Borrowers = doc.Scenarios.First().BorrowerIncomes?.ToList(),
                     CreatedAt = doc.CreatedAt,
@@ -301,7 +301,7 @@ public class PreApprovalService : IPreApprovalService
                 {
                     PreApprovalId = doc.Id,
                     BorrowerName = doc.Scenarios.First().BorrowerInfo?.BorrowerName,
-                    LoanProgram = doc.Scenarios != null && doc.Scenarios.Any(s => s.PurchaseInfo?.LoanProgram != null) ? string.Join("/", doc.Scenarios.Where(s => s.PurchaseInfo?.LoanProgram != null).Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())) : "N/A",
+                    LoanProgram = string.Join("/", doc.Scenarios.Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())),
                     AgentName = doc.Scenarios.First().LenderFees?.AgentName,
                     Borrowers = doc.Scenarios.First().BorrowerIncomes?.ToList(),
                     CreatedAt = doc.CreatedAt,
@@ -327,7 +327,7 @@ public class PreApprovalService : IPreApprovalService
                 {
                     PreApprovalId = doc.Id,
                     BorrowerName = doc.Scenarios.First().BorrowerInfo?.BorrowerName,
-                    LoanProgram = doc.Scenarios != null && doc.Scenarios.Any(s => s.PurchaseInfo?.LoanProgram != null) ? string.Join("/", doc.Scenarios.Where(s => s.PurchaseInfo?.LoanProgram != null).Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())) : "N/A",
+                    LoanProgram = string.Join("/", doc.Scenarios.Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())),
                     AgentName = doc.Scenarios.First().LenderFees?.AgentName,
                     Borrowers = doc.Scenarios.First().BorrowerIncomes?.ToList(),
                     CreatedAt = doc.CreatedAt,

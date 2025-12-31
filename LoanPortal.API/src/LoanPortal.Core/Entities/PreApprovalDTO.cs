@@ -419,5 +419,6 @@ namespace LoanPortal.Core.Entities
         public List<BorrowerIncomeDTO>? BorrowerIncomes { get; set; }
 
         public List<DebtBreakdownDTO>? DebtBreakdowns { get; set; }
+        public LoanProgramDTO? LoanProgram { get; set; }
     }
 }

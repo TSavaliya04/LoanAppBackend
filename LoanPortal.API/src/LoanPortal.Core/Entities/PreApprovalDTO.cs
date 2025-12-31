@@ -215,7 +215,7 @@ namespace LoanPortal.Core.Entities
     {
         public Guid PreApprovalId { get; set; }
         public string? BorrowerName { get; set; }
-        public string? LoanProgram { get; set; }
+        public int? LoanProgram { get; set; }
         public string? AgentName { get; set; }
         public DateTime? CreatedAt { get; set; }
         public bool? isLoanProgramFilled { get; set; }
@@ -344,34 +344,14 @@ namespace LoanPortal.Core.Entities
     }
 
     [BsonIgnoreExtraElements]
-    public class ScenarioDTO
-    {
-        [BsonId]
-        public Guid Id { get; set; }
-
-        public int ScenarioOrder { get; set; }  
-        public string? ScenarioName { get; set; }  
-        public DateTime? CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public int LastSubmittedFormNo { get; set; }
-
-        // All form data per scenario
-        public BorrowerInfoDTO? BorrowerInfo { get; set; }
-        public PurchaseInfoDTO? PurchaseInfo { get; set; }
-        public LenderFeesDTO? LenderFees { get; set; }
-        public PrepaidItemsDTO? PrepaidItems { get; set; }
-        public MiscFeesDTO? MiscFees { get; set; }
-        public List<BorrowerIncomeDTO>? BorrowerIncomes { get; set; }
-        public LoanProgramDTO? LoanProgram { get; set; }
-    }
-
-    [BsonIgnoreExtraElements]
     public class PreApprovalDocument
     {
         [BsonId]
+        //[BsonRepresentation(BsonType.String)]
         public Guid Id { get; set; }
 
         [BsonElement("userId")]
+        //[BsonRepresentation(BsonType.String)]
         public Guid UserId { get; set; }
 
         [BsonElement("createdAt")]
@@ -383,14 +363,32 @@ namespace LoanPortal.Core.Entities
         [BsonElement("lastSubmittedFormNo")]
         public int LastSubmittedFormNo { get; set; }
 
-        [BsonElement("lastSubmittedScenarioNo")]
-        public int LastSubmittedScenarioNo { get; set; }
-
-        [BsonElement("Status")]
+        [BsonElement("status")]
         public int Status { get; set; }
 
-        [BsonElement("Scenarios")]
-        public List<ScenarioDTO> Scenarios { get; set; }
+        [BsonElement("borrowerInfo")]
+        public BorrowerInfoDTO BorrowerInfo { get; set; }
+
+        [BsonElement("purchaseInfo")]
+        public PurchaseInfoDTO PurchaseInfo { get; set; }
+
+        [BsonElement("lenderFees")]
+        public LenderFeesDTO LenderFees { get; set; }
+
+        [BsonElement("prepaidItems")]
+        public PrepaidItemsDTO PrepaidItems { get; set; }
+
+        [BsonElement("miscFees")]
+        public MiscFeesDTO MiscFees { get; set; }
+
+        [BsonElement("borrowerIncomes")]
+        public List<BorrowerIncomeDTO> BorrowerIncomes { get; set; }
+
+        [BsonElement("debtBreakdowns")]
+        public List<DebtBreakdownDTO> DebtBreakdowns { get; set; }
+
+        [BsonElement("loanProgram")]
+        public LoanProgramDTO LoanProgram { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -406,10 +404,20 @@ namespace LoanPortal.Core.Entities
 
         public int? LastSubmittedFormNo { get; set; }
 
-        public int? LastSubmittedScenarioNo { get; set; }
-
         public int Status { get; set; }
 
-        public List<ScenarioDTO> Scenarios { get; set; }
+        public BorrowerInfoDTO? BorrowerInfo { get; set; }
+
+        public PurchaseInfoDTO? PurchaseInfo { get; set; }
+
+        public LenderFeesDTO? LenderFees { get; set; }
+
+        public PrepaidItemsDTO? PrepaidItems { get; set; }
+
+        public MiscFeesDTO? MiscFees { get; set; }
+
+        public List<BorrowerIncomeDTO>? BorrowerIncomes { get; set; }
+
+        public List<DebtBreakdownDTO>? DebtBreakdowns { get; set; }
     }
 }

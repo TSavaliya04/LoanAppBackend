@@ -293,7 +293,10 @@ public class PreApprovalService : IPreApprovalService
         try
         {
             var userId = _loginUserDetails.UserID;
-            var topOpportunities = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 2);
+            Console.WriteLine("user", userId);
+            var ts = await _preApprovalRepository.GetAllAsync(userId);
+            Console.WriteLine(ts);
+            var topOpportunities = ts.Where(x => x.Status == 2);
 
             return topOpportunities
                 .OrderByDescending(doc => doc.CreatedAt)

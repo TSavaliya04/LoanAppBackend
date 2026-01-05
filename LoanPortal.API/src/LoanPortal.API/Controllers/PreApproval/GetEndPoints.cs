@@ -116,7 +116,21 @@ namespace LoanPortal.API.Controllers.PreApproval
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<FHAReport>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<QuickQuote>(500, ex.Message));
+            }
+        }
+
+        [HttpGet("preapproval/GetDashboardData")]
+        public async Task<IActionResult> GetDashboardData([FromQuery] int month, [FromQuery] int year)
+        {
+            try
+            {
+                var result = await _preApprovalService.GetDashboardData(month, year);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<DashboardDTO>(500, ex.Message));
             }
         }
     }

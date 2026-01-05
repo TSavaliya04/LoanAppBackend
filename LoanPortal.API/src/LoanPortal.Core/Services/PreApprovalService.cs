@@ -742,4 +742,29 @@ public class PreApprovalService : IPreApprovalService
             throw;
         }
     }
+
+    public async Task<DashboardDTO> GetDashboardData(int month, int year)
+    {
+        try
+        {
+            var userId = _loginUserDetails.UserID;
+            var allPreApprovals = await _preApprovalRepository.GetByMonth(userId, month, year);
+            
+            var preApprovedCount = allPreApprovals.Count(x => x.Status == (int)ApplicationStatus.PreApproved);
+            var inEscrowCount = allPreApprovals.Count(x => x.Status == (int)ApplicationStatus.InEscrow);
+
+            return new DashboardDTO
+            {
+                Month = month,
+                Year = year,
+                PreApprovedCount = preApprovedCount,
+                InEscrowCount = inEscrowCount
+            };
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
+    }
+
 }

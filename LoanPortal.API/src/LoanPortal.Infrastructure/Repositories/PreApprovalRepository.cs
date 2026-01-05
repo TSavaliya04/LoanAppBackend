@@ -83,5 +83,27 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<List<PreApprovalDocument>> GetByMonth(Guid userId, int month, int year)
+        {
+            try
+            {
+                var startDate = new DateTime(year, month, 1);
+                var endDate = startDate.AddMonths(1);
+
+                var filter = Builders<PreApprovalDocument>.Filter.And(
+                    Builders<PreApprovalDocument>.Filter.Eq(doc => doc.UserId, userId),
+                    Builders<PreApprovalDocument>.Filter.Gte(doc => doc.CreatedAt, startDate),
+                    Builders<PreApprovalDocument>.Filter.Lt(doc => doc.CreatedAt, endDate)
+                );
+
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in PreApprovalRepository.GetByMonth: {ex.Message}");
+                throw;
+            }
+        }
     }
 }

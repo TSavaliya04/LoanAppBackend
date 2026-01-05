@@ -21,7 +21,7 @@ namespace LoanPortal.Shared.Enum
 
     public enum ApplicationStatus
     {
-        PreApproval = 1,
+        PreApproved = 1,
         InEscrow = 2,
         TBD = 3
     }

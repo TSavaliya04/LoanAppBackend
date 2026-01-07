@@ -1,4 +1,4 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -220,6 +220,16 @@ namespace LoanPortal.Core.Entities
         public DateTime? CreatedAt { get; set; }
         public bool? isLoanProgramFilled { get; set; }
         public List<BorrowerIncomeDTO> Borrowers { get; set; }
+        public List<ScenarioData> Scenarios { get; set; }
+    }
+
+    public class ScenarioData
+    {
+        public decimal LoanAmount { get; set; }
+        public decimal AnnualInterestRate { get; set; }
+        public string? LoanProgram { get; set; }
+        public decimal? MonthlyTotal { get; set; }
+
     }
 
     [BsonIgnoreExtraElements]

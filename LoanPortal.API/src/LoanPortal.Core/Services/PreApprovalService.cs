@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using LoanPortal.Core.Exceptions;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
@@ -267,20 +267,34 @@ public class PreApprovalService : IPreApprovalService
         try
         {
             var userId = _loginUserDetails.UserID;
-            var topOpportunities = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 1);
-
-            return topOpportunities
-                .OrderByDescending(doc => doc.CreatedAt)
-                .Select(doc => new TopOpportunityDTO
+            var preApprovals = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 1);
+            var results = new List<TopOpportunityDTO>();
+            foreach (PreApprovalDocument preApproval in preApprovals)
+            {
+                List<ScenarioData> scenarios = new List<ScenarioData>();
+                foreach (ScenarioDTO scenario in preApproval.Scenarios)
                 {
-                    PreApprovalId = doc.Id,
-                    BorrowerName = doc.Scenarios.First().BorrowerInfo?.BorrowerName,
-                    LoanProgram = doc.Scenarios != null && doc.Scenarios.Any(s => s.PurchaseInfo?.LoanProgram != null) ? string.Join("/",doc.Scenarios.Where(s => s.PurchaseInfo?.LoanProgram != null).Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())): "N/A",
-                    AgentName = doc.Scenarios.First().LenderFees?.AgentName,
-                    Borrowers = doc.Scenarios.First().BorrowerIncomes?.ToList(),
-                    CreatedAt = doc.CreatedAt,
-                    isLoanProgramFilled = doc.LastSubmittedFormNo == (int)FormType.LoanProgram
-                }).ToList();
+                    if(scenario.PurchaseInfo != null)
+                    {
+                        scenarios.Add(new ScenarioData
+                        {
+                            AnnualInterestRate = scenario.PurchaseInfo.AnnualInterestRate,
+                            MonthlyTotal = scenario.LoanProgram?.MonthlyTotal,
+                            LoanAmount = scenario.PurchaseInfo.LoanAmount,
+                            LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString(),
+                        });
+                    }
+                }
+                results.Add(new TopOpportunityDTO
+                {
+                    PreApprovalId = preApproval.Id,
+                    CreatedAt = preApproval.CreatedAt,
+                    BorrowerName = preApproval.Scenarios.First().BorrowerInfo?.BorrowerName,
+                    Scenarios = scenarios
+                });
+            }
+
+            return results.OrderByDescending(doc => doc.CreatedAt).ToList();
         }
         catch (Exception ex)
         {
@@ -293,23 +307,31 @@ public class PreApprovalService : IPreApprovalService
         try
         {
             var userId = _loginUserDetails.UserID;
-            Console.WriteLine("user", userId);
-            var ts = await _preApprovalRepository.GetAllAsync(userId);
-            Console.WriteLine(ts);
-            var topOpportunities = ts.Where(x => x.Status == 2);
-
-            return topOpportunities
-                .OrderByDescending(doc => doc.CreatedAt)
-                .Select(doc => new TopOpportunityDTO
+            var preApprovals = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 2);
+            var results = new List<TopOpportunityDTO>();
+            foreach (PreApprovalDocument preApproval in preApprovals)
+            {
+                List<ScenarioData> scenarios = new List<ScenarioData>();
+                foreach (ScenarioDTO scenario in preApproval.Scenarios)
                 {
-                    PreApprovalId = doc.Id,
-                    BorrowerName = doc.Scenarios.First().BorrowerInfo?.BorrowerName,
-                    LoanProgram = doc.Scenarios != null && doc.Scenarios.Any(s => s.PurchaseInfo?.LoanProgram != null) ? string.Join("/", doc.Scenarios.Where(s => s.PurchaseInfo?.LoanProgram != null).Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())) : "N/A",
-                    AgentName = doc.Scenarios.First().LenderFees?.AgentName,
-                    Borrowers = doc.Scenarios.First().BorrowerIncomes?.ToList(),
-                    CreatedAt = doc.CreatedAt,
-                    isLoanProgramFilled = doc.LastSubmittedFormNo == (int)FormType.LoanProgram
-                }).ToList();
+                    scenarios.Add(new ScenarioData
+                    {
+                        AnnualInterestRate = scenario.PurchaseInfo.AnnualInterestRate,
+                        MonthlyTotal = scenario.LoanProgram.MonthlyTotal,
+                        LoanAmount = scenario.PurchaseInfo.LoanAmount,
+                        LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString(),
+                    });
+                }
+                results.Add(new TopOpportunityDTO
+                {
+                    PreApprovalId = preApproval.Id,
+                    CreatedAt = preApproval.CreatedAt,
+                    BorrowerName = preApproval.Scenarios.First().BorrowerInfo?.BorrowerName,
+                    Scenarios = scenarios
+                });
+            }
+
+            return results.OrderByDescending(doc => doc.CreatedAt).ToList();
         }
         catch (Exception ex)
         {
@@ -322,20 +344,31 @@ public class PreApprovalService : IPreApprovalService
         try
         {
             var userId = _loginUserDetails.UserID;
-            var topOpportunities = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 3);
-
-            return topOpportunities
-                .OrderByDescending(doc => doc.CreatedAt)
-                .Select(doc => new TopOpportunityDTO
+            var preApprovals = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 3);
+            var results = new List<TopOpportunityDTO>();
+            foreach(PreApprovalDocument preApproval in preApprovals)
+            {
+                List<ScenarioData> scenarios = new List<ScenarioData>();
+                foreach (ScenarioDTO scenario in preApproval.Scenarios)
                 {
-                    PreApprovalId = doc.Id,
-                    BorrowerName = doc.Scenarios.First().BorrowerInfo?.BorrowerName,
-                    LoanProgram = doc.Scenarios != null && doc.Scenarios.Any(s => s.PurchaseInfo?.LoanProgram != null) ? string.Join("/", doc.Scenarios.Where(s => s.PurchaseInfo?.LoanProgram != null).Select(s => ((LoanProgram)s.PurchaseInfo.LoanProgram).ToString())) : "N/A",
-                    AgentName = doc.Scenarios.First().LenderFees?.AgentName,
-                    Borrowers = doc.Scenarios.First().BorrowerIncomes?.ToList(),
-                    CreatedAt = doc.CreatedAt,
-                    isLoanProgramFilled = doc.LastSubmittedFormNo == (int)FormType.LoanProgram
-                }).ToList();
+                    scenarios.Add(new ScenarioData
+                    {
+                        AnnualInterestRate = scenario.PurchaseInfo.AnnualInterestRate,
+                        MonthlyTotal = scenario.LoanProgram.MonthlyTotal,
+                        LoanAmount = scenario.PurchaseInfo.LoanAmount,
+                        LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString(),
+                    });
+                }
+                results.Add(new TopOpportunityDTO
+                {
+                    PreApprovalId = preApproval.Id,
+                    CreatedAt = preApproval.CreatedAt,
+                    BorrowerName = preApproval.Scenarios.First().BorrowerInfo?.BorrowerName,
+                    Scenarios = scenarios
+                });
+            }
+
+            return results.OrderByDescending(doc => doc.CreatedAt).ToList();
         }
         catch (Exception ex)
         {

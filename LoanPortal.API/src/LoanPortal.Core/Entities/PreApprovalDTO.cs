@@ -225,11 +225,11 @@ namespace LoanPortal.Core.Entities
 
     public class ScenarioData
     {
-        public decimal LoanAmount { get; set; }
-        public decimal AnnualInterestRate { get; set; }
+        public decimal? LoanAmount { get; set; }
+        public decimal? AnnualInterestRate { get; set; }
         public string? LoanProgram { get; set; }
         public decimal? MonthlyTotal { get; set; }
-
+        public bool? isLoanProgramFilled { get; set; }
     }
 
     [BsonIgnoreExtraElements]

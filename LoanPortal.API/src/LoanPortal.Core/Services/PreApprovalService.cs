@@ -278,10 +278,11 @@ public class PreApprovalService : IPreApprovalService
                     {
                         scenarios.Add(new ScenarioData
                         {
-                            AnnualInterestRate = scenario.PurchaseInfo.AnnualInterestRate,
-                            MonthlyTotal = scenario.LoanProgram?.MonthlyTotal,
-                            LoanAmount = scenario.PurchaseInfo.LoanAmount,
-                            LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString(),
+                            AnnualInterestRate = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.AnnualInterestRate : 0,
+                            MonthlyTotal = scenario.LoanProgram != null ? scenario.LoanProgram.MonthlyTotal : 0,
+                            LoanAmount = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.LoanAmount : 0,
+                            LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString() ?? "",
+                            isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
                         });
                     }
                 }
@@ -316,10 +317,11 @@ public class PreApprovalService : IPreApprovalService
                 {
                     scenarios.Add(new ScenarioData
                     {
-                        AnnualInterestRate = scenario.PurchaseInfo.AnnualInterestRate,
-                        MonthlyTotal = scenario.LoanProgram.MonthlyTotal,
-                        LoanAmount = scenario.PurchaseInfo.LoanAmount,
-                        LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString(),
+                        AnnualInterestRate = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.AnnualInterestRate : 0,
+                        MonthlyTotal = scenario.LoanProgram != null ? scenario.LoanProgram.MonthlyTotal : 0,
+                        LoanAmount = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.LoanAmount : 0,
+                        LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString() ?? "",
+                        isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
                     });
                 }
                 results.Add(new TopOpportunityDTO
@@ -353,10 +355,11 @@ public class PreApprovalService : IPreApprovalService
                 {
                     scenarios.Add(new ScenarioData
                     {
-                        AnnualInterestRate = scenario.PurchaseInfo.AnnualInterestRate,
-                        MonthlyTotal = scenario.LoanProgram.MonthlyTotal,
-                        LoanAmount = scenario.PurchaseInfo.LoanAmount,
-                        LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString(),
+                        AnnualInterestRate = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.AnnualInterestRate : 0,
+                        MonthlyTotal = scenario.LoanProgram != null ? scenario.LoanProgram.MonthlyTotal : 0,
+                        LoanAmount = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.LoanAmount : 0,
+                        LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString() ?? "",
+                        isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
                     });
                 }
                 results.Add(new TopOpportunityDTO

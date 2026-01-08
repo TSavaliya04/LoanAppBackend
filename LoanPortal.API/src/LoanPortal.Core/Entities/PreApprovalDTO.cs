@@ -366,6 +366,9 @@ namespace LoanPortal.Core.Entities
         [BsonElement("status")]
         public int Status { get; set; }
 
+        [BsonElement("StatusUpdatedAt")]
+        public DateTime? StatusUpdatedAt { get; set; }
+
         [BsonElement("borrowerInfo")]
         public BorrowerInfoDTO BorrowerInfo { get; set; }
 
@@ -405,6 +408,7 @@ namespace LoanPortal.Core.Entities
         public int? LastSubmittedFormNo { get; set; }
 
         public int Status { get; set; }
+        public DateTime? StatusUpdatedAt { get; set; }
 
         public BorrowerInfoDTO? BorrowerInfo { get; set; }
 

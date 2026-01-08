@@ -692,7 +692,8 @@ public class PreApprovalService : IPreApprovalService
                 MiscFees = preApproval.MiscFees,
                 BorrowerIncomes = preApproval.BorrowerIncomes,
                 DebtBreakdowns = preApproval.DebtBreakdowns,
-                LoanProgram = preApproval.LoanProgram
+                LoanProgram = preApproval.LoanProgram,
+                StatusUpdatedAt = preApproval.StatusUpdatedAt
             };
 
             if (preApproval.Id.HasValue && preApproval.Id != Guid.Empty)
@@ -733,6 +734,7 @@ public class PreApprovalService : IPreApprovalService
         {
             var preApprovalDoc = await _preApprovalRepository.GetByIdAsync(id);
             preApprovalDoc.Status = status;
+            preApprovalDoc.StatusUpdatedAt = DateTime.Now;
 
             await _preApprovalRepository.UpdateAsync(id, preApprovalDoc);
             return preApprovalDoc;
@@ -743,22 +745,47 @@ public class PreApprovalService : IPreApprovalService
         }
     }
 
-    public async Task<DashboardDTO> GetDashboardData(int month, int year)
+    public async Task<DashboardDTO> GetDashboardData()
     {
         try
         {
             var userId = _loginUserDetails.UserID;
-            var allPreApprovals = await _preApprovalRepository.GetByMonth(userId, month, year);
             
-            var preApprovedCount = allPreApprovals.Count(x => x.Status == (int)ApplicationStatus.PreApproved);
-            var inEscrowCount = allPreApprovals.Count(x => x.Status == (int)ApplicationStatus.InEscrow);
+            // Calculate weekly metrics
+            var today = DateTime.UtcNow.Date;
+            var startOfWeek = today.AddDays(-(int)today.DayOfWeek); // Sunday
+            var endOfWeek = startOfWeek.AddDays(7);
+            var startOfLastWeek = startOfWeek.AddDays(-7);
+            var endOfLastWeek = startOfWeek;
+
+            // Get quotes created this week (based on CreatedAt)
+            var thisWeekPreApprovals = await _preApprovalRepository.GetByDateRange(userId, startOfWeek, endOfWeek);
+            var quotesCreatedThisWeek = thisWeekPreApprovals.Count;
+
+            // Get quotes created last week (based on CreatedAt)
+            var lastWeekPreApprovals = await _preApprovalRepository.GetByDateRange(userId, startOfLastWeek, endOfLastWeek);
+            var quotesCreatedLastWeek = lastWeekPreApprovals.Count;
+
+            // Get pre-approvals that were pre-approved this week (based on PreApprovedAt)
+            var thisWeekPreApproved = await _preApprovalRepository.GetByPreApprovedDateRange(userId, startOfWeek, endOfWeek);
+            var preApprovedThisWeek = thisWeekPreApproved.Count;
+
+            // Get pre-approvals that were pre-approved last week (based on PreApprovedAt)
+            var lastWeekPreApproved = await _preApprovalRepository.GetByPreApprovedDateRange(userId, startOfLastWeek, endOfLastWeek);
+            var preApprovedLastWeek = lastWeekPreApproved.Count;
+
+            // Calculate changes
+            var quotesCreatedChange = quotesCreatedThisWeek - quotesCreatedLastWeek;
+            var preApprovedChange = preApprovedThisWeek - preApprovedLastWeek;
 
             return new DashboardDTO
             {
-                Month = month,
-                Year = year,
-                PreApprovedCount = preApprovedCount,
-                InEscrowCount = inEscrowCount
+                QuotesCreatedThisWeek = quotesCreatedThisWeek,
+                QuotesCreatedLastWeek = quotesCreatedLastWeek,
+                QuotesCreatedChange = quotesCreatedChange,
+                PreApprovedThisWeek = preApprovedThisWeek,
+                PreApprovedLastWeek = preApprovedLastWeek,
+                PreApprovedChange = preApprovedChange
             };
         }
         catch (Exception e)

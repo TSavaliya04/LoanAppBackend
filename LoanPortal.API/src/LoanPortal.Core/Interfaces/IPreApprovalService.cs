@@ -28,6 +28,6 @@ namespace LoanPortal.Core.Interfaces
         public Task<PreApprovalDocument> SavePreApproval(PreApprovalDTO preApproval);
         public Task DeletePreApproval(List<Guid> preApprovalIds);
         public Task<PreApprovalDocument> UpdateApplicationStatus(Guid id, int status);
-        public Task<DashboardDTO> GetDashboardData(int month, int year);
+        public Task<DashboardDTO> GetDashboardData();
     }
 }

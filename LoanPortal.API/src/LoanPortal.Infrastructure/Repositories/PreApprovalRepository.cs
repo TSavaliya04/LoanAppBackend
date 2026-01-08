@@ -14,6 +14,7 @@ using LoanPortal.Core.Helper;
 using LoanPortal.Core.Repositories;
 using LoanPortal.Infrastructure;
 using LoanPortal.Shared.Constants;
+using LoanPortal.Shared.Enum;
 using static Dapper.SqlMapper;
 
 namespace LoanPortal.Infrastructure.Repositories
@@ -102,6 +103,45 @@ namespace LoanPortal.Infrastructure.Repositories
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception in PreApprovalRepository.GetByMonth: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<List<PreApprovalDocument>> GetByDateRange(Guid userId, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var filter = Builders<PreApprovalDocument>.Filter.And(
+                    Builders<PreApprovalDocument>.Filter.Eq(doc => doc.UserId, userId),
+                    Builders<PreApprovalDocument>.Filter.Gte(doc => doc.CreatedAt, startDate),
+                    Builders<PreApprovalDocument>.Filter.Lt(doc => doc.CreatedAt, endDate)
+                );
+
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in PreApprovalRepository.GetByDateRange: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<List<PreApprovalDocument>> GetByPreApprovedDateRange(Guid userId, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var filter = Builders<PreApprovalDocument>.Filter.And(
+                    Builders<PreApprovalDocument>.Filter.Eq(doc => doc.UserId, userId),
+                    Builders<PreApprovalDocument>.Filter.Eq(doc => doc.Status, (int)ApplicationStatus.PreApproved),
+                    Builders<PreApprovalDocument>.Filter.Gte(doc => doc.StatusUpdatedAt, startDate),
+                    Builders<PreApprovalDocument>.Filter.Lt(doc => doc.StatusUpdatedAt, endDate)
+                );
+
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in PreApprovalRepository.GetByPreApprovedDateRange: {ex.Message}");
                 throw;
             }
         }

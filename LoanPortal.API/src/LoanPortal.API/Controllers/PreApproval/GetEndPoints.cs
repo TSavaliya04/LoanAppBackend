@@ -121,11 +121,11 @@ namespace LoanPortal.API.Controllers.PreApproval
         }
 
         [HttpGet("preapproval/GetDashboardData")]
-        public async Task<IActionResult> GetDashboardData([FromQuery] int month, [FromQuery] int year)
+        public async Task<IActionResult> GetDashboardData()
         {
             try
             {
-                var result = await _preApprovalService.GetDashboardData(month, year);
+                var result = await _preApprovalService.GetDashboardData();
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)

@@ -23,7 +23,8 @@ namespace LoanPortal.Shared.Enum
     {
         PreApproved = 1,
         InEscrow = 2,
-        TBD = 3
+        TBD = 3,
+        ClosedEscrow=4,
     }
 
     public enum OccupancyStatus

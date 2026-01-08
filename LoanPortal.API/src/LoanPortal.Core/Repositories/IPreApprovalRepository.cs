@@ -17,5 +17,7 @@ namespace LoanPortal.Core.Repositories
         Task DeleteManyAsync(List<Guid> ids);
         Task<List<PreApprovalDocument>> GetAllAsync(Guid userId);
         Task<List<PreApprovalDocument>> GetByMonth(Guid userId, int month, int year);
+        Task<List<PreApprovalDocument>> GetByDateRange(Guid userId, DateTime startDate, DateTime endDate);
+        Task<List<PreApprovalDocument>> GetByPreApprovedDateRange(Guid userId, DateTime startDate, DateTime endDate);
     }
 }

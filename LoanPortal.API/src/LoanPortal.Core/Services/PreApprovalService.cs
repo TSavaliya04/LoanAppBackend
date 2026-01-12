@@ -385,7 +385,12 @@ public class PreApprovalService : IPreApprovalService
         {              
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             ScenarioDTO scenario = preApproval.Scenarios.FirstOrDefault(s => s.Id == scenarioId);
-            
+
+            if (scenario.LoanProgram == null)
+            {
+                throw new ValidationException("LoanProgram cannot be null");
+            }
+
             UserDTO agent = UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
             
             if(agent != null && !string.IsNullOrEmpty(agent.Profile))
@@ -430,6 +435,11 @@ public class PreApprovalService : IPreApprovalService
         {
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             ScenarioDTO scenario = preApproval.Scenarios.FirstOrDefault(s => s.Id == scenarioId);
+
+            if (scenario.LoanProgram == null)
+            {
+                throw new ValidationException("LoanProgram cannot be null");
+            }
 
             UserEntity user = await _userRepository.GetUserById(_loginUserDetails.UserID);
             decimal purchasePrice = scenario.LoanProgram.Price.Value;
@@ -541,6 +551,11 @@ public class PreApprovalService : IPreApprovalService
     {
         PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
         ScenarioDTO scenario = preApproval.Scenarios.FirstOrDefault(s => s.Id == scenarioId);
+
+        if (scenario.LoanProgram == null)
+        {
+            throw new ValidationException("LoanProgram cannot be null");
+        }
 
         QuickQuote quote = new QuickQuote();
         quote.HomeValue = scenario.LoanProgram.Price.Value;

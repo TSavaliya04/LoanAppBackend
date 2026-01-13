@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,9 +22,7 @@ namespace LoanPortal.Core.Interfaces
         public Task<PreApprovalReport> GetPreApprovalReport(Guid preApprovalId, Guid scenarioId);
         public Task<FHAReport> GetFHAReport(Guid preApprovalId, Guid scenarioId);
         public Task<QuickQuote> GetQuickQuote(Guid preApprovalId, Guid scenarioId);
-        public Task<List<TopOpportunityDTO>> GetPreApprovalsList();
-        public Task<List<TopOpportunityDTO>> GetInEscrowList();
-        public Task<List<TopOpportunityDTO>> GetTBDsList();
+        public Task<List<TopOpportunityDTO>> GetQuoteList(int status);
         public Task ClonePreApproval(Guid preApprovalId);
         public Task<PreApprovalDocument> SavePreApproval(PreApprovalDTO preApproval);
         public Task DeletePreApproval(List<Guid> preApprovalIds);

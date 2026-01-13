@@ -262,111 +262,43 @@ public class PreApprovalService : IPreApprovalService
         return document;
     }
 
-    public async Task<List<TopOpportunityDTO>> GetPreApprovalsList()
+    public async Task<List<TopOpportunityDTO>> GetQuoteList(int status)
     {
         try
         {
             var userId = _loginUserDetails.UserID;
-            var preApprovals = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 1);
+            var quotes = await _preApprovalRepository.GetAllAsync(userId);
+            if(status != 0)
+            {
+                quotes = quotes.Where(x => x.Status == status).ToList();
+            }
             var results = new List<TopOpportunityDTO>();
-            foreach (PreApprovalDocument preApproval in preApprovals)
+            foreach (PreApprovalDocument quote in quotes)
             {
                 List<ScenarioData> scenarios = new List<ScenarioData>();
-                foreach (ScenarioDTO scenario in preApproval.Scenarios)
+                if (quote.Scenarios != null && quote.Scenarios.Count > 0)
                 {
-                    if(scenario.PurchaseInfo != null)
+                    foreach (ScenarioDTO scenario in quote.Scenarios)
                     {
-                        scenarios.Add(new ScenarioData
+                        if (scenario.PurchaseInfo != null)
                         {
-                            AnnualInterestRate = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.AnnualInterestRate : 0,
-                            MonthlyTotal = scenario.LoanProgram != null ? scenario.LoanProgram.MonthlyTotal : 0,
-                            LoanAmount = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.LoanAmount : 0,
-                            LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString() ?? "",
-                            isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
-                        });
+                            scenarios.Add(new ScenarioData
+                            {
+                                AnnualInterestRate = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.AnnualInterestRate : 0,
+                                MonthlyTotal = scenario.LoanProgram != null ? scenario.LoanProgram.MonthlyTotal : 0,
+                                LoanAmount = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.LoanAmount : 0,
+                                LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString() ?? "",
+                                isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
+                            });
+                        }
                     }
                 }
+
                 results.Add(new TopOpportunityDTO
                 {
-                    PreApprovalId = preApproval.Id,
-                    CreatedAt = preApproval.CreatedAt,
-                    BorrowerName = preApproval.Scenarios.First().BorrowerInfo?.BorrowerName,
-                    Scenarios = scenarios
-                });
-            }
-
-            return results.OrderByDescending(doc => doc.CreatedAt).ToList();
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
-    }
-
-    public async Task<List<TopOpportunityDTO>> GetInEscrowList()
-    {
-        try
-        {
-            var userId = _loginUserDetails.UserID;
-            var preApprovals = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 2);
-            var results = new List<TopOpportunityDTO>();
-            foreach (PreApprovalDocument preApproval in preApprovals)
-            {
-                List<ScenarioData> scenarios = new List<ScenarioData>();
-                foreach (ScenarioDTO scenario in preApproval.Scenarios)
-                {
-                    scenarios.Add(new ScenarioData
-                    {
-                        AnnualInterestRate = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.AnnualInterestRate : 0,
-                        MonthlyTotal = scenario.LoanProgram != null ? scenario.LoanProgram.MonthlyTotal : 0,
-                        LoanAmount = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.LoanAmount : 0,
-                        LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString() ?? "",
-                        isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
-                    });
-                }
-                results.Add(new TopOpportunityDTO
-                {
-                    PreApprovalId = preApproval.Id,
-                    CreatedAt = preApproval.CreatedAt,
-                    BorrowerName = preApproval.Scenarios.First().BorrowerInfo?.BorrowerName,
-                    Scenarios = scenarios
-                });
-            }
-
-            return results.OrderByDescending(doc => doc.CreatedAt).ToList();
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
-    }
-
-    public async Task<List<TopOpportunityDTO>> GetTBDsList()
-    {
-        try
-        {
-            var userId = _loginUserDetails.UserID;
-            var preApprovals = (await _preApprovalRepository.GetAllAsync(userId)).Where(x => x.Status == 3);
-            var results = new List<TopOpportunityDTO>();
-            foreach(PreApprovalDocument preApproval in preApprovals)
-            {
-                List<ScenarioData> scenarios = new List<ScenarioData>();
-                foreach (ScenarioDTO scenario in preApproval.Scenarios)
-                {
-                    scenarios.Add(new ScenarioData
-                    {
-                        AnnualInterestRate = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.AnnualInterestRate : 0,
-                        MonthlyTotal = scenario.LoanProgram != null ? scenario.LoanProgram.MonthlyTotal : 0,
-                        LoanAmount = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.LoanAmount : 0,
-                        LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString() ?? "",
-                        isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
-                    });
-                }
-                results.Add(new TopOpportunityDTO
-                {
-                    PreApprovalId = preApproval.Id,
-                    CreatedAt = preApproval.CreatedAt,
-                    BorrowerName = preApproval.Scenarios.First().BorrowerInfo?.BorrowerName,
+                    PreApprovalId = quote.Id,
+                    CreatedAt = quote.CreatedAt,
+                    BorrowerName = quote.Scenarios != null ? quote.Scenarios.First().BorrowerInfo?.BorrowerName : "",
                     Scenarios = scenarios
                 });
             }

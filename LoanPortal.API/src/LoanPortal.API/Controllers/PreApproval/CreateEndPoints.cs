@@ -26,16 +26,16 @@ namespace LoanPortal.API.Controllers.PreApproval
             _loginUserDetails = loginUserDetails;
         }
 
-        [HttpPost("preapproval/BorrowerInfo")]
+        /*[HttpPost("preapproval/BorrowerInfo")]
         public async Task<IActionResult> BorrowerInfo([FromBody] BorrowerInfoDTO info)
         {
             try
             {
-                /*var errors = PreApprovalHelper.ValidateBorrowerInfo(info);
-                if (errors.Count > 0)
-                {
-                    return BadRequest(new { message = "Validation failed", errors });
-                }*/
+                //var errors = PreApprovalHelper.ValidateBorrowerInfo(info);
+                //if (errors.Count > 0)
+                //{
+                //    return BadRequest(new { message = "Validation failed", errors });
+                //}
 
                 var result = await _preApprovalService.CreateBorrowerInfo(info);
                 return Ok(SuccessResponse(result));
@@ -150,7 +150,7 @@ namespace LoanPortal.API.Controllers.PreApproval
             {
                 return StatusCode(500, ErrorResponse<List<BorrowerIncomeDTO>>(500, ex.Message));
             }
-        }
+        }*/
 
         /*[HttpPost("preapproval/DebtBreakdown")]
         public async Task<IActionResult> DebtBreakdown([FromBody] List<DebtBreakdownDTO> debtDtos)
@@ -172,7 +172,7 @@ namespace LoanPortal.API.Controllers.PreApproval
             }
         }*/
 
-        [HttpPost("preapproval/LoanProgram")]
+        /*[HttpPost("preapproval/LoanProgram")]
         public async Task<IActionResult> LoanProgram([FromBody] LoanProgramDTO loanProgramDto)
         {
             try
@@ -211,7 +211,7 @@ namespace LoanPortal.API.Controllers.PreApproval
             {
                 return StatusCode(500, ErrorResponse<LoanProgramDTO>(500, ex.Message));
             }
-        }
+        }*/
 
         [HttpPost("preapproval/SavePreApproval")]
         public async Task<IActionResult> SavePreApproval([FromBody] PreApprovalDTO preApproval)

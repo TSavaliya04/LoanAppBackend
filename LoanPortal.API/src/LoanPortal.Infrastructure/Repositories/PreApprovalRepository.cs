@@ -126,6 +126,30 @@ namespace LoanPortal.Infrastructure.Repositories
             }
         }
 
+        public async Task<List<PreApprovalDocument>> GetByDateRangeAdmin(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                if(startDate == null || endDate == null)
+                {
+                    startDate = DateTime.Now;
+                    endDate = DateTime.Now;
+                }
+
+                var filter = Builders<PreApprovalDocument>.Filter.And(
+                    Builders<PreApprovalDocument>.Filter.Gte(doc => doc.CreatedAt, startDate),
+                    Builders<PreApprovalDocument>.Filter.Lt(doc => doc.CreatedAt, endDate)
+                );
+
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in PreApprovalRepository.GetByDateRange: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<List<PreApprovalDocument>> GetByPreApprovedDateRange(Guid userId, DateTime startDate, DateTime endDate)
         {
             try

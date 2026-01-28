@@ -641,7 +641,7 @@ public class PreApprovalService : IPreApprovalService
                 await _preApprovalRepository.InsertAsync(preApprovalDocument);
             }
 
-            return preApprovalDocument;
+            return await _preApprovalRepository.GetByIdAsync(preApprovalDocument.Id);
         }
         catch (Exception e) 
         {

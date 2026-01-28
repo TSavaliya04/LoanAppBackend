@@ -89,7 +89,7 @@ namespace LoanPortal.API.Controllers.Admin
         }
 
         [HttpPost("admin/GetUsers")]
-        public async Task<IActionResult> GetUsers([FromBody] List<Guid> userIds)
+        public async Task<IActionResult> GetUsers()
         {
             try
             {
@@ -98,18 +98,32 @@ namespace LoanPortal.API.Controllers.Admin
                 {
                     return StatusCode(403, ErrorResponse<List<UserDTO>>(403, "Access denied. Admin privileges required."));
                 }
-
-                if (userIds == null || userIds.Count == 0)
-                {
-                    return BadRequest(ErrorResponse<List<UserDTO>>(400, "User IDs list cannot be empty."));
-                }
-
-                var result = await _adminService.GetUsers(userIds);
+                var result = await _adminService.GetUsers();
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ErrorResponse<List<UserDTO>>(500, ex.Message));
+            }
+        }
+
+        [HttpGet("admin/GetAdminDashboard")]
+        public async Task<IActionResult> GetAdminDashboard(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                // Check if user is admin
+                if (!IsAdmin())
+                {
+                    return StatusCode(403, ErrorResponse<CurrentActiveUsersDTO>(403, "Access denied. Admin privileges required."));
+                }
+
+                var result = await _adminService.GetAdminDashboard(startDate, endDate);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CurrentActiveUsersDTO>(500, ex.Message));
             }
         }
 

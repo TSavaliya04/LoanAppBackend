@@ -22,4 +22,22 @@ namespace LoanPortal.Core.Entities
         public int ActiveUsers { get; set; }
         public DateTime Date { get; set; }
     }
+
+    public class AdminDashboardDTO
+    {
+        public int ActiveUser { get; set; }
+        public int QuotesCreated { get; set; }
+        public int PreApprovals { get; set; }
+        public int FilesInEscrow { get; set; }
+    }
+
+    public class AgentDTO
+    {
+        public string AgentName { get; set; }
+        public string Email { get; set; }
+        public string Company { get; set; }
+        public DateTime LastLogin { get; set; }
+        public int QuotesThisWeek { get; set; }
+        public string Status { get; set; }
+    }
 }

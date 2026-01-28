@@ -20,5 +20,6 @@ namespace LoanPortal.Core.Repositories
         Task<List<UserEntity>> GetUsersActiveInRange(DateTime startDate, DateTime endDate);
         Task UpdateUserLoginActivity(Guid userId, DateTime loginTime);
         Task<List<UserEntity>> GetUsersByIds(List<Guid> userIds);
+        Task<List<UserEntity>> GetAll();
     }
 }

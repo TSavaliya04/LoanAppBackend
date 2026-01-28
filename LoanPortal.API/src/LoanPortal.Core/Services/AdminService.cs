@@ -2,16 +2,23 @@ using LoanPortal.Core.Entities;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
+using LoanPortal.Shared.Constants;
+using LoanPortal.Shared.Enum;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace LoanPortal.Core.Services
 {
     public class AdminService : IAdminService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IPreApprovalRepository _preApprovalRepository;
 
-        public AdminService(IUserRepository userRepository)
+        public AdminService(IUserRepository userRepository, IPreApprovalRepository preApprovalRepository)
         {
             _userRepository = userRepository;
+            _preApprovalRepository = preApprovalRepository;
         }
 
         public async Task<DailyActiveUsersDTO> GetDailyActiveUsers(DateTime date)
@@ -65,15 +72,49 @@ namespace LoanPortal.Core.Services
             };
         }
 
-        public async Task<List<UserDTO>> GetUsers(List<Guid> userIds)
+        public async Task<List<AgentDTO>> GetUsers()
         {
-            if (userIds == null || userIds.Count == 0)
-            {
-                return new List<UserDTO>();
-            }
+            var users = await _userRepository.GetAll();
+            users.Remove(users.Find(u => u.Id == IConstants.AdminId));
 
-            var users = await _userRepository.GetUsersByIds(userIds);
-            return users.Select(user => UserHelper.MaptoUserDTO(user)).ToList();
+            var today = DateTime.UtcNow.Date;
+            var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+            var endOfWeek = startOfWeek.AddDays(7);
+
+            var thisWeekPreApprovals = await _preApprovalRepository.GetByDateRangeAdmin(startOfWeek, endOfWeek);
+            var preApprovalsByUser = thisWeekPreApprovals
+                .GroupBy(p => p.UserId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            List<AgentDTO> agents = new List<AgentDTO>();
+
+            foreach (UserEntity user in users)
+            {
+                preApprovalsByUser.TryGetValue(user.Id, out var quotesThisWeek);
+
+                agents.Add(new AgentDTO
+                {
+                    AgentName = user.FirstName + " " + user.LastName,
+                    Company = user.CompanyName,
+                    Email = user.Email,
+                    LastLogin = user.LastLoginDate ?? DateTime.UtcNow,
+                    Status = user.IsActive ? "Active" : "InActive",
+                    QuotesThisWeek = quotesThisWeek
+                });
+            }
+            return agents;
+        }
+
+        public async Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate)
+        {
+            List<PreApprovalDocument> quotes = await _preApprovalRepository.GetByDateRangeAdmin(startDate, endDate);
+            return new AdminDashboardDTO
+            {
+                ActiveUser = (await _userRepository.GetAll()).Count,
+                QuotesCreated = quotes.Where(q => q.Status == (int)ApplicationStatus.TBD).Count(),
+                PreApprovals = quotes.Where(q => q.Status == (int)ApplicationStatus.PreApproved).Count(),
+                FilesInEscrow = quotes.Where(q => q.Status == (int)ApplicationStatus.InEscrow).Count(),
+            };
         }
     }
 }

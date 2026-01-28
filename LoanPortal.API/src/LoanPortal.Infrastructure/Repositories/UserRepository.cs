@@ -162,5 +162,18 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<List<UserEntity>> GetAll() 
+        {
+            try
+            {
+                return await _collection.Find(_ => true).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.GetAll -> " + ex.Message);
+                throw;
+            }
+        }
     }
 }

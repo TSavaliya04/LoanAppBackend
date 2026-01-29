@@ -130,12 +130,6 @@ namespace LoanPortal.Infrastructure.Repositories
         {
             try
             {
-                if(startDate == null || endDate == null)
-                {
-                    startDate = DateTime.Now;
-                    endDate = DateTime.Now;
-                }
-
                 var filter = Builders<PreApprovalDocument>.Filter.And(
                     Builders<PreApprovalDocument>.Filter.Gte(doc => doc.CreatedAt, startDate),
                     Builders<PreApprovalDocument>.Filter.Lt(doc => doc.CreatedAt, endDate)
@@ -169,5 +163,24 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<List<PreApprovalDocument>> GetByStatusChangeDateRange(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var filter = Builders<PreApprovalDocument>.Filter.And(
+                    Builders<PreApprovalDocument>.Filter.Gte(doc => doc.StatusUpdatedAt, startDate),
+                    Builders<PreApprovalDocument>.Filter.Lt(doc => doc.StatusUpdatedAt, endDate)
+                );
+
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in PreApprovalRepository.GetByPreApprovedDateRange: {ex.Message}");
+                throw;
+            }
+        }
+
     }
 }

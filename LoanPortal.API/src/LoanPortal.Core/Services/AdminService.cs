@@ -107,13 +107,21 @@ namespace LoanPortal.Core.Services
 
         public async Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate)
         {
+            if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
+            {
+                startDate = DateTime.UtcNow.Date;
+                endDate = startDate.AddDays(1);
+            }
+
             List<PreApprovalDocument> quotes = await _preApprovalRepository.GetByDateRangeAdmin(startDate, endDate);
+            List<PreApprovalDocument> quotesStatus = await _preApprovalRepository.GetByStatusChangeDateRange(startDate, endDate);
             return new AdminDashboardDTO
             {
-                ActiveUser = (await _userRepository.GetAll()).Count,
-                QuotesCreated = quotes.Where(q => q.Status == (int)ApplicationStatus.TBD).Count(),
-                PreApprovals = quotes.Where(q => q.Status == (int)ApplicationStatus.PreApproved).Count(),
-                FilesInEscrow = quotes.Where(q => q.Status == (int)ApplicationStatus.InEscrow).Count(),
+                TotalUser = (await _userRepository.GetAll()).Count,
+                ActiveUser = (await _userRepository.GetUsersActiveInRange(startDate,endDate)).Count,
+                QuotesCreated = quotes.Count(),
+                PreApprovals = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.PreApproved).Count(),
+                FilesInEscrow = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.InEscrow).Count(),
             };
         }
     }

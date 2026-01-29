@@ -25,6 +25,7 @@ namespace LoanPortal.Core.Entities
 
     public class AdminDashboardDTO
     {
+        public int TotalUser { get; set; }
         public int ActiveUser { get; set; }
         public int QuotesCreated { get; set; }
         public int PreApprovals { get; set; }

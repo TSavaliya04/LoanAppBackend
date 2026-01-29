@@ -20,5 +20,6 @@ namespace LoanPortal.Core.Repositories
         Task<List<PreApprovalDocument>> GetByDateRange(Guid userId, DateTime startDate, DateTime endDate);
         Task<List<PreApprovalDocument>> GetByPreApprovedDateRange(Guid userId, DateTime startDate, DateTime endDate);
         Task<List<PreApprovalDocument>> GetByDateRangeAdmin(DateTime startDate, DateTime endDate);
+        Task<List<PreApprovalDocument>> GetByStatusChangeDateRange(DateTime startDate, DateTime endDate);
     }
 }

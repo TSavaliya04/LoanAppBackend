@@ -629,6 +629,7 @@ public class PreApprovalService : IPreApprovalService
                 LastSubmittedFormNo = preApproval.LastSubmittedFormNo ?? 0,
                 LastSubmittedScenarioNo = preApproval.LastSubmittedScenarioNo ?? 0,
                 Status = preApproval.Status,
+                StatusUpdatedAt = preApproval.StatusUpdatedAt,
                 Scenarios = preApproval.Scenarios
             };
 

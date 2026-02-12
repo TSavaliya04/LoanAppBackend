@@ -72,7 +72,7 @@ namespace LoanPortal.Core.Services
             };
         }
 
-        public async Task<List<AgentDTO>> GetUsers()
+        public async Task<PagedAgentsDTO> GetUsers(AgentListRequest request)
         {
             var users = await _userRepository.GetAll();
             users.Remove(users.Find(u => u.Id == IConstants.AdminId));
@@ -102,7 +102,59 @@ namespace LoanPortal.Core.Services
                     QuotesThisWeek = quotesThisWeek
                 });
             }
-            return agents;
+
+            // Apply search
+            IEnumerable<AgentDTO> query = agents;
+            if (!string.IsNullOrWhiteSpace(request.SearchText))
+            {
+                var search = request.SearchText.Trim().ToLower();
+                query = query.Where(a =>
+                    (!string.IsNullOrEmpty(a.AgentName) && a.AgentName.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(a.Email) && a.Email.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(a.Company) && a.Company.ToLower().Contains(search)));
+            }
+
+            // Apply sorting
+            bool desc = string.Equals(request.SortByDirection, "desc", StringComparison.OrdinalIgnoreCase);
+            switch (request.SortBy?.ToLower())
+            {
+                case "email":
+                    query = desc ? query.OrderByDescending(a => a.Email) : query.OrderBy(a => a.Email);
+                    break;
+                case "company":
+                    query = desc ? query.OrderByDescending(a => a.Company) : query.OrderBy(a => a.Company);
+                    break;
+                case "lastlogin":
+                    query = desc ? query.OrderByDescending(a => a.LastLogin) : query.OrderBy(a => a.LastLogin);
+                    break;
+                case "quotesthisweek":
+                    query = desc ? query.OrderByDescending(a => a.QuotesThisWeek) : query.OrderBy(a => a.QuotesThisWeek);
+                    break;
+                case "status":
+                    query = desc ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status);
+                    break;
+                default:
+                    query = desc ? query.OrderByDescending(a => a.AgentName) : query.OrderBy(a => a.AgentName);
+                    break;
+            }
+
+            var totalCount = query.Count();
+
+            var pageNumber = request.PageNumber <= 0 ? 1 : request.PageNumber;
+            var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+            var items = query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedAgentsDTO
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate)

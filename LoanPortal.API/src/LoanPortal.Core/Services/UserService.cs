@@ -166,8 +166,17 @@ namespace LoanPortal.Core.Services
         {
             try
             {
-                // Get existing user data
-                var existingUser = await _userRepository.GetUserById(_loginUserDetails.UserID);
+                Guid userId = _loginUserDetails.UserID;
+                UserEntity existingUser = null;
+                if (userId == IConstants.AdminId)
+                {
+                    existingUser = await _userRepository.GetUserById(request.UserId.Value);
+                }
+                else
+                {
+                    existingUser = await _userRepository.GetUserById(userId);
+                }
+
 
                 string url = "";
                 if (request.Profile != null && BlobStorageHelper.isValidFile(request.Profile.FileName))

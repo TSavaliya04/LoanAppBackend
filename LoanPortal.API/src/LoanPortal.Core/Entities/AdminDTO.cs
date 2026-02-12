@@ -41,4 +41,21 @@ namespace LoanPortal.Core.Entities
         public int QuotesThisWeek { get; set; }
         public string Status { get; set; }
     }
+
+    public class AgentListRequest
+    {
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public string? SearchText { get; set; }
+        public string? SortBy { get; set; }
+        public string? SortByDirection { get; set; } = "asc";
+    }
+
+    public class PagedAgentsDTO
+    {
+        public List<AgentDTO> Items { get; set; }
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+    }
 }

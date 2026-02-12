@@ -8,6 +8,6 @@ namespace LoanPortal.Core.Interfaces
         Task<DailyActiveUsersRangeDTO> GetDailyActiveUsersRange(DateTime startDate, DateTime endDate);
         Task<CurrentActiveUsersDTO> GetCurrentActiveUsers();
         Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate);
-        Task<List<AgentDTO>> GetUsers();
+        Task<PagedAgentsDTO> GetUsers(AgentListRequest request);
     }
 }

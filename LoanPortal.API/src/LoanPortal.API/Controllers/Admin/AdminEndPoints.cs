@@ -13,11 +13,13 @@ namespace LoanPortal.API.Controllers.Admin
     {
         private readonly IAdminService _adminService;
         private readonly ILoginUserDetails _loginUserDetails;
+        private readonly IUserService _userService;
 
-        public AdminEndPoints(IAdminService adminService, ILoginUserDetails loginUserDetails)
+        public AdminEndPoints(IAdminService adminService, ILoginUserDetails loginUserDetails, IUserService userService)
         {
             _adminService = adminService;
             _loginUserDetails = loginUserDetails;
+            _userService = userService;
         }
 
         [HttpGet("admin/DailyActiveUsers")]
@@ -89,21 +91,21 @@ namespace LoanPortal.API.Controllers.Admin
         }
 
         [HttpPost("admin/GetUsers")]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUsers([FromBody] AgentListRequest request)
         {
             try
             {
                 // Check if user is admin
                 if (!IsAdmin())
                 {
-                    return StatusCode(403, ErrorResponse<List<UserDTO>>(403, "Access denied. Admin privileges required."));
+                    return StatusCode(403, ErrorResponse<PagedAgentsDTO>(403, "Access denied. Admin privileges required."));
                 }
-                var result = await _adminService.GetUsers();
+                var result = await _adminService.GetUsers(request);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<List<UserDTO>>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<PagedAgentsDTO>(500, ex.Message));
             }
         }
 
@@ -124,6 +126,20 @@ namespace LoanPortal.API.Controllers.Admin
             catch (Exception ex)
             {
                 return StatusCode(500, ErrorResponse<CurrentActiveUsersDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpPut("admin/UpdateUser")]
+        public async Task<IActionResult> UpdateUser([FromForm] UpdateProfileRequest request)
+        {
+            try
+            {
+                var result = await _userService.UpdateProfile(request);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
             }
         }
 

@@ -3,6 +3,7 @@ using LoanPortal.Core.Exceptions;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
+using LoanPortal.Shared.Constants;
 using LoanPortal.Shared.Enum;
 using MongoDB.Driver;
 using static MongoDB.Bson.Serialization.Serializers.SerializerHelper;
@@ -326,8 +327,7 @@ public class PreApprovalService : IPreApprovalService
             
             if(agent != null && !string.IsNullOrEmpty(agent.Profile))
             {
-                string token = "sp=racwdli&st=2025-10-01T17:14:14Z&se=2026-10-02T01:29:14Z&sv=2024-11-04&sr=c&sig=tbTUGvn1%2F7uCyUtIvk8coOlzS9RD%2FGKBtdNyVxLR33Q%3D";
-                agent.Profile = agent.Profile + "?" + token;
+                agent.Profile = agent.Profile + "?" + IConstants.AzureToken;
             }
 
             decimal purchasePrice = scenario.LoanProgram.Price.Value;

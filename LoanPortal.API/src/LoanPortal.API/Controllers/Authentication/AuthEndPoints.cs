@@ -77,7 +77,7 @@ namespace LoanPortal.API.Controllers.Authentication
         {
             try
             {
-                var result = await _userService.GetUserProfile();
+                var result = await _userService.GetUserProfile(_loginUserDetails.UserID);
                 return Ok(SuccessResponse(result));
             }
             catch (ValidationException ex)

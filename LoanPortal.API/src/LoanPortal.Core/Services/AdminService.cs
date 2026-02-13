@@ -72,7 +72,7 @@ namespace LoanPortal.Core.Services
             };
         }
 
-        public async Task<PagedAgentsDTO> GetUsers(AgentListRequest request)
+        public async Task<PagedAgentsDTO> GetUsers(DefaultRequest request)
         {
             var users = await _userRepository.GetAll();
             users.Remove(users.Find(u => u.Id == IConstants.AdminId));
@@ -158,6 +158,95 @@ namespace LoanPortal.Core.Services
             };
         }
 
+        public async Task<PagedRecentQuotesDTO> GetRecentQuotes(RecentQuoteRequest request)
+        {
+            var quotes = await _preApprovalRepository.GetAllAsync(request.UserId);
+
+            var recentQuotes = new List<RecentQuoteDTO>();
+
+            foreach (var quote in quotes)
+            {
+                var latestScenario = quote.Scenarios?
+                    .OrderByDescending(s => s.CreatedAt ?? DateTime.MinValue)
+                    .FirstOrDefault();
+
+                var borrowerInfo = latestScenario?.BorrowerInfo;
+                var purchaseInfo = latestScenario?.PurchaseInfo;
+                var loanProgram = latestScenario?.LoanProgram;
+
+                var loanType = loanProgram != null
+                    ? Enum.IsDefined(typeof(LoanProgram), loanProgram.LoanProgram)
+                        ? ((LoanProgram)loanProgram.LoanProgram).ToString()
+                        : string.Empty
+                    : string.Empty;
+
+                var stage = Enum.IsDefined(typeof(ApplicationStatus), quote.Status)
+                    ? ((ApplicationStatus)quote.Status).ToString()
+                    : string.Empty;
+
+                recentQuotes.Add(new RecentQuoteDTO
+                {
+                    UserId = quote.UserId,
+                    Date = quote.CreatedAt,
+                    ClientName = borrowerInfo?.BorrowerName,
+                    LoanAmount = purchaseInfo?.LoanAmount ?? 0,
+                    LoanType = loanType,
+                    Stage = stage
+                });
+            }
+
+            IEnumerable<RecentQuoteDTO> query = recentQuotes;
+
+            if (!string.IsNullOrWhiteSpace(request.Params.SearchText))
+            {
+                var search = request.Params.SearchText.Trim().ToLower();
+                query = query.Where(q =>
+                    (!string.IsNullOrEmpty(q.ClientName) && q.ClientName.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(q.LoanType) && q.LoanType.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(q.Stage) && q.Stage.ToLower().Contains(search)) ||
+                    q.UserId.ToString().ToLower().Contains(search));
+            }
+
+            bool desc = string.Equals(request.Params.SortByDirection, "desc", StringComparison.OrdinalIgnoreCase);
+            switch (request.Params.SortBy?.ToLower())
+            {
+                case "clientname":
+                    query = desc ? query.OrderByDescending(q => q.ClientName) : query.OrderBy(q => q.ClientName);
+                    break;
+                case "loanamount":
+                    query = desc ? query.OrderByDescending(q => q.LoanAmount) : query.OrderBy(q => q.LoanAmount);
+                    break;
+                case "loantype":
+                    query = desc ? query.OrderByDescending(q => q.LoanType) : query.OrderBy(q => q.LoanType);
+                    break;
+                case "stage":
+                    query = desc ? query.OrderByDescending(q => q.Stage) : query.OrderBy(q => q.Stage);
+                    break;
+                case "date":
+                default:
+                    query = desc ? query.OrderByDescending(q => q.Date) : query.OrderBy(q => q.Date);
+                    break;
+            }
+
+            var total = query.Count();
+
+            var pageNumber = request.Params.PageNumber <= 0 ? 1 : request.Params.PageNumber;
+            var pageSize = request.Params.PageSize <= 0 ? 10 : request.Params.PageSize;
+
+            var items = query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedRecentQuotesDTO
+            {
+                Quotes = items,
+                TotalCount = total,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
         public async Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate)
         {
             if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
@@ -175,6 +264,49 @@ namespace LoanPortal.Core.Services
                 QuotesCreated = quotes.Count(),
                 PreApprovals = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.PreApproved).Count(),
                 FilesInEscrow = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.InEscrow).Count(),
+            };
+        }
+
+        public async Task<QuotesOverviewDTO> GetQuotesOverview(DateTime startDate, DateTime endDate, Guid userId)
+        {
+            if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
+            {
+                startDate = DateTime.UtcNow.Date;
+                endDate = startDate.AddDays(1);
+            }
+
+            var quotes = await _preApprovalRepository.GetByDateRange(userId, startDate, endDate);
+            
+            // Group quotes by date
+            var dailyQuoteCounts = quotes
+                .GroupBy(q => q.CreatedAt.Date)
+                .Select(g => new DailyQuoteCountDTO
+                {
+                    Date = g.Key,
+                    QuoteCount = g.Count()
+                })
+                .OrderBy(d => d.Date)
+                .ToList();
+
+            // Fill in missing dates with 0 counts
+            var allDates = new List<DailyQuoteCountDTO>();
+            for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+            {
+                var existingCount = dailyQuoteCounts.FirstOrDefault(d => d.Date.Date == date.Date);
+                allDates.Add(existingCount ?? new DailyQuoteCountDTO
+                {
+                    Date = date,
+                    QuoteCount = 0
+                });
+            }
+
+            return new QuotesOverviewDTO
+            {
+                UserId = userId,
+                StartDate = startDate.Date,
+                EndDate = endDate.Date,
+                TotalQuotes = quotes.Count,
+                DailyQuoteCounts = allDates
             };
         }
     }

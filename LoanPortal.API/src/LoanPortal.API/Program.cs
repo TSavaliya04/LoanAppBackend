@@ -41,6 +41,16 @@ builder
         };
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userIdClaim = context.User.FindFirst("UserId")?.Value;
+            return userIdClaim == LoanPortal.Shared.Constants.IConstants.AdminId.ToString();
+        }));
+});
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -212,6 +222,7 @@ app.Use(
 );
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

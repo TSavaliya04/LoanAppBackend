@@ -44,7 +44,12 @@ namespace LoanPortal.Core.Entities
         public string Status { get; set; }
     }
 
-    public class AgentListRequest
+    public class DefaultRequestWrapper
+    {
+        public DefaultRequest Params { get; set; }
+    }
+
+    public class DefaultRequest
     {
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
@@ -59,5 +64,44 @@ namespace LoanPortal.Core.Entities
         public int TotalCount { get; set; }
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
+    }
+
+    public class RecentQuoteRequest
+    {
+        public DefaultRequest Params { get; set; }
+        public Guid UserId { get; set; }
+    }
+
+    public class RecentQuoteDTO
+    {
+        public Guid UserId { get; set; }
+        public DateTime Date { get; set; }
+        public string? ClientName { get; set; }
+        public decimal LoanAmount { get; set; }
+        public string? LoanType { get; set; }
+        public string? Stage { get; set; }
+    }
+
+    public class PagedRecentQuotesDTO
+    {
+        public List<RecentQuoteDTO> Quotes { get; set; }
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+    }
+
+    public class DailyQuoteCountDTO
+    {
+        public DateTime Date { get; set; }
+        public int QuoteCount { get; set; }
+    }
+
+    public class QuotesOverviewDTO
+    {
+        public Guid UserId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int TotalQuotes { get; set; }
+        public List<DailyQuoteCountDTO> DailyQuoteCounts { get; set; }
     }
 }

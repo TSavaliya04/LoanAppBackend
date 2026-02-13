@@ -8,7 +8,7 @@ using static LoanPortal.API.Helper.ResponseHelper;
 
 namespace LoanPortal.API.Controllers.Admin
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "AdminOnly")]
     public class AdminEndPoints : EndpointBase
     {
         private readonly IAdminService _adminService;
@@ -27,12 +27,6 @@ namespace LoanPortal.API.Controllers.Admin
         {
             try
             {
-                // Check if user is admin
-                if (!IsAdmin())
-                {
-                    return StatusCode(403, ErrorResponse<DailyActiveUsersDTO>(403, "Access denied. Admin privileges required."));
-                }
-
                 var targetDate = date ?? DateTime.UtcNow;
                 var result = await _adminService.GetDailyActiveUsers(targetDate);
                 return Ok(SuccessResponse(result));
@@ -50,12 +44,6 @@ namespace LoanPortal.API.Controllers.Admin
         {
             try
             {
-                // Check if user is admin
-                if (!IsAdmin())
-                {
-                    return StatusCode(403, ErrorResponse<DailyActiveUsersRangeDTO>(403, "Access denied. Admin privileges required."));
-                }
-
                 if (endDate < startDate)
                 {
                     return BadRequest(ErrorResponse<DailyActiveUsersRangeDTO>(400, "End date must be after start date"));
@@ -75,12 +63,6 @@ namespace LoanPortal.API.Controllers.Admin
         {
             try
             {
-                // Check if user is admin
-                if (!IsAdmin())
-                {
-                    return StatusCode(403, ErrorResponse<CurrentActiveUsersDTO>(403, "Access denied. Admin privileges required."));
-                }
-
                 var result = await _adminService.GetCurrentActiveUsers();
                 return Ok(SuccessResponse(result));
             }
@@ -91,16 +73,11 @@ namespace LoanPortal.API.Controllers.Admin
         }
 
         [HttpPost("admin/GetUsers")]
-        public async Task<IActionResult> GetUsers([FromBody] AgentListRequest request)
+        public async Task<IActionResult> GetUsers([FromBody] DefaultRequestWrapper request)
         {
             try
             {
-                // Check if user is admin
-                if (!IsAdmin())
-                {
-                    return StatusCode(403, ErrorResponse<PagedAgentsDTO>(403, "Access denied. Admin privileges required."));
-                }
-                var result = await _adminService.GetUsers(request);
+                var result = await _adminService.GetUsers(request.Params);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
@@ -109,17 +86,25 @@ namespace LoanPortal.API.Controllers.Admin
             }
         }
 
+        [HttpPost("admin/user/RecentQuotes")]
+        public async Task<IActionResult> GetRecentQuotes(RecentQuoteRequest request)
+        {
+            try
+            {
+                var result = await _adminService.GetRecentQuotes(request);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<PagedRecentQuotesDTO>(500, ex.Message));
+            }
+        }
+
         [HttpGet("admin/GetAdminDashboard")]
         public async Task<IActionResult> GetAdminDashboard(DateTime startDate, DateTime endDate)
         {
             try
             {
-                // Check if user is admin
-                if (!IsAdmin())
-                {
-                    return StatusCode(403, ErrorResponse<CurrentActiveUsersDTO>(403, "Access denied. Admin privileges required."));
-                }
-
                 var result = await _adminService.GetAdminDashboard(startDate, endDate);
                 return Ok(SuccessResponse(result));
             }
@@ -129,7 +114,26 @@ namespace LoanPortal.API.Controllers.Admin
             }
         }
 
-        [HttpPut("admin/UpdateUser")]
+        [HttpGet("admin/user/QuotesOverview")]
+        public async Task<IActionResult> GetQuotesOverview([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] Guid userId)
+        {
+            try
+            {
+                if (endDate < startDate)
+                {
+                    return BadRequest(ErrorResponse<QuotesOverviewDTO>(400, "End date must be after start date"));
+                }
+
+                var result = await _adminService.GetQuotesOverview(startDate, endDate, userId);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<QuotesOverviewDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpPut("admin/user/UpdateUser")]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateProfileRequest request)
         {
             try
@@ -143,9 +147,18 @@ namespace LoanPortal.API.Controllers.Admin
             }
         }
 
-        private bool IsAdmin()
+        [HttpGet("admin/user/GetUserDetails")]
+        public async Task<IActionResult> GetUserDetails(Guid userId)
         {
-            return _loginUserDetails.UserID == LoanPortal.Shared.Constants.IConstants.AdminId;
+            try
+            {
+                var result = await _userService.GetUserProfile(userId);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
         }
     }
 }

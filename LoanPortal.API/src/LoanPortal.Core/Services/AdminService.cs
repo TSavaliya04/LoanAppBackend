@@ -94,6 +94,7 @@ namespace LoanPortal.Core.Services
 
                 agents.Add(new AgentDTO
                 {
+                    AgentId = user.Id,
                     AgentName = user.FirstName + " " + user.LastName,
                     Company = user.CompanyName,
                     Email = user.Email,
@@ -150,7 +151,7 @@ namespace LoanPortal.Core.Services
 
             return new PagedAgentsDTO
             {
-                Items = items,
+                Users = items,
                 TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize

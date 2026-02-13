@@ -34,6 +34,8 @@ namespace LoanPortal.Core.Entities
 
     public class AgentDTO
     {
+
+        public Guid AgentId { get; set; }
         public string AgentName { get; set; }
         public string Email { get; set; }
         public string Company { get; set; }
@@ -53,7 +55,7 @@ namespace LoanPortal.Core.Entities
 
     public class PagedAgentsDTO
     {
-        public List<AgentDTO> Items { get; set; }
+        public List<AgentDTO> Users { get; set; }
         public int TotalCount { get; set; }
         public int PageNumber { get; set; }
         public int PageSize { get; set; }

@@ -74,88 +74,96 @@ namespace LoanPortal.Core.Services
 
         public async Task<PagedAgentsDTO> GetUsers(DefaultRequest request)
         {
-            var users = await _userRepository.GetAll();
-            users.Remove(users.Find(u => u.Id == IConstants.AdminId));
-
-            var today = DateTime.UtcNow.Date;
-            var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
-            var endOfWeek = startOfWeek.AddDays(7);
-
-            var thisWeekPreApprovals = await _preApprovalRepository.GetByDateRangeAdmin(startOfWeek, endOfWeek);
-            var preApprovalsByUser = thisWeekPreApprovals
-                .GroupBy(p => p.UserId)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            List<AgentDTO> agents = new List<AgentDTO>();
-
-            foreach (UserEntity user in users)
+            try
             {
-                preApprovalsByUser.TryGetValue(user.Id, out var quotesThisWeek);
+                var users = await _userRepository.GetAll();
+                users.Remove(users.Find(u => u.Id == IConstants.AdminId));
 
-                agents.Add(new AgentDTO
+                var today = DateTime.UtcNow.Date;
+                var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+                var endOfWeek = startOfWeek.AddDays(7);
+
+                var thisWeekPreApprovals = await _preApprovalRepository.GetByDateRangeAdmin(startOfWeek, endOfWeek);
+                var preApprovalsByUser = thisWeekPreApprovals
+                    .GroupBy(p => p.UserId)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                List<AgentDTO> agents = new List<AgentDTO>();
+
+                foreach (UserEntity user in users)
                 {
-                    AgentId = user.Id,
-                    AgentName = user.FirstName + " " + user.LastName,
-                    Company = user.CompanyName,
-                    Email = user.Email,
-                    LastLogin = user.LastLoginDate ?? DateTime.UtcNow,
-                    Status = user.IsActive ? "Active" : "InActive",
-                    QuotesThisWeek = quotesThisWeek
-                });
+                    preApprovalsByUser.TryGetValue(user.Id, out var quotesThisWeek);
+
+                    agents.Add(new AgentDTO
+                    {
+                        AgentId = user.Id,
+                        AgentName = user.FirstName + " " + user.LastName,
+                        Company = user.CompanyName,
+                        Email = user.Email,
+                        LastLogin = user.LastLoginDate,
+                        Status = user.IsActive ? "Active" : "InActive",
+                        QuotesThisWeek = quotesThisWeek
+                    });
+                }
+
+                // Apply search
+                IEnumerable<AgentDTO> query = agents;
+                if (!string.IsNullOrWhiteSpace(request.SearchText))
+                {
+                    var search = request.SearchText.Trim().ToLower();
+                    query = query.Where(a =>
+                        (!string.IsNullOrEmpty(a.AgentName) && a.AgentName.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(a.Email) && a.Email.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(a.Company) && a.Company.ToLower().Contains(search)));
+                }
+
+                // Apply sorting
+                bool desc = string.Equals(request.SortByDirection, "desc", StringComparison.OrdinalIgnoreCase);
+                switch (request.SortBy?.ToLower())
+                {
+                    case "email":
+                        query = desc ? query.OrderByDescending(a => a.Email) : query.OrderBy(a => a.Email);
+                        break;
+                    case "company":
+                        query = desc ? query.OrderByDescending(a => a.Company) : query.OrderBy(a => a.Company);
+                        break;
+                    case "lastlogin":
+                        query = desc ? query.OrderByDescending(a => a.LastLogin) : query.OrderBy(a => a.LastLogin);
+                        break;
+                    case "quotesthisweek":
+                        query = desc ? query.OrderByDescending(a => a.QuotesThisWeek) : query.OrderBy(a => a.QuotesThisWeek);
+                        break;
+                    case "status":
+                        query = desc ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status);
+                        break;
+                    default:
+                        query = desc ? query.OrderByDescending(a => a.AgentName) : query.OrderBy(a => a.AgentName);
+                        break;
+                }
+
+                var totalCount = query.Count();
+
+                var pageNumber = request.PageNumber < 0 ? 0 : request.PageNumber;
+                var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+                var items = query
+                    .Skip(pageNumber * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new PagedAgentsDTO
+                {
+                    Users = items,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
             }
-
-            // Apply search
-            IEnumerable<AgentDTO> query = agents;
-            if (!string.IsNullOrWhiteSpace(request.SearchText))
+            catch (Exception ex)
             {
-                var search = request.SearchText.Trim().ToLower();
-                query = query.Where(a =>
-                    (!string.IsNullOrEmpty(a.AgentName) && a.AgentName.ToLower().Contains(search)) ||
-                    (!string.IsNullOrEmpty(a.Email) && a.Email.ToLower().Contains(search)) ||
-                    (!string.IsNullOrEmpty(a.Company) && a.Company.ToLower().Contains(search)));
+                // TODO: add logging here if a logging framework is available
+                throw new Exception("An error occurred while retrieving users.", ex);
             }
-
-            // Apply sorting
-            bool desc = string.Equals(request.SortByDirection, "desc", StringComparison.OrdinalIgnoreCase);
-            switch (request.SortBy?.ToLower())
-            {
-                case "email":
-                    query = desc ? query.OrderByDescending(a => a.Email) : query.OrderBy(a => a.Email);
-                    break;
-                case "company":
-                    query = desc ? query.OrderByDescending(a => a.Company) : query.OrderBy(a => a.Company);
-                    break;
-                case "lastlogin":
-                    query = desc ? query.OrderByDescending(a => a.LastLogin) : query.OrderBy(a => a.LastLogin);
-                    break;
-                case "quotesthisweek":
-                    query = desc ? query.OrderByDescending(a => a.QuotesThisWeek) : query.OrderBy(a => a.QuotesThisWeek);
-                    break;
-                case "status":
-                    query = desc ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status);
-                    break;
-                default:
-                    query = desc ? query.OrderByDescending(a => a.AgentName) : query.OrderBy(a => a.AgentName);
-                    break;
-            }
-
-            var totalCount = query.Count();
-
-            var pageNumber = request.PageNumber <= 0 ? 1 : request.PageNumber;
-            var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
-
-            var items = query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            return new PagedAgentsDTO
-            {
-                Users = items,
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
         }
 
         public async Task<PagedRecentQuotesDTO> GetRecentQuotes(RecentQuoteRequest request)
@@ -230,11 +238,11 @@ namespace LoanPortal.Core.Services
 
             var total = query.Count();
 
-            var pageNumber = request.Params.PageNumber <= 0 ? 1 : request.Params.PageNumber;
+            var pageNumber = request.Params.PageNumber < 0 ? 0 : request.Params.PageNumber;
             var pageSize = request.Params.PageSize <= 0 ? 10 : request.Params.PageSize;
 
             var items = query
-                .Skip((pageNumber - 1) * pageSize)
+                .Skip(pageNumber * pageSize)
                 .Take(pageSize)
                 .ToList();
 

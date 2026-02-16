@@ -39,7 +39,7 @@ namespace LoanPortal.Core.Entities
         public string AgentName { get; set; }
         public string Email { get; set; }
         public string Company { get; set; }
-        public DateTime LastLogin { get; set; }
+        public DateTime? LastLogin { get; set; }
         public int QuotesThisWeek { get; set; }
         public string Status { get; set; }
     }

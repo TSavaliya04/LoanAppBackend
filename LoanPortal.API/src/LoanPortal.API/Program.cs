@@ -86,8 +86,6 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 });
 builder.Services.AddSingleton<MongoDbContext>();
 
-builder.Services.AddSingleton<DataContext>();
-builder.Services.AddSingleton<IUnitOfWork, UnitOfWork>();
 builder.Services.AddSingleton<ILoginUserDetails, LoginUserDetails>();
 
 builder.Services.AddSingleton<IPreApprovalService, PreApprovalService>();

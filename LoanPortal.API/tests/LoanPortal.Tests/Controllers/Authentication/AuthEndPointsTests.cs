@@ -133,76 +133,49 @@ namespace LoanPortal.Tests.Controllers.Authentication
         #endregion
 
         #region Login Tests
-        /*[Fact]
-        public async Task Login_ValidCredentials_ReturnsOkResult()
+        [Fact]
+        public async Task Login_ValidRequest_ReturnsOkWithLoginResponse()
         {
-            var loginRequest = new LoginRequest
-            {
-                Email = "john.doe@example.com",
-                Password = "Test@123"
-            };
+            var request = new LoginRequest { Email = "john@example.com", Password = "Test@123" };
+            var expectedResponse = new LoginResponse { Email = request.Email, Token = "jwt-token-here" };
 
-            var expectedResponse = new LoginResponse
-            {
-                Email = loginRequest.Email,
-                Token = "valid-jwt-token"
-            };
-
-            _mockUserService.Setup(x => x.Login(loginRequest))
+            _mockUserService.Setup(x => x.Login(request))
                 .ReturnsAsync(expectedResponse);
 
-            var result = await _controller.Login(loginRequest);
+            var result = await _controller.Login(request);
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<LoginResponse>>(okResult.Value);
             Assert.True(response.Success);
-            Assert.Equal(expectedResponse, response.Data);
+            Assert.NotNull(response.Data);
+            Assert.Equal(expectedResponse.Email, response.Data.Email);
+            Assert.Equal(expectedResponse.Token, response.Data.Token);
         }
 
         [Fact]
-        public async Task Login_AccountNotFound_ThrowsException()
+        public async Task Login_ServiceThrows_ReturnsInternalServerError()
         {
-            var loginRequest = new LoginRequest
-            {
-                Email = "nonexistent@example.com",
-                Password = "Test@123"
-            };
+            var request = new LoginRequest { Email = "john@example.com", Password = "wrong" };
+            _mockUserService.Setup(x => x.Login(request))
+                .ThrowsAsync(new Exception("Invalid credentials"));
 
-            _mockUserService.Setup(x => x.Login(loginRequest))
-                .ThrowsAsync(new Exception("Account not found with given email."));
+            var result = await _controller.Login(request);
 
-            await Assert.ThrowsAsync<Exception>(() => _controller.Login(loginRequest));
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
         }
 
         [Fact]
-        public async Task Login_InactiveAccount_ThrowsException()
+        public async Task Login_ServiceCalled_VerifyMethodInvocation()
         {
-            var loginRequest = new LoginRequest
-            {
-                Email = "inactive@example.com",
-                Password = "Test@123"
-            };
+            var request = new LoginRequest { Email = "test@example.com", Password = "Pass@1" };
+            _mockUserService.Setup(x => x.Login(request))
+                .ReturnsAsync(new LoginResponse { Email = request.Email, Token = "token" });
 
-            _mockUserService.Setup(x => x.Login(loginRequest))
-                .ThrowsAsync(new Exception("Account is not active."));
+            await _controller.Login(request);
 
-            await Assert.ThrowsAsync<Exception>(() => _controller.Login(loginRequest));
+            _mockUserService.Verify(x => x.Login(request), Times.Once);
         }
-
-        [Fact]
-        public async Task Login_InvalidCredentials_ThrowsException()
-        {
-            var loginRequest = new LoginRequest
-            {
-                Email = "john.doe@example.com",
-                Password = "WrongPassword"
-            };
-
-            _mockUserService.Setup(x => x.Login(loginRequest))
-                .ThrowsAsync(new Exception("Login failed: Invalid credentials"));
-
-            await Assert.ThrowsAsync<Exception>(() => _controller.Login(loginRequest));
-        }*/
         #endregion
 
         #region UpdateProfile Tests
@@ -237,9 +210,9 @@ namespace LoanPortal.Tests.Controllers.Authentication
         [Fact]
         public async Task UpdateProfile_NullRequest_ReturnsBadRequest()
         {
-            UpdateProfileRequest updateRequest = null;
+            UpdateProfileRequest updateRequest = null!;
 
-            _mockUserService.Setup(x => x.UpdateProfile(updateRequest))
+            _mockUserService.Setup(x => x.UpdateProfile(It.IsAny<UpdateProfileRequest>()))
                 .ThrowsAsync(new ValidationException("Update profile request cannot be null"));
 
             var result = await _controller.UpdateProfile(updateRequest);
@@ -302,7 +275,8 @@ namespace LoanPortal.Tests.Controllers.Authentication
                 Email = "john.doe@example.com"
             };
 
-            _mockUserService.Setup(x => x.GetUserProfile())
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockUserService.Setup(x => x.GetUserProfile(userId))
                 .ReturnsAsync(expectedUser);
 
             var result = await _controller.GetUserProfile();
@@ -317,7 +291,8 @@ namespace LoanPortal.Tests.Controllers.Authentication
         public async Task GetUserProfile_InvalidId_ReturnsBadRequest()
         {
             var userId = Guid.NewGuid();
-            _mockUserService.Setup(x => x.GetUserProfile())
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockUserService.Setup(x => x.GetUserProfile(userId))
                 .ThrowsAsync(new ValidationException("User not found"));
 
             var result = await _controller.GetUserProfile();
@@ -332,7 +307,8 @@ namespace LoanPortal.Tests.Controllers.Authentication
         public async Task GetUserProfile_EmptyId_ReturnsBadRequest()
         {
             var userId = Guid.Empty;
-            _mockUserService.Setup(x => x.GetUserProfile())
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockUserService.Setup(x => x.GetUserProfile(userId))
                 .ThrowsAsync(new ValidationException("Invalid user ID"));
 
             var result = await _controller.GetUserProfile();
@@ -423,9 +399,8 @@ namespace LoanPortal.Tests.Controllers.Authentication
 
             var badRequestResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(400, badRequestResult.StatusCode);
-            // Optionally, check the error message if your controller includes it in the response
-            // var response = Assert.IsType<ApiResponse<UserDTO>>(badRequestResult.Value);
-            // Assert.Equal("Request Failed.", response.Message);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(badRequestResult.Value);
+            Assert.Equal(validationMessage, response.Error);
         }
 
         [Fact]
@@ -474,6 +449,74 @@ namespace LoanPortal.Tests.Controllers.Authentication
             Assert.Equal(expectedUser.Id, response.Data.Id);
             Assert.Equal(expectedUser.Email, response.Data.Email);
             Assert.True(response.Success);
+        }
+        #endregion
+
+        #region GetNewToken Tests
+        [Fact]
+        public async Task GetNewToken_ValidRefreshToken_ReturnsOkWithTokenResponse()
+        {
+            var refreshToken = "valid-refresh-token";
+            var expectedResponse = new GetNewTokenResponse
+            {
+                IdToken = "new-jwt-token",
+                RefreshToken = "new-refresh-token",
+                User = new UserDTO { Email = "user@example.com" }
+            };
+
+            _mockUserService.Setup(x => x.GetNewToken(refreshToken))
+                .ReturnsAsync(expectedResponse);
+
+            var result = await _controller.GetNewToken(refreshToken);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<GetNewTokenResponse>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
+            Assert.Equal(expectedResponse.IdToken, response.Data.IdToken);
+            Assert.Equal(expectedResponse.RefreshToken, response.Data.RefreshToken);
+            Assert.NotNull(response.Data.User);
+        }
+
+        [Fact]
+        public async Task GetNewToken_ValidationException_ReturnsBadRequest()
+        {
+            var refreshToken = "invalid-refresh-token";
+            var errorMessage = "Refresh token is expired or invalid";
+            _mockUserService.Setup(x => x.GetNewToken(refreshToken))
+                .ThrowsAsync(new ValidationException(errorMessage));
+
+            var result = await _controller.GetNewToken(refreshToken);
+
+            var badRequestResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<GetNewTokenResponse>>(badRequestResult.Value);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task GetNewToken_GenericException_ReturnsInternalServerError()
+        {
+            var refreshToken = "valid-token";
+            _mockUserService.Setup(x => x.GetNewToken(refreshToken))
+                .ThrowsAsync(new Exception("Server error"));
+
+            var result = await _controller.GetNewToken(refreshToken);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetNewToken_ServiceCalled_VerifyMethodInvocation()
+        {
+            var refreshToken = "refresh-token";
+            _mockUserService.Setup(x => x.GetNewToken(refreshToken))
+                .ReturnsAsync(new GetNewTokenResponse { IdToken = "token", RefreshToken = refreshToken });
+
+            await _controller.GetNewToken(refreshToken);
+
+            _mockUserService.Verify(x => x.GetNewToken(refreshToken), Times.Once);
         }
         #endregion
     }

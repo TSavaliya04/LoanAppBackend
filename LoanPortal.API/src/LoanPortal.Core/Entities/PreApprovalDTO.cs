@@ -26,14 +26,6 @@ namespace LoanPortal.Core.Entities
         public DateTime? UpdatedAt { get; set; }
     }
 
-    //[BsonIgnoreExtraElements]
-    //public class PreApprovalDTO
-    //{
-    //    public Guid? Id { get; set; }
-    //    public Guid UserId { get; set; }
-    //    public DateTime? CreatedAt { get; set; }
-    //}
-
     [BsonIgnoreExtraElements]
     public class PurchaseInfoDTO
     {
@@ -118,14 +110,6 @@ namespace LoanPortal.Core.Entities
     }
 
     [BsonIgnoreExtraElements]
-    public class PreApprovalTrackDTO
-    {
-        public Guid PreApprovalId { get; set; }
-        public int LastSubmittedFormNo { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-    }
-
-    [BsonIgnoreExtraElements]
     public class BorrowerIncomeDTO
     {
         public Guid? Id { get; set; }
@@ -136,16 +120,6 @@ namespace LoanPortal.Core.Entities
         public int? FicoScore { get; set; }
         public decimal? MonthlyIncome { get; set; }
         public List<DebtBreakdownDTO> Debts { get; set; }
-        public DateTime? CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-    }
-
-    [BsonIgnoreExtraElements]
-    public class W2DTO
-    {
-        public Guid Id { get; set; }
-        public decimal? Amount { get; set; }
-        public int? TaxYear { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -300,7 +274,6 @@ namespace LoanPortal.Core.Entities
         public decimal EarnestMoneyDeposit { get; set; }
         public decimal MiscFee4 { get; set; }
     }
-
 
     [BsonIgnoreExtraElements]
     public class EstimatedClosingCostDTO

@@ -32,31 +32,6 @@ namespace LoanPortal.Core.Entities
     {
         public string IdToken { get; set; }
         public string RefreshToken { get; set; }
-        //public string ExpiresIn { get; set; }
-        //public string TokenType { get; set; }
-        //public string UserId { get; set; }
-        //public string ProjectId { get; set; }
         public UserDTO User { get; set; }
-    }
-
-    public class FirebaseTokenResponse
-    {
-        //[JsonProperty("expires_in")]
-        //public string ExpiresIn { get; set; }
-
-        //[JsonProperty("token_type")]
-        //public string TokenType { get; set; }
-
-        [JsonProperty("refresh_token")]
-        public string RefreshToken { get; set; }
-
-        [JsonProperty("id_token")]
-        public string IdToken { get; set; }
-
-        //[JsonProperty("user_id")]
-        //public string UserId { get; set; }
-
-        //[JsonProperty("project_id")]
-        //public string ProjectId { get; set; }
     }
 }

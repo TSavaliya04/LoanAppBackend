@@ -22,56 +22,6 @@ namespace LoanPortal.API.Controllers.Admin
             _userService = userService;
         }
 
-        [HttpGet("admin/DailyActiveUsers")]
-        public async Task<IActionResult> GetDailyActiveUsers([FromQuery] DateTime? date)
-        {
-            try
-            {
-                var targetDate = date ?? DateTime.UtcNow;
-                var result = await _adminService.GetDailyActiveUsers(targetDate);
-                return Ok(SuccessResponse(result));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ErrorResponse<DailyActiveUsersDTO>(500, ex.Message));
-            }
-        }
-
-        [HttpGet("admin/DailyActiveUsersRange")]
-        public async Task<IActionResult> GetDailyActiveUsersRange(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate)
-        {
-            try
-            {
-                if (endDate < startDate)
-                {
-                    return BadRequest(ErrorResponse<DailyActiveUsersRangeDTO>(400, "End date must be after start date"));
-                }
-
-                var result = await _adminService.GetDailyActiveUsersRange(startDate, endDate);
-                return Ok(SuccessResponse(result));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ErrorResponse<DailyActiveUsersRangeDTO>(500, ex.Message));
-            }
-        }
-
-        [HttpGet("admin/CurrentActiveUsers")]
-        public async Task<IActionResult> GetCurrentActiveUsers()
-        {
-            try
-            {
-                var result = await _adminService.GetCurrentActiveUsers();
-                return Ok(SuccessResponse(result));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ErrorResponse<CurrentActiveUsersDTO>(500, ex.Message));
-            }
-        }
-
         [HttpPost("admin/GetUsers")]
         public async Task<IActionResult> GetUsers([FromBody] DefaultRequestWrapper request)
         {
@@ -110,7 +60,7 @@ namespace LoanPortal.API.Controllers.Admin
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<CurrentActiveUsersDTO>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<AdminDashboardDTO>(500, ex.Message));
             }
         }
 

@@ -9,15 +9,6 @@ namespace LoanPortal.Core.Interfaces
 {
     public interface IPreApprovalService
     {
-        //public Task<BorrowerInfoDTO> CreateBorrowerInfo(BorrowerInfoDTO borrowerInfo);
-        //public Task<PurchaseInfoDTO> CreatePurchaseInfo(PurchaseInfoDTO purchaseInfo);
-        //public Task<LenderFeesDTO> CreateLenderFees(LenderFeesDTO feesDTO);
-        //public Task<PrepaidItemsDTO> CreatePrepaidItems(PrepaidItemsDTO prepaidItemsDTO);
-        //public Task<MiscFeesDTO> CreateMiscFees(MiscFeesDTO miscFeesDTO);
-        //public Task<List<BorrowerIncomeDTO>> CreateBorrowerIncome(List<BorrowerIncomeDTO> borrowerIncomeDTO);
-        //public Task<List<DebtBreakdownDTO>> CreateDebtBreakdown(List<DebtBreakdownDTO> debtDtos);
-        //public Task<LoanProgramDTO> CreateLoanProgram(LoanProgramDTO loanProgramDto);
-        //public Task<List<TopOpportunityDTO>> GetTopOpportunities();
         public Task<PreApprovalDocument> GetPreApproval(Guid id);
         public Task<PreApprovalReport> GetPreApprovalReport(Guid preApprovalId, Guid scenarioId);
         public Task<FHAReport> GetFHAReport(Guid preApprovalId, Guid scenarioId);

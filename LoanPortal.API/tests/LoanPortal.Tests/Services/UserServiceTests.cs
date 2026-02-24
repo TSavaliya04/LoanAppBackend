@@ -8,6 +8,7 @@ using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
 using LoanPortal.Core.Services;
 using LoanPortal.Shared;
+using LoanPortal.Shared.Constants;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using System.ComponentModel.DataAnnotations;
@@ -267,7 +268,7 @@ namespace LoanPortal.Tests.Services
             _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
 
             // Act
-            var result = await _userService.GetUserProfile();
+            var result = await _userService.GetUserProfile(userId);
 
             // Assert
             Assert.NotNull(result);
@@ -285,7 +286,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync((UserEntity)null);
 
             // Act & Assert
-            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.GetUserProfile());
+            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.GetUserProfile(userId));
         }
 
         [Fact]
@@ -431,6 +432,116 @@ namespace LoanPortal.Tests.Services
 
             _mockFirebaseAuthService.Verify(x => x.GeneratePasswordResetLinkAsync(email), Times.Never);
             _mockUserHelper.Verify(x => x.ResetPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ValidateUserToken_VerifyIdTokenFails_ThrowsValidationException()
+        {
+            // Arrange
+            var token = "invalid-token";
+            var validationException = new ValidationException("Invalid token");
+
+            _mockFirebaseAuthService
+                .Setup(x => x.VerifyIdTokenAsync(token))
+                .ThrowsAsync(validationException);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ValidationException>(() => _userService.ValidateUserToken(token));
+            Assert.Equal("Invalid token", ex.Message);
+        }
+
+        [Fact]
+        public async Task GetNewToken_ValidRefreshToken_ReturnsResponseWithUserAndSetsClaims()
+        {
+            // Arrange
+            var refreshToken = "valid-refresh-token";
+            var firebaseUserId = "firebase-user-id";
+
+            var initialResponse = new GetNewTokenResponse
+            {
+                IdToken = "new-id-token",
+                RefreshToken = "new-refresh-token"
+            };
+
+            var user = new UserEntity
+            {
+                Id = Guid.NewGuid(),
+                Email = "user@example.com",
+                FirstName = "John",
+                LastName = "Doe",
+                Phone = "1234567890"
+            };
+
+            _mockFirebaseAuthService
+                .Setup(x => x.GetNewTokenAsync(refreshToken))
+                .ReturnsAsync((initialResponse, firebaseUserId));
+
+            _mockUserRepository
+                .Setup(x => x.GetUserByFirebaseId(firebaseUserId))
+                .ReturnsAsync(user);
+
+            _mockFirebaseAuthService
+                .Setup(x => x.SetCustomUserClaimsAsync(firebaseUserId, It.IsAny<Dictionary<string, object>>()))
+                .Returns(Task.CompletedTask);
+
+            // Act
+            var result = await _userService.GetNewToken(refreshToken);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(initialResponse.IdToken, result.IdToken);
+            Assert.Equal(initialResponse.RefreshToken, result.RefreshToken);
+            Assert.NotNull(result.User);
+            Assert.Equal(user.Email, result.User.Email);
+
+            _mockFirebaseAuthService.Verify(x => x.GetNewTokenAsync(refreshToken), Times.Once);
+            _mockUserRepository.Verify(x => x.GetUserByFirebaseId(firebaseUserId), Times.Once);
+            _mockFirebaseAuthService.Verify(x => x.SetCustomUserClaimsAsync(firebaseUserId, It.IsAny<Dictionary<string, object>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetNewToken_AdminUser_SetsIsAdminClaim()
+        {
+            // Arrange
+            var refreshToken = "admin-refresh-token";
+            var firebaseUserId = "admin-firebase-id";
+
+            var response = new GetNewTokenResponse
+            {
+                IdToken = "admin-id-token",
+                RefreshToken = "admin-refresh-token"
+            };
+
+            var adminUser = new UserEntity
+            {
+                Id = IConstants.AdminId,
+                Email = "admin@example.com",
+                FirstName = "Admin",
+                LastName = "User",
+                Phone = "9999999999"
+            };
+
+            _mockFirebaseAuthService
+                .Setup(x => x.GetNewTokenAsync(refreshToken))
+                .ReturnsAsync((response, firebaseUserId));
+
+            _mockUserRepository
+                .Setup(x => x.GetUserByFirebaseId(firebaseUserId))
+                .ReturnsAsync(adminUser);
+
+            Dictionary<string, object>? capturedClaims = null;
+            _mockFirebaseAuthService
+                .Setup(x => x.SetCustomUserClaimsAsync(firebaseUserId, It.IsAny<Dictionary<string, object>>()))
+                .Callback<string, Dictionary<string, object>>((uid, claims) => capturedClaims = claims)
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _userService.GetNewToken(refreshToken);
+
+            // Assert
+            Assert.NotNull(capturedClaims);
+            Assert.True(capturedClaims!.ContainsKey("isAdmin"));
+            Assert.True((bool)capturedClaims["isAdmin"]);
         }
     }
 }

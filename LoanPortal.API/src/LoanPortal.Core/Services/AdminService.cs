@@ -85,8 +85,11 @@ namespace LoanPortal.Core.Services
                     case "status":
                         query = desc ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status);
                         break;
-                    default:
+                    case "agentname":
                         query = desc ? query.OrderByDescending(a => a.AgentName) : query.OrderBy(a => a.AgentName);
+                        break;
+                    default:
+                        query = query.OrderByDescending(a => a.LastLogin);
                         break;
                 }
 
@@ -214,10 +217,12 @@ namespace LoanPortal.Core.Services
 
             List<PreApprovalDocument> quotes = await _preApprovalRepository.GetByDateRangeAdmin(startDate, endDate);
             List<PreApprovalDocument> quotesStatus = await _preApprovalRepository.GetByStatusChangeDateRange(startDate, endDate);
+            List<UserEntity> activeUsers = await _userRepository.GetUsersActiveInRange(startDate, endDate);
+            activeUsers.Remove(activeUsers.Find(u => u.Id == IConstants.AdminId));
             return new AdminDashboardDTO
             {
                 TotalUser = (await _userRepository.GetAll()).Count,
-                ActiveUser = (await _userRepository.GetUsersActiveInRange(startDate,endDate)).Count,
+                ActiveUser = activeUsers.Count,
                 QuotesCreated = quotes.Count(),
                 PreApprovals = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.PreApproved).Count(),
                 FilesInEscrow = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.InEscrow).Count(),

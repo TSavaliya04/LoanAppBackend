@@ -163,9 +163,12 @@ namespace LoanPortal.Tests.Services
                     new ScenarioDTO
                     {
                         CreatedAt = baseDate,
-                        BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Alice" },
-                        PurchaseInfo = new PurchaseInfoDTO { LoanAmount = 100000 },
-                        LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.FHA }
+                        Purchase = new PurchaseScenarioDTO
+                        {
+                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Alice" },
+                            PurchaseInfo = new PurchaseInfoDTO { LoanAmount = 100000 },
+                            LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.FHA }
+                        }
                     }
                 }
             };
@@ -181,9 +184,12 @@ namespace LoanPortal.Tests.Services
                     new ScenarioDTO
                     {
                         CreatedAt = baseDate.AddDays(1),
-                        BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Bob" },
-                        PurchaseInfo = new PurchaseInfoDTO { LoanAmount = 150000 },
-                        LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.Conventional }
+                        Purchase = new PurchaseScenarioDTO
+                        {
+                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Bob" },
+                            PurchaseInfo = new PurchaseInfoDTO { LoanAmount = 150000 },
+                            LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.Conventional }
+                        }
                     }
                 }
             };

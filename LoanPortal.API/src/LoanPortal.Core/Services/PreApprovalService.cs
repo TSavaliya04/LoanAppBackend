@@ -53,14 +53,14 @@ public class PreApprovalService : IPreApprovalService
                 {
                     foreach (ScenarioDTO scenario in quote.Scenarios)
                     {
-                        if (scenario.PurchaseInfo != null)
+                        if (scenario.Purchase?.PurchaseInfo != null)
                         {
                             scenarios.Add(new ScenarioData
                             {
-                                AnnualInterestRate = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.AnnualInterestRate : 0,
-                                MonthlyTotal = scenario.LoanProgram != null ? scenario.LoanProgram.MonthlyTotal : 0,
-                                LoanAmount = scenario.PurchaseInfo != null ? scenario.PurchaseInfo.LoanAmount : 0,
-                                LoanProgram = ((LoanProgram)scenario.PurchaseInfo.LoanProgram).ToString() ?? "",
+                                AnnualInterestRate = scenario.Purchase.PurchaseInfo.AnnualInterestRate,
+                                MonthlyTotal = scenario.Purchase.LoanProgram != null ? scenario.Purchase.LoanProgram.MonthlyTotal : 0,
+                                LoanAmount = scenario.Purchase.PurchaseInfo.LoanAmount,
+                                LoanProgram = ((LoanProgram)scenario.Purchase.PurchaseInfo.LoanProgram).ToString() ?? "",
                                 isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
                             });
                         }
@@ -71,7 +71,7 @@ public class PreApprovalService : IPreApprovalService
                 {
                     PreApprovalId = quote.Id,
                     CreatedAt = quote.CreatedAt,
-                    BorrowerName = quote.Scenarios != null ? quote.Scenarios.First().BorrowerInfo?.BorrowerName : "",
+                    BorrowerName = quote.Scenarios != null ? quote.Scenarios.First().Purchase?.BorrowerInfo?.BorrowerName : "",
                     Scenarios = scenarios
                 });
             }
@@ -90,10 +90,6 @@ public class PreApprovalService : IPreApprovalService
         {              
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             ScenarioDTO scenario = preApproval.Scenarios.FirstOrDefault(s => s.Id == scenarioId);
-            if (scenario.LoanProgram == null)
-            {
-                throw new ValidationException("LoanProgram cannot be null");
-            }
 
             UserDTO agent = UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
             
@@ -102,28 +98,62 @@ public class PreApprovalService : IPreApprovalService
                 agent.Profile = agent.Profile + "?" + IConstants.AzureToken;
             }
 
-            decimal purchasePrice = scenario.LoanProgram.Price.Value;
-            decimal downPercent = scenario.PurchaseInfo.DownPayment;
-            decimal downAmount = (purchasePrice * downPercent) / 100;
-            decimal fma = purchasePrice - downAmount;
-            List<string> borrowers = scenario.BorrowerIncomes.Select(b => b.BorrowerName).ToList();
-            return new PreApprovalReport
+            if (preApproval.LoanType == 1) // Refinance
             {
-                Date = DateTime.UtcNow,
-                PreApprovalId = preApproval.Id,
-                BorrowerName = scenario.BorrowerInfo.BorrowerName,
-                FirstMortgageAmount = fma,
-                DownPaymentPercentage = downPercent,    
-                DownPaymentAmount = downAmount,
-                PurchasePrice = purchasePrice,
-                LoanProgram = scenario.LoanProgram.LoanProgram,
-                PropertyType = scenario.PurchaseInfo.PropertyType,
-                Borrowers = borrowers,
-                LendingCompany = agent.CompanyName,
-                OccupancyStatus = scenario.PurchaseInfo.OccupancyStatus,
-                AgentName = scenario.LenderFees.AgentName,
-                AgentInfo = agent
-            };
+                var refi = scenario.Refinance;
+                if (refi?.LoanProgram == null)
+                    throw new ValidationException("Refinance LoanProgram cannot be null");
+
+                decimal propertyValue = refi.RefinanceInfo?.EstimatedPropertyValue ?? 0;
+                decimal loanAmount = refi.RefinanceInfo?.LoanAmount ?? 0;
+
+                return new PreApprovalReport
+                {
+                    Date = DateTime.UtcNow,
+                    PreApprovalId = preApproval.Id,
+                    BorrowerName = refi.BorrowerInfo?.BorrowerName,
+                    FirstMortgageAmount = loanAmount,
+                    DownPaymentPercentage = 0,
+                    DownPaymentAmount = 0,
+                    PurchasePrice = propertyValue,
+                    LoanProgram = refi.LoanStructure?.LoanProgram ?? 0,
+                    PropertyType = 0,
+                    Borrowers = new List<string>(),
+                    LendingCompany = agent?.CompanyName,
+                    OccupancyStatus = refi.RefinanceInfo?.OccupancyStatus ?? 0,
+                    AgentName = string.Empty,
+                    AgentInfo = agent
+                };
+            }
+            else // Purchase
+            {
+                if (scenario.Purchase?.LoanProgram == null)
+                    throw new ValidationException("LoanProgram cannot be null");
+
+                decimal purchasePrice = scenario.Purchase.LoanProgram.Price.Value;
+                decimal downPercent = scenario.Purchase.PurchaseInfo.DownPayment;
+                decimal downAmount = (purchasePrice * downPercent) / 100;
+                decimal fma = purchasePrice - downAmount;
+                List<string> borrowers = scenario.Purchase.BorrowerIncomes.Select(b => b.BorrowerName).ToList();
+
+                return new PreApprovalReport
+                {
+                    Date = DateTime.UtcNow,
+                    PreApprovalId = preApproval.Id,
+                    BorrowerName = scenario.Purchase.BorrowerInfo.BorrowerName,
+                    FirstMortgageAmount = fma,
+                    DownPaymentPercentage = downPercent,    
+                    DownPaymentAmount = downAmount,
+                    PurchasePrice = purchasePrice,
+                    LoanProgram = scenario.Purchase.LoanProgram.LoanProgram,
+                    PropertyType = scenario.Purchase.PurchaseInfo.PropertyType,
+                    Borrowers = borrowers,
+                    LendingCompany = agent.CompanyName,
+                    OccupancyStatus = scenario.Purchase.PurchaseInfo.OccupancyStatus,
+                    AgentName = scenario.Purchase.LenderFees.AgentName,
+                    AgentInfo = agent
+                };
+            }
         }
         catch (Exception ex)
         {
@@ -138,52 +168,91 @@ public class PreApprovalService : IPreApprovalService
         {
             PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
             ScenarioDTO scenario = preApproval.Scenarios.FirstOrDefault(s => s.Id == scenarioId);
-            if (scenario.LoanProgram == null)
+            UserEntity user = await _userRepository.GetUserById(_loginUserDetails.UserID);
+
+            if (preApproval.LoanType == 1) // Refinance
             {
-                throw new ValidationException("LoanProgram cannot be null");
+                var refi = scenario.Refinance;
+                if (refi?.LoanProgram == null)
+                    throw new ValidationException("Refinance LoanProgram cannot be null");
+
+                decimal loanAmount = refi.RefinanceInfo?.LoanAmount ?? 0;
+                decimal upFrontPercent = refi.LoanProgram.UPMIPRate ?? 0;
+                decimal upFrontAmount = loanAmount * (upFrontPercent / 100);
+                decimal interestRate = refi.LoanStructure?.InterestRate ?? 0;
+                int loanTerm = refi.LoanProgram.Term;
+                decimal UPMIPAmount = loanAmount * (upFrontPercent / 100);
+                double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(loanAmount + UPMIPAmount, interestRate, loanTerm);
+                decimal MMI = refi.LoanProgram.MMI ?? 0;
+                decimal monthlyMortgageInsurance = ((loanAmount * MMI) / 100) / 12;
+
+                report.Date = DateTime.UtcNow;
+                report.ExpirationDate = report.Date.AddMonths(1);
+                report.PreApprovalId = preApproval.Id;
+                report.BorrowerName = refi.BorrowerInfo?.BorrowerName;
+                report.DownPaymentAmount = 0;
+                report.SalePrice = refi.RefinanceInfo?.EstimatedPropertyValue ?? 0;
+                report.UpfrontMipPercent = upFrontPercent;
+                report.UpfrontMipAmount = upFrontAmount;
+                report.TotalLoanAmount = loanAmount;
+                report.InterestRate = interestRate;
+                report.LoanTerm = loanTerm;
+                report.PILoanAmount = (decimal)monthlyPI;
+                report.PropertyTax = refi.LoanStructure?.MonthlyTaxAmount ?? 0;
+                report.HazardInsurancePremium = refi.LoanStructure?.HazardInsurance ?? 0;
+                report.CoverageRate = upFrontPercent;
+                report.MortgageInsurance = refi.LoanStructure?.MI ?? 0;
+                report.LoanProgram = refi.LoanStructure?.LoanProgram ?? 0;
+                report.HOADues = refi.LoanStructure?.AssociationFee ?? 0;
+                report.TotalMonthlyPayment = report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues;
+                // No Purchase-specific closing cost breakdown for Refi — use the stored value
+                report.estimatedClosingCost = new EstimatedClosingCostDTO
+                {
+                    TotalEstSettlementCharges = refi.LoanProgram.ClosingCosts ?? 0
+                };
+            }
+            else // Purchase
+            {
+                if (scenario.Purchase?.LoanProgram == null)
+                    throw new ValidationException("LoanProgram cannot be null");
+
+                decimal purchasePrice = scenario.Purchase.LoanProgram.Price.Value;
+                decimal downPercent = scenario.Purchase.PurchaseInfo.DownPayment;
+                decimal downAmount = (purchasePrice * downPercent) / 100;
+                decimal upFront = scenario.Purchase.PurchaseInfo.MipFundingFee;
+                decimal upFrontAmount = (purchasePrice * upFront) / 100;
+                decimal totalLoanAmount = purchasePrice - downAmount;
+
+                decimal interestRate = scenario.Purchase.PurchaseInfo.AnnualInterestRate;
+                int loanTerm = scenario.Purchase.LoanProgram.Term;
+                decimal UPMIPAmount = totalLoanAmount * (scenario.Purchase.LoanProgram.UPMIPRate.Value / 100);
+                double MonthlyPILoanAmount = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount + UPMIPAmount, interestRate, loanTerm);
+                decimal MMI = scenario.Purchase.LoanProgram.MMI.Value;
+                decimal hazInsurancePremium = scenario.Purchase.PrepaidItems.HazardInsurance;
+                decimal monthlyMortgageInsurance = ((totalLoanAmount * MMI) / 100) / 12;
+
+                report.Date = DateTime.UtcNow;
+                report.ExpirationDate = report.Date.AddMonths(1);
+                report.PreApprovalId = preApproval.Id;
+                report.BorrowerName = scenario.Purchase.BorrowerInfo.BorrowerName;
+                report.DownPaymentAmount = downAmount;
+                report.SalePrice = purchasePrice;
+                report.UpfrontMipPercent = upFront;
+                report.UpfrontMipAmount = upFrontAmount;
+                report.TotalLoanAmount = totalLoanAmount;
+                report.InterestRate = interestRate;
+                report.LoanTerm = loanTerm;
+                report.PILoanAmount = (decimal)MonthlyPILoanAmount;
+                report.PropertyTax = scenario.Purchase.LoanProgram.MonthlyPropertyTax.Value;
+                report.HazardInsurancePremium = scenario.Purchase.PurchaseInfo.HazardInsurance.Value;
+                report.CoverageRate = scenario.Purchase.PurchaseInfo.MipFundingFee;
+                report.MortgageInsurance = scenario.Purchase.PurchaseInfo.MiPercent.Value;
+                report.LoanProgram = scenario.Purchase.PurchaseInfo.LoanProgram;
+                report.HOADues = scenario.Purchase.PurchaseInfo.AssociationFee.Value;
+                report.TotalMonthlyPayment = report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues;
+                report.estimatedClosingCost = GetEstClosingCost(scenario, report);
             }
 
-            UserEntity user = await _userRepository.GetUserById(_loginUserDetails.UserID);
-            decimal purchasePrice = scenario.LoanProgram.Price.Value;
-            decimal downPercent = scenario.PurchaseInfo.DownPayment;
-            decimal downAmount = (purchasePrice * downPercent) / 100;
-            decimal upFront = scenario.PurchaseInfo.MipFundingFee;
-            decimal upFrontAmount = (purchasePrice * upFront) / 100;
-            //decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
-            decimal totalLoanAmount = purchasePrice - downAmount;
-
-            decimal interestRate = scenario.PurchaseInfo.AnnualInterestRate;
-            int loanTerm = scenario.LoanProgram.Term;
-            decimal UPMIPAmount = totalLoanAmount * (scenario.LoanProgram.UPMIPRate.Value / 100);
-            double MonthlyPILoanAmount = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount + UPMIPAmount, interestRate, loanTerm);
-
-            decimal realEstateTaxes = scenario.PrepaidItems.PropertyTaxAmount;
-            decimal MMI = scenario.LoanProgram.MMI.Value;
-            decimal hazInsurancePremium = scenario.PrepaidItems.HazardInsurance;
-            decimal monthlyMortgageInsurance = ((totalLoanAmount * MMI) / 100) / 12;
-
-            report.Date = DateTime.UtcNow;
-            report.ExpirationDate = report.Date.AddMonths(1);
-            report.PreApprovalId = preApproval.Id;
-            report.BorrowerName = scenario.BorrowerInfo.BorrowerName;
-            report.DownPaymentAmount = downAmount;
-            report.SalePrice = purchasePrice;
-            report.UpfrontMipPercent = upFront;
-            report.UpfrontMipAmount = upFrontAmount;
-            report.TotalLoanAmount = totalLoanAmount;
-            report.InterestRate = interestRate;
-            report.LoanTerm = loanTerm;
-            report.PILoanAmount = (decimal)MonthlyPILoanAmount;
-            report.PropertyTax = scenario.LoanProgram.MonthlyPropertyTax.Value;
-            report.HazardInsurancePremium = scenario.PurchaseInfo.HazardInsurance.Value;
-            report.CoverageRate = scenario.PurchaseInfo.MipFundingFee;
-            report.MortgageInsurance = scenario.PurchaseInfo.MiPercent.Value;
-            report.LoanProgram = scenario.PurchaseInfo.LoanProgram;
-            report.HOADues = scenario.PurchaseInfo.AssociationFee.Value;
-            report.TotalMonthlyPayment = (report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues);
-            
-            EstimatedClosingCostDTO costDto = GetEstClosingCost(scenario, report);
-            report.estimatedClosingCost = costDto;   
             return report;
         }             
         catch (Exception ex)
@@ -194,11 +263,11 @@ public class PreApprovalService : IPreApprovalService
 
     private EstimatedClosingCostDTO GetEstClosingCost(ScenarioDTO scenario, FHAReport report) 
     {
-        LenderFeesDTO lenderFees = scenario.LenderFees;
-        LoanProgramDTO loanProgram = scenario.LoanProgram;
-        PrepaidItemsDTO prepaidItems = scenario.PrepaidItems;
-        PurchaseInfoDTO purchaseInfo = scenario.PurchaseInfo;
-        MiscFeesDTO miscFees = scenario.MiscFees;
+        LenderFeesDTO lenderFees = scenario.Purchase.LenderFees;
+        LoanProgramDTO loanProgram = scenario.Purchase.LoanProgram;
+        PrepaidItemsDTO prepaidItems = scenario.Purchase.PrepaidItems;
+        PurchaseInfoDTO purchaseInfo = scenario.Purchase.PurchaseInfo;
+        MiscFeesDTO miscFees = scenario.Purchase.MiscFees;
 
         EstimatedClosingCostDTO estClosingCost = new EstimatedClosingCostDTO();
         
@@ -253,48 +322,74 @@ public class PreApprovalService : IPreApprovalService
     {
         PreApprovalDocument preApproval = await _preApprovalRepository.GetByIdAsync(preApprovalId);
         ScenarioDTO scenario = preApproval.Scenarios.FirstOrDefault(s => s.Id == scenarioId);
-        if (scenario.LoanProgram == null)
-        {
-            throw new ValidationException("LoanProgram cannot be null");
-        }
 
         QuickQuote quote = new QuickQuote();
-        quote.HomeValue = scenario.LoanProgram.Price.Value;
-        quote.InterestRate = scenario.LoanProgram.InterestRate;
-        decimal downPercent = scenario.PurchaseInfo.DownPayment;
-        quote.DownPaymentPercent = downPercent;
-        quote.LoanProgram = scenario.PurchaseInfo.LoanProgram;
 
-        decimal purchasePrice = scenario.LoanProgram.Price.Value;
-        decimal downAmount = (purchasePrice * downPercent) / 100;
-        //decimal otherFinancedItem = ((purchasePrice - downAmount) * 1.75m) / 100;
-        decimal totalLoanAmount = purchasePrice - downAmount;
-        decimal UPMIPAmount = totalLoanAmount * (scenario.LoanProgram.UPMIPRate.Value / 100);
-        double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount + UPMIPAmount, quote.InterestRate, scenario.LoanProgram.Term);
-        quote.PrincipalAndInterest = (decimal)monthlyPI;
+        if (preApproval.LoanType == 1) // Refinance
+        {
+            var refi = scenario.Refinance;
+            if (refi?.LoanProgram == null)
+                throw new ValidationException("Refinance LoanProgram cannot be null");
 
-        quote.PropertyTax = scenario.LoanProgram.MonthlyPropertyTax.Value;
-        quote.HazardInsurance = scenario.PurchaseInfo.HazardInsurance.Value;
-        quote.MortgageInsurance = scenario.PurchaseInfo.MiPercent.Value;
-        quote.HoaFee = scenario.PurchaseInfo.AssociationFee.Value;
-        quote.MonthlyTotal = (decimal)(quote.PrincipalAndInterest + quote.PropertyTax + quote.HazardInsurance + quote.MortgageInsurance + quote.HoaFee);
+            quote.HomeValue = refi.RefinanceInfo?.EstimatedPropertyValue ?? 0;
+            quote.InterestRate = refi.LoanStructure?.InterestRate ?? 0;
+            quote.DownPaymentPercent = 0;
+            quote.DownPayment = 0;
+            quote.LoanProgram = refi.LoanStructure?.LoanProgram ?? 0;
 
-        quote.ClosingCosts = (GetEstClosingCost(scenario, new FHAReport())).TotalEstSettlementCharges;
-        //LenderFeesDTO lenderFees = preApproval.LenderFees;
-        //quote.ClosingCosts = (decimal)(lenderFees.LoanOriginationFee + lenderFees.DiscountFee + lenderFees.UpfrontMip + lenderFees.AppraisalFee + lenderFees.EscrowFees + lenderFees.TitleFees + lenderFees.ThirdPartyLenderFee);
-        quote.DownPayment = downAmount;
+            decimal loanAmount = refi.RefinanceInfo?.LoanAmount ?? 0;
+            decimal upmipAmount = loanAmount * ((refi.LoanProgram.UPMIPRate ?? 0) / 100);
+            double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(loanAmount + upmipAmount, quote.InterestRate, refi.LoanProgram.Term);
+            quote.PrincipalAndInterest = (decimal)monthlyPI;
 
-        PrepaidItemsDTO prePaid = scenario.PrepaidItems;
-        //quote.Prepaids = (prePaid.PrepaidInterestAmount + prePaid.HazardInsurance + prePaid.HazardInsuranceReserves + prePaid.PropertyTaxAmount);
-        
-        MiscFeesDTO miscFees = scenario.MiscFees;
-        quote.SellerCredit = miscFees.SellerCredit.Value;
-        quote.LenderCredit = miscFees.LenderCredit.Value;
-        quote.EarnestMoneyDeposit = miscFees.EarnestMoneyDeposit.Value;
-        quote.MiscFee4 = miscFees.MiscFee4.Value;
-        decimal miscFeesSum = (quote.SellerCredit + quote.LenderCredit + quote.EarnestMoneyDeposit + quote.MiscFee4);
+            quote.PropertyTax = refi.LoanStructure?.MonthlyTaxAmount ?? 0;
+            quote.HazardInsurance = refi.LoanStructure?.HazardInsurance ?? 0;
+            quote.MortgageInsurance = refi.LoanStructure?.MI ?? 0;
+            quote.HoaFee = refi.LoanStructure?.AssociationFee ?? 0;
+            quote.MonthlyTotal = (decimal)(quote.PrincipalAndInterest + quote.PropertyTax + quote.HazardInsurance + quote.MortgageInsurance + quote.HoaFee);
 
-        quote.TotalRequired = (quote.DownPayment + quote.ClosingCosts) - miscFeesSum;
+            quote.ClosingCosts = refi.LoanProgram.ClosingCosts ?? 0;
+            quote.SellerCredit = 0;
+            quote.LenderCredit = 0;
+            quote.EarnestMoneyDeposit = 0;
+            quote.MiscFee4 = 0;
+            quote.TotalRequired = quote.ClosingCosts;
+        }
+        else // Purchase
+        {
+            if (scenario.Purchase?.LoanProgram == null)
+                throw new ValidationException("LoanProgram cannot be null");
+
+            quote.HomeValue = scenario.Purchase.LoanProgram.Price.Value;
+            quote.InterestRate = scenario.Purchase.LoanProgram.InterestRate;
+            decimal downPercent = scenario.Purchase.PurchaseInfo.DownPayment;
+            quote.DownPaymentPercent = downPercent;
+            quote.LoanProgram = scenario.Purchase.PurchaseInfo.LoanProgram;
+
+            decimal purchasePrice = scenario.Purchase.LoanProgram.Price.Value;
+            decimal downAmount = (purchasePrice * downPercent) / 100;
+            decimal totalLoanAmount = purchasePrice - downAmount;
+            decimal UPMIPAmount = totalLoanAmount * (scenario.Purchase.LoanProgram.UPMIPRate.Value / 100);
+            double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount + UPMIPAmount, quote.InterestRate, scenario.Purchase.LoanProgram.Term);
+            quote.PrincipalAndInterest = (decimal)monthlyPI;
+
+            quote.PropertyTax = scenario.Purchase.LoanProgram.MonthlyPropertyTax.Value;
+            quote.HazardInsurance = scenario.Purchase.PurchaseInfo.HazardInsurance.Value;
+            quote.MortgageInsurance = scenario.Purchase.PurchaseInfo.MiPercent.Value;
+            quote.HoaFee = scenario.Purchase.PurchaseInfo.AssociationFee.Value;
+            quote.MonthlyTotal = (decimal)(quote.PrincipalAndInterest + quote.PropertyTax + quote.HazardInsurance + quote.MortgageInsurance + quote.HoaFee);
+
+            quote.ClosingCosts = (GetEstClosingCost(scenario, new FHAReport())).TotalEstSettlementCharges;
+            quote.DownPayment = downAmount;
+
+            MiscFeesDTO miscFees = scenario.Purchase.MiscFees;
+            quote.SellerCredit = miscFees.SellerCredit.Value;
+            quote.LenderCredit = miscFees.LenderCredit.Value;
+            quote.EarnestMoneyDeposit = miscFees.EarnestMoneyDeposit.Value;
+            quote.MiscFee4 = miscFees.MiscFee4.Value;
+            decimal miscFeesSum = (quote.SellerCredit + quote.LenderCredit + quote.EarnestMoneyDeposit + quote.MiscFee4);
+            quote.TotalRequired = (quote.DownPayment + quote.ClosingCosts) - miscFeesSum;
+        }
 
         return quote;
     }
@@ -326,6 +421,7 @@ public class PreApprovalService : IPreApprovalService
                 UpdatedAt = preApproval.UpdatedAt ?? DateTime.UtcNow,
                 LastSubmittedFormNo = preApproval.LastSubmittedFormNo ?? 0,
                 LastSubmittedScenarioNo = preApproval.LastSubmittedScenarioNo ?? 0,
+                LoanType = preApproval.LoanType,
                 Status = preApproval.Status,
                 StatusUpdatedAt = preApproval.StatusUpdatedAt,
                 Scenarios = preApproval.Scenarios

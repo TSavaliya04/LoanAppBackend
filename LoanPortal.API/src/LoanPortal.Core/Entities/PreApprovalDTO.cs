@@ -27,6 +27,22 @@ namespace LoanPortal.Core.Entities
     }
 
     [BsonIgnoreExtraElements]
+    public class RefinanceBorrowerInfoDTO
+    {
+        public Guid? Id { get; set; }
+
+        [BsonIgnore]
+        public Guid? PreApprovalId { get; set; }
+        public string BorrowerName { get; set; }
+        public string? CoBorrowerName { get; set; }
+        public string? BorrowerCellNumber { get; set; }
+        public string? CoBorrowerCellNumber { get; set; }
+        public string? BorrowerEmail { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
     public class PurchaseInfoDTO
     {
         public Guid? Id { get; set; }
@@ -45,6 +61,42 @@ namespace LoanPortal.Core.Entities
         public int PropertyType { get; set; }
         public int OccupancyStatus { get; set; }
 
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class RefinanceInfoDTO
+    {
+        public Guid? Id { get; set; }
+
+        [BsonIgnore]
+        public Guid PreApprovalId { get; set; }
+        public int OccupancyStatus { get; set; }
+        public decimal EstimatedPropertyValue { get; set; }
+        public decimal LTV { get; set; }
+        public decimal LoanAmount { get; set; }
+        public decimal CurrentLoanBalance { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class RefinanceLoanStructureDTO
+    {
+        public Guid? Id { get; set; }
+
+        [BsonIgnore]
+        public Guid PreApprovalId { get; set; }
+        public int LoanProgram { get; set; }
+        public int RefinanceType { get; set; }  // 0 = Rate and Term, 1 = Cash Out
+        public decimal InterestRate { get; set; }
+        public decimal? MonthlyTaxAmount { get; set; }
+        public decimal? AnnualTaxAmount { get; set; }
+        public decimal? MipRate { get; set; }
+        public decimal? HazardInsurance { get; set; }
+        public decimal? AssociationFee { get; set; }
+        public decimal? MI { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -71,6 +123,27 @@ namespace LoanPortal.Core.Entities
         public decimal UnderWriter { get; set; }
         public decimal ProcessFee { get; set; }
         public decimal? NonRecurringCost { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class RefinanceLenderFeesDTO
+    {
+        public Guid? Id { get; set; }
+
+        [BsonIgnore]
+        public Guid PreApprovalId { get; set; }
+        public decimal LoanOriginationFee { get; set; }
+        public decimal LoanOriginationFeePercentage { get; set; }
+        public decimal DiscountFee { get; set; }
+        public decimal DiscountFeePercentage { get; set; }
+        public decimal UpfrontMip { get; set; }
+        public decimal UpfrontMipPercentage { get; set; }
+        public decimal AppraisalFee { get; set; }
+        public decimal EscrowFees { get; set; }
+        public decimal? TitleFees { get; set; }
+        public decimal? ThirdPartyLenderFee { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -180,6 +253,46 @@ namespace LoanPortal.Core.Entities
         public decimal? MonthlyTotal { get; set; }
         public decimal? AnnualMIPRate { get; set; }
         public decimal? monthlyPropertyTaxPercentage { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class RefinanceLoanProgramDTO
+    {
+        public Guid? Id { get; set; }
+
+        [BsonIgnore]
+        public Guid PreApprovalId { get; set; }
+        public int LoanProgram { get; set; }
+        public decimal? FrontEndRatio { get; set; }
+        public decimal? BackEndRatio { get; set; }
+        public decimal? Price { get; set; }
+        public decimal InterestRate { get; set; }
+        public decimal BaseLoanAmount { get; set; }
+        public decimal? UPMIPRate { get; set; }
+        public decimal? UPMIPAmount { get; set; }
+        public decimal? FinalLoanAmount { get; set; }
+        public decimal? MMI { get; set; }
+        public int Term { get; set; }
+        public decimal? ClearingCart { get; set; }
+        public decimal? PropertyTax { get; set; }
+        public decimal? TotalNeededToClear { get; set; }
+        public List<LoanProgramBorrowerIncomeDTO>? Borrowers { get; set; }
+        public decimal? CombinedMonthlyIncome { get; set; }
+        public decimal? PrincipalAndInterest { get; set; }
+        public decimal? MonthlyPropertyTax { get; set; }
+        public decimal? HazardInsurance { get; set; }
+        public decimal? MortgageInsurance { get; set; }
+        public decimal? HoaFee { get; set; }
+        public decimal? MonthlyTotal { get; set; }
+        public decimal? AnnualMIPRate { get; set; }
+        public decimal? monthlyPropertyTaxPercentage { get; set; }
+        // Refinance-specific
+        public decimal? LTV { get; set; }
+        public decimal? LTVAmount { get; set; }
+        public decimal? ClosingCosts { get; set; }
+        public decimal? CashOutAmount { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -327,18 +440,8 @@ namespace LoanPortal.Core.Entities
     }
 
     [BsonIgnoreExtraElements]
-    public class ScenarioDTO
+    public class PurchaseScenarioDTO
     {
-        [BsonId]
-        public Guid Id { get; set; }
-
-        public int ScenarioOrder { get; set; }  
-        public string? ScenarioName { get; set; }  
-        public DateTime? CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public int LastSubmittedFormNo { get; set; }
-
-        // All form data per scenario
         public BorrowerInfoDTO? BorrowerInfo { get; set; }
         public PurchaseInfoDTO? PurchaseInfo { get; set; }
         public LenderFeesDTO? LenderFees { get; set; }
@@ -346,6 +449,33 @@ namespace LoanPortal.Core.Entities
         public MiscFeesDTO? MiscFees { get; set; }
         public List<BorrowerIncomeDTO>? BorrowerIncomes { get; set; }
         public LoanProgramDTO? LoanProgram { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class RefinanceScenarioDTO
+    {
+        public RefinanceBorrowerInfoDTO? BorrowerInfo { get; set; }
+        public RefinanceInfoDTO? RefinanceInfo { get; set; }
+        public RefinanceLoanStructureDTO? LoanStructure { get; set; }
+        public RefinanceLenderFeesDTO? LenderFees { get; set; }
+        public RefinanceLoanProgramDTO? LoanProgram { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class ScenarioDTO
+    {
+        [BsonId]
+        public Guid Id { get; set; }
+
+        public int ScenarioOrder { get; set; }
+        public string? ScenarioName { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public int LastSubmittedFormNo { get; set; }
+
+        // Only one will be populated based on PreApprovalDTO.LoanType
+        public PurchaseScenarioDTO? Purchase { get; set; }
+        public RefinanceScenarioDTO? Refinance { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -368,6 +498,10 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("lastSubmittedScenarioNo")]
         public int LastSubmittedScenarioNo { get; set; }
+
+        // 0 = Purchase, 1 = Refinance
+        [BsonElement("LoanType")]
+        public int LoanType { get; set; }
 
         [BsonElement("Status")]
         public int Status { get; set; }
@@ -393,6 +527,9 @@ namespace LoanPortal.Core.Entities
         public int? LastSubmittedFormNo { get; set; }
 
         public int? LastSubmittedScenarioNo { get; set; }
+
+        // 0 = Purchase, 1 = Refinance
+        public int LoanType { get; set; }
 
         public int Status { get; set; }
         

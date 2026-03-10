@@ -130,9 +130,9 @@ namespace LoanPortal.Core.Services
                     .OrderByDescending(s => s.CreatedAt ?? DateTime.MinValue)
                     .FirstOrDefault();
 
-                var borrowerInfo = latestScenario?.BorrowerInfo;
-                var purchaseInfo = latestScenario?.PurchaseInfo;
-                var loanProgram = latestScenario?.LoanProgram;
+                var borrowerInfo = latestScenario?.Purchase?.BorrowerInfo;
+                var purchaseInfo = latestScenario?.Purchase?.PurchaseInfo;
+                var loanProgram = latestScenario?.Purchase?.LoanProgram;
 
                 var loanType = loanProgram != null
                     ? Enum.IsDefined(typeof(LoanProgram), loanProgram.LoanProgram)

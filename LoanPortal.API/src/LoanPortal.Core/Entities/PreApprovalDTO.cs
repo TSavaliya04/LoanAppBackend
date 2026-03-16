@@ -458,6 +458,7 @@ namespace LoanPortal.Core.Entities
         public RefinanceInfoDTO? RefinanceInfo { get; set; }
         public RefinanceLoanStructureDTO? LoanStructure { get; set; }
         public RefinanceLenderFeesDTO? LenderFees { get; set; }
+        public List<BorrowerIncomeDTO>? BorrowerIncomes { get; set; }
         public RefinanceLoanProgramDTO? LoanProgram { get; set; }
     }
 

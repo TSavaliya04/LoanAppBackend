@@ -64,6 +64,17 @@ public class PreApprovalService : IPreApprovalService
                                 isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
                             });
                         }
+                        else if (scenario.Refinance?.RefinanceInfo != null)
+                        {
+                            scenarios.Add(new ScenarioData
+                            {
+                                AnnualInterestRate = scenario.Refinance.LoanStructure?.InterestRate ?? 0,
+                                MonthlyTotal = scenario.Refinance.LoanProgram?.MonthlyTotal ?? 0,
+                                LoanAmount = scenario.Refinance.RefinanceInfo.LoanAmount,
+                                LoanProgram = ((LoanProgram)(scenario.Refinance.LoanStructure?.LoanProgram ?? 0)).ToString() ?? "",
+                                isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
+                            });
+                        }
                     }
                 }
 
@@ -71,7 +82,10 @@ public class PreApprovalService : IPreApprovalService
                 {
                     PreApprovalId = quote.Id,
                     CreatedAt = quote.CreatedAt,
-                    BorrowerName = quote.Scenarios != null ? quote.Scenarios.First().Purchase?.BorrowerInfo?.BorrowerName : "",
+                    BorrowerName = quote.Scenarios != null
+                        ? (quote.Scenarios.First().Purchase?.BorrowerInfo?.BorrowerName
+                           ?? quote.Scenarios.First().Refinance?.BorrowerInfo?.BorrowerName)
+                        : "",
                     Scenarios = scenarios
                 });
             }

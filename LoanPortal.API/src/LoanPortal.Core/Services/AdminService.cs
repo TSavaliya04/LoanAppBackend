@@ -130,14 +130,28 @@ namespace LoanPortal.Core.Services
                     .OrderByDescending(s => s.CreatedAt ?? DateTime.MinValue)
                     .FirstOrDefault();
 
-                var borrowerInfo = latestScenario?.Purchase?.BorrowerInfo;
-                var purchaseInfo = latestScenario?.Purchase?.PurchaseInfo;
-                var loanProgram = latestScenario?.Purchase?.LoanProgram;
+                string? clientName = null;
+                decimal loanAmount = 0;
+                int? loanProgramValue = null;
 
-                var loanType = loanProgram != null
-                    ? Enum.IsDefined(typeof(LoanProgram), loanProgram.LoanProgram)
-                        ? ((LoanProgram)loanProgram.LoanProgram).ToString()
-                        : string.Empty
+                // 0 = Purchase, 1 = Refinance
+                if (quote.LoanType == 1)
+                {
+                    var refinance = latestScenario?.Refinance;
+                    clientName = refinance?.BorrowerInfo?.BorrowerName;
+                    loanAmount = refinance?.RefinanceInfo?.LoanAmount ?? 0;
+                    loanProgramValue = refinance?.LoanStructure?.LoanProgram;
+                }
+                else
+                {
+                    var purchase = latestScenario?.Purchase;
+                    clientName = purchase?.BorrowerInfo?.BorrowerName;
+                    loanAmount = purchase?.PurchaseInfo?.LoanAmount ?? 0;
+                    loanProgramValue = purchase?.LoanProgram?.LoanProgram;
+                }
+
+                var loanType = loanProgramValue.HasValue && Enum.IsDefined(typeof(LoanProgram), loanProgramValue.Value)
+                    ? ((LoanProgram)loanProgramValue.Value).ToString()
                     : string.Empty;
 
                 var stage = Enum.IsDefined(typeof(ApplicationStatus), quote.Status)
@@ -148,8 +162,8 @@ namespace LoanPortal.Core.Services
                 {
                     UserId = quote.UserId,
                     Date = quote.CreatedAt,
-                    ClientName = borrowerInfo?.BorrowerName,
-                    LoanAmount = purchaseInfo?.LoanAmount ?? 0,
+                    ClientName = clientName,
+                    LoanAmount = loanAmount,
                     LoanType = loanType,
                     Stage = stage
                 });

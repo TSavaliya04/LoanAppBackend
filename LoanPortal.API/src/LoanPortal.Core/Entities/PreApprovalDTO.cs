@@ -1,4 +1,4 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -168,6 +168,12 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("interestRate")]
         public decimal InterestRate { get; set; }
+
+        [BsonElement("desiredCashOut")]
+        public decimal? DesiredCashOut { get; set; }
+
+        [BsonElement("maxAllowed")]
+        public decimal? MaxAllowed { get; set; }
 
         [BsonElement("monthlyTaxAmount")]
         public decimal? MonthlyTaxAmount { get; set; }

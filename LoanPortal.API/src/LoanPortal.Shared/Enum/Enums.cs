@@ -57,4 +57,9 @@ namespace LoanPortal.Shared.Enum
         //BorrowerIncomeDataBonus = 9,
     }
 
+    public enum LoanType
+    {
+        Purchase = 0,
+        Refinance = 1
+    }
 }

@@ -86,6 +86,7 @@ public class PreApprovalService : IPreApprovalService
                         ? (quote.Scenarios.First().Purchase?.BorrowerInfo?.BorrowerName
                            ?? quote.Scenarios.First().Refinance?.BorrowerInfo?.BorrowerName)
                         : "",
+                    LoanType = ((LoanType)(quote.LoanType)).ToString() ?? "",
                     Scenarios = scenarios
                 });
             }

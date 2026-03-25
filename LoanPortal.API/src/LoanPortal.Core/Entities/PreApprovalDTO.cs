@@ -639,6 +639,7 @@ namespace LoanPortal.Core.Entities
         public string? AgentName { get; set; }
         public DateTime? CreatedAt { get; set; }
         public bool? isLoanProgramFilled { get; set; }
+        public string LoanType { get; set; }
         public List<BorrowerIncomeDTO> Borrowers { get; set; }
         public List<ScenarioData> Scenarios { get; set; }
     }

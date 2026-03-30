@@ -651,6 +651,8 @@ namespace LoanPortal.Core.Entities
         public string? LoanProgram { get; set; }
         public decimal? MonthlyTotal { get; set; }
         public bool? isLoanProgramFilled { get; set; }
+        public decimal? Cashout { get; set; }
+        public decimal? DownPaymentPercentage { get; set; }
     }
 
     [BsonIgnoreExtraElements]

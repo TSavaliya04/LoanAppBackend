@@ -61,7 +61,8 @@ public class PreApprovalService : IPreApprovalService
                                 MonthlyTotal = scenario.Purchase.LoanProgram != null ? scenario.Purchase.LoanProgram.MonthlyTotal : 0,
                                 LoanAmount = scenario.Purchase.PurchaseInfo.LoanAmount,
                                 LoanProgram = ((LoanProgram)scenario.Purchase.PurchaseInfo.LoanProgram).ToString() ?? "",
-                                isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
+                                isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram,
+                                DownPaymentPercentage = scenario.Purchase.LoanProgram?.DownPaymentPercentage
                             });
                         }
                         else if (scenario.Refinance?.RefinanceInfo != null)
@@ -72,7 +73,8 @@ public class PreApprovalService : IPreApprovalService
                                 MonthlyTotal = scenario.Refinance.LoanProgram?.MonthlyTotal ?? 0,
                                 LoanAmount = scenario.Refinance.RefinanceInfo.LoanAmount,
                                 LoanProgram = ((LoanProgram)(scenario.Refinance.LoanStructure?.LoanProgram ?? 0)).ToString() ?? "",
-                                isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram
+                                isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram,
+                                Cashout = scenario.Refinance.LoanStructure?.DesiredCashOut
                             });
                         }
                     }

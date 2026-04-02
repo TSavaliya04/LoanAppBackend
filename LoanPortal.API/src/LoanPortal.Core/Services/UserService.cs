@@ -297,6 +297,11 @@ namespace LoanPortal.Core.Services
                     throw new ValidationException($"User with email {user.Email} not found.");
                 }
 
+                if (user.Id == IConstants.AdminId)
+                {
+                    throw new UnauthorizedAccessException("Admin can't login in user portal");
+                }
+
                 var claims = new Dictionary<string, object>()
                 {
                     { "UserId", user.Id },
@@ -305,10 +310,58 @@ namespace LoanPortal.Core.Services
                     { "UserName", user.FirstName + " " + user.LastName },
                 };
 
-                if (user.Id == IConstants.AdminId)
+                // Track login activity
+                await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);
+
+                await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
+                return UserHelper.MaptoUserDTO(user);
+            }
+            catch (ValidationException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<UserDTO> ValidateAdminToken(string token)
+        {
+            try
+            {
+                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token);
+                UserRecord userRecord = await _firebaseAuthService.GetUserAsync(uid);
+
+                var user = new UserEntity();
+                if (userRecord.ProviderData != null && userRecord.ProviderData.ToList().Count > 0 && userRecord.ProviderData[0].ProviderId == "phone")
                 {
-                    claims["isAdmin"] = true;
+                    var phone = userRecord.PhoneNumber.Substring(1);
+                    user = await _userRepository.GetUserByPhone(phone);
                 }
+                else if (userRecord.ProviderData != null && userRecord.ProviderData.ToList().Count > 0 && userRecord.ProviderData[0].ProviderId == "password")
+                {
+                    user = await _userRepository.GetUserByEmail(userRecord.ProviderData[0].Email);
+                }
+
+                if (user == null || user.Id == Guid.Empty)
+                {
+                    throw new ValidationException($"User with email {user.Email} not found.");
+                }
+
+                if (user.Id != IConstants.AdminId)
+                {
+                    throw new UnauthorizedAccessException("User can't login in admin portal");
+                }
+
+                var claims = new Dictionary<string, object>()
+                {
+                    { "UserId", user.Id },
+                    { "Phone", user.Phone },
+                    { "Email", user.Email },
+                    { "UserName", user.FirstName + " " + user.LastName },
+                    { "isAdmin",  true }
+                };
 
                 // Track login activity
                 await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);

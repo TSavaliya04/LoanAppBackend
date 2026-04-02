@@ -110,6 +110,25 @@ namespace LoanPortal.API.Controllers.Authentication
         }
 
         [AllowAnonymous]
+        [HttpPost("user/ValidateAdminToken")]
+        public async Task<IActionResult> ValidateAdminToken(string token)
+        {
+            try
+            {
+                var result = await _userService.ValidateAdminToken(token);
+                return Ok(SuccessResponse(result));
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(400, ErrorResponse<UserDTO>(error: ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [AllowAnonymous]
         [HttpPost("user/ResetPassword")]
         public async Task<IActionResult> ResetPassword(string email)
         {

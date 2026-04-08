@@ -96,9 +96,12 @@ namespace LoanPortal.Tests.Services
                         new ScenarioDTO
                         {
                             Id = scenarioId,
-                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Doe" },
-                            PurchaseInfo = new PurchaseInfoDTO { AnnualInterestRate = 3.5m, LoanProgram = (int)LoanProgram.FHA },
-                            LoanProgram = new LoanProgramDTO { MonthlyTotal = 1500m },
+                            Purchase = new PurchaseScenarioDTO
+                            {
+                                BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Doe" },
+                                PurchaseInfo = new PurchaseInfoDTO { AnnualInterestRate = 3.5m, LoanProgram = (int)LoanProgram.FHA },
+                                LoanProgram = new LoanProgramDTO { MonthlyTotal = 1500m }
+                            },
                             LastSubmittedFormNo = (int)LoanPortal.Shared.Enum.FormType.LoanProgram
                         }
                     }
@@ -132,7 +135,7 @@ namespace LoanPortal.Tests.Services
                     CreatedAt = DateTime.UtcNow,
                     Scenarios = new List<ScenarioDTO>
                     {
-                        new ScenarioDTO { BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Jane Doe" } }
+                        new ScenarioDTO { Purchase = new PurchaseScenarioDTO { BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Jane Doe" } } }
                     }
                 },
                 new PreApprovalDocument { Id = Guid.NewGuid(), Status = 2, CreatedAt = DateTime.UtcNow.AddDays(-1), Scenarios = new List<ScenarioDTO>() }
@@ -161,23 +164,26 @@ namespace LoanPortal.Tests.Services
                     new ScenarioDTO
                     {
                         Id = scenarioId,
-                        BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Doe" },
-                        PurchaseInfo = new PurchaseInfoDTO
+                        Purchase = new PurchaseScenarioDTO
                         {
-                            PurchasePrice = 300000,
-                            DownPayment = 20,
-                            PropertyType = (int)PropertyType.TwoUnit,
-                            OccupancyStatus = 0
-                        },
-                        LoanProgram = new LoanProgramDTO
-                        {
-                            LoanProgram = (int)LoanProgram.Conventional,
-                            Price = 300000
-                        },
-                        LenderFees = new LenderFeesDTO { AgentName = "Agent X" },
-                        BorrowerIncomes = new List<BorrowerIncomeDTO>
-                        {
-                            new BorrowerIncomeDTO { BorrowerName = "John Doe" }
+                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Doe" },
+                            PurchaseInfo = new PurchaseInfoDTO
+                            {
+                                PurchasePrice = 300000,
+                                DownPayment = 20,
+                                PropertyType = (int)PropertyType.TwoUnit,
+                                OccupancyStatus = 0
+                            },
+                            LoanProgram = new LoanProgramDTO
+                            {
+                                LoanProgram = (int)LoanProgram.Conventional,
+                                Price = 300000
+                            },
+                            LenderFees = new LenderFeesDTO { AgentName = "Agent X" },
+                            BorrowerIncomes = new List<BorrowerIncomeDTO>
+                            {
+                                new BorrowerIncomeDTO { BorrowerName = "John Doe" }
+                            }
                         }
                     }
                 }
@@ -226,55 +232,58 @@ namespace LoanPortal.Tests.Services
                     new ScenarioDTO
                     {
                         Id = scenarioId,
-                        BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Doe" },
-                        PurchaseInfo = new PurchaseInfoDTO
+                        Purchase = new PurchaseScenarioDTO
                         {
-                            PurchasePrice = 300000,
-                            DownPayment = 3.5m,
-                            MipFundingFee = 1.75m,
-                            AnnualInterestRate = 3.5m,
-                            HazardInsurance = 1200,
-                            MiPercent = 0m,
-                            AssociationFee = 0m
-                        },
-                        LoanProgram = new LoanProgramDTO
-                        {
-                            InterestRate = 3.5m,
-                            Term = 30,
-                            MMI = 0.85m,
-                            UPMIPRate = 0m,
-                            BaseLoanAmount = 294750,
-                            Price = 300000,
-                            MonthlyPropertyTax = 3000
-                        },
-                        PrepaidItems = new PrepaidItemsDTO
-                        {
-                            PropertyTaxAmount = 3000,
-                            HazardInsurance = 1200,
-                            PrepaidInterestDays = 10,
-                            PrepaidInterestAmount = 50,
-                            PropertyTaxMonths = 2,
-                            HazardInsuranceMonths = 2,
-                            HazardInsuranceReserves = 100
-                        },
-                        LenderFees = new LenderFeesDTO
-                        {
-                            LoanOriginationFee = 1,
-                            EscrowFees = 500,
-                            NotaryFee = 100,
-                            DiscountFee = 200,
-                            UpfrontMip = 5250,
-                            UnderWriter = 300,
-                            ProcessFee = 400,
-                            TitleFees = 1000,
-                            ThirdPartyLenderFee = 0
-                        },
-                        MiscFees = new MiscFeesDTO
-                        {
-                            EarnestMoneyDeposit = 0,
-                            SellerCredit = 0,
-                            LenderCredit = 0,
-                            MiscFee4 = 0
+                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Doe" },
+                            PurchaseInfo = new PurchaseInfoDTO
+                            {
+                                PurchasePrice = 300000,
+                                DownPayment = 3.5m,
+                                MipFundingFee = 1.75m,
+                                AnnualInterestRate = 3.5m,
+                                HazardInsurance = 1200,
+                                MiPercent = 0m,
+                                AssociationFee = 0m
+                            },
+                            LoanProgram = new LoanProgramDTO
+                            {
+                                InterestRate = 3.5m,
+                                Term = 30,
+                                MMI = 0.85m,
+                                UPMIPRate = 0m,
+                                BaseLoanAmount = 294750,
+                                Price = 300000,
+                                MonthlyPropertyTax = 3000
+                            },
+                            PrepaidItems = new PrepaidItemsDTO
+                            {
+                                PropertyTaxAmount = 3000,
+                                HazardInsurance = 1200,
+                                PrepaidInterestDays = 10,
+                                PrepaidInterestAmount = 50,
+                                PropertyTaxMonths = 2,
+                                HazardInsuranceMonths = 2,
+                                HazardInsuranceReserves = 100
+                            },
+                            LenderFees = new LenderFeesDTO
+                            {
+                                LoanOriginationFee = 1,
+                                EscrowFees = 500,
+                                NotaryFee = 100,
+                                DiscountFee = 200,
+                                UpfrontMip = 5250,
+                                UnderWriter = 300,
+                                ProcessFee = 400,
+                                TitleFees = 1000,
+                                ThirdPartyLenderFee = 0
+                            },
+                            MiscFees = new MiscFeesDTO
+                            {
+                                EarnestMoneyDeposit = 0,
+                                SellerCredit = 0,
+                                LenderCredit = 0,
+                                MiscFee4 = 0
+                            }
                         }
                     }
                 }
@@ -417,7 +426,7 @@ namespace LoanPortal.Tests.Services
                 CreatedAt = originalCreatedAt,
                 Scenarios = new List<ScenarioDTO>
                 {
-                    new ScenarioDTO { BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Jane Doe" } }
+                    new ScenarioDTO { Purchase = new PurchaseScenarioDTO { BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Jane Doe" } } }
                 }
             };
 
@@ -442,7 +451,7 @@ namespace LoanPortal.Tests.Services
             Assert.NotEqual(originalCreatedAt, insertedDoc.CreatedAt);
             Assert.NotNull(insertedDoc.Scenarios);
             Assert.Single(insertedDoc.Scenarios);
-            Assert.Equal("Jane Doe", insertedDoc.Scenarios[0].BorrowerInfo?.BorrowerName);
+            Assert.Equal("Jane Doe", insertedDoc.Scenarios[0].Purchase?.BorrowerInfo?.BorrowerName);
         }
 
         [Fact]
@@ -484,48 +493,51 @@ namespace LoanPortal.Tests.Services
                     new ScenarioDTO
                     {
                         Id = scenarioId,
-                        LoanProgram = new LoanProgramDTO
+                        Purchase = new PurchaseScenarioDTO
                         {
-                            Price = purchasePrice,
-                            InterestRate = interestRate,
-                            Term = term,
-                            MonthlyPropertyTax = monthlyPropertyTax,
-                            UPMIPRate = 0m
-                        },
-                        PurchaseInfo = new PurchaseInfoDTO
-                        {
-                            DownPayment = downPercent,
-                            HazardInsurance = hazardInsurance,
-                            MiPercent = mortgageInsurance,
-                            AssociationFee = hoaFee,
-                            MipFundingFee = 1.75m
-                        },
-                        PrepaidItems = new PrepaidItemsDTO
-                        {
-                            PrepaidInterestAmount = 10m,
-                            HazardInsurance = 20m,
-                            HazardInsuranceReserves = 30m,
-                            PropertyTaxAmount = 40m
-                        },
-                        MiscFees = new MiscFeesDTO
-                        {
-                            SellerCredit = 5m,
-                            LenderCredit = 6m,
-                            EarnestMoneyDeposit = 7m,
-                            MiscFee4 = 8m
-                        },
-                        LenderFees = new LenderFeesDTO
-                        {
-                            DiscountFee = 0m,
-                            LoanOriginationFee = 0m,
-                            AppraisalFee = 0m,
-                            EscrowFees = 0m,
-                            NotaryFee = 0m,
-                            UpfrontMip = 0m,
-                            UnderWriter = 0m,
-                            ProcessFee = 0m,
-                            TitleFees = 0m,
-                            ThirdPartyLenderFee = 0m
+                            LoanProgram = new LoanProgramDTO
+                            {
+                                Price = purchasePrice,
+                                InterestRate = interestRate,
+                                Term = term,
+                                MonthlyPropertyTax = monthlyPropertyTax,
+                                UPMIPRate = 0m
+                            },
+                            PurchaseInfo = new PurchaseInfoDTO
+                            {
+                                DownPayment = downPercent,
+                                HazardInsurance = hazardInsurance,
+                                MiPercent = mortgageInsurance,
+                                AssociationFee = hoaFee,
+                                MipFundingFee = 1.75m
+                            },
+                            PrepaidItems = new PrepaidItemsDTO
+                            {
+                                PrepaidInterestAmount = 10m,
+                                HazardInsurance = 20m,
+                                HazardInsuranceReserves = 30m,
+                                PropertyTaxAmount = 40m
+                            },
+                            MiscFees = new MiscFeesDTO
+                            {
+                                SellerCredit = 5m,
+                                LenderCredit = 6m,
+                                EarnestMoneyDeposit = 7m,
+                                MiscFee4 = 8m
+                            },
+                            LenderFees = new LenderFeesDTO
+                            {
+                                DiscountFee = 0m,
+                                LoanOriginationFee = 0m,
+                                AppraisalFee = 0m,
+                                EscrowFees = 0m,
+                                NotaryFee = 0m,
+                                UpfrontMip = 0m,
+                                UnderWriter = 0m,
+                                ProcessFee = 0m,
+                                TitleFees = 0m,
+                                ThirdPartyLenderFee = 0m
+                            }
                         }
                     }
                 }
@@ -584,48 +596,51 @@ namespace LoanPortal.Tests.Services
                     new ScenarioDTO
                     {
                         Id = scenarioId,
-                        LoanProgram = new LoanProgramDTO
+                        Purchase = new PurchaseScenarioDTO
                         {
-                            Price = purchasePrice,
-                            InterestRate = interestRate,
-                            Term = term,
-                            MonthlyPropertyTax = monthlyPropertyTax,
-                            UPMIPRate = 0m
-                        },
-                        PurchaseInfo = new PurchaseInfoDTO
-                        {
-                            DownPayment = downPercent,
-                            HazardInsurance = hazardInsurance,
-                            MiPercent = mortgageInsurance,
-                            AssociationFee = hoaFee,
-                            MipFundingFee = 0m
-                        },
-                        PrepaidItems = new PrepaidItemsDTO
-                        {
-                            PrepaidInterestAmount = 0m,
-                            HazardInsurance = 0m,
-                            HazardInsuranceReserves = 0m,
-                            PropertyTaxAmount = 0m
-                        },
-                        MiscFees = new MiscFeesDTO
-                        {
-                            SellerCredit = 0m,
-                            LenderCredit = 0m,
-                            EarnestMoneyDeposit = 0m,
-                            MiscFee4 = 0m
-                        },
-                        LenderFees = new LenderFeesDTO
-                        {
-                            DiscountFee = 0m,
-                            LoanOriginationFee = 0m,
-                            AppraisalFee = 0m,
-                            EscrowFees = 0m,
-                            NotaryFee = 0m,
-                            UpfrontMip = 0m,
-                            UnderWriter = 0m,
-                            ProcessFee = 0m,
-                            TitleFees = 0m,
-                            ThirdPartyLenderFee = 0m
+                            LoanProgram = new LoanProgramDTO
+                            {
+                                Price = purchasePrice,
+                                InterestRate = interestRate,
+                                Term = term,
+                                MonthlyPropertyTax = monthlyPropertyTax,
+                                UPMIPRate = 0m
+                            },
+                            PurchaseInfo = new PurchaseInfoDTO
+                            {
+                                DownPayment = downPercent,
+                                HazardInsurance = hazardInsurance,
+                                MiPercent = mortgageInsurance,
+                                AssociationFee = hoaFee,
+                                MipFundingFee = 0m
+                            },
+                            PrepaidItems = new PrepaidItemsDTO
+                            {
+                                PrepaidInterestAmount = 0m,
+                                HazardInsurance = 0m,
+                                HazardInsuranceReserves = 0m,
+                                PropertyTaxAmount = 0m
+                            },
+                            MiscFees = new MiscFeesDTO
+                            {
+                                SellerCredit = 0m,
+                                LenderCredit = 0m,
+                                EarnestMoneyDeposit = 0m,
+                                MiscFee4 = 0m
+                            },
+                            LenderFees = new LenderFeesDTO
+                            {
+                                DiscountFee = 0m,
+                                LoanOriginationFee = 0m,
+                                AppraisalFee = 0m,
+                                EscrowFees = 0m,
+                                NotaryFee = 0m,
+                                UpfrontMip = 0m,
+                                UnderWriter = 0m,
+                                ProcessFee = 0m,
+                                TitleFees = 0m,
+                                ThirdPartyLenderFee = 0m
+                            }
                         }
                     }
                 }

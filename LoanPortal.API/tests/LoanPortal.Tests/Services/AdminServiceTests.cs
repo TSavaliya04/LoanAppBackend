@@ -163,9 +163,12 @@ namespace LoanPortal.Tests.Services
                     new ScenarioDTO
                     {
                         CreatedAt = baseDate,
-                        BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Alice" },
-                        PurchaseInfo = new PurchaseInfoDTO { LoanAmount = 100000 },
-                        LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.FHA }
+                        Purchase = new PurchaseScenarioDTO
+                        {
+                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Alice" },
+                            PurchaseInfo = new PurchaseInfoDTO { LoanAmount = 100000 },
+                            LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.FHA }
+                        }
                     }
                 }
             };
@@ -181,9 +184,12 @@ namespace LoanPortal.Tests.Services
                     new ScenarioDTO
                     {
                         CreatedAt = baseDate.AddDays(1),
-                        BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Bob" },
-                        PurchaseInfo = new PurchaseInfoDTO { LoanAmount = 150000 },
-                        LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.Conventional }
+                        Purchase = new PurchaseScenarioDTO
+                        {
+                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "Bob" },
+                            PurchaseInfo = new PurchaseInfoDTO { LoanAmount = 150000 },
+                            LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.Conventional }
+                        }
                     }
                 }
             };
@@ -216,6 +222,65 @@ namespace LoanPortal.Tests.Services
             Assert.Equal(150000, first.LoanAmount);
             Assert.Equal(quote2.UserId, first.UserId);
             Assert.Equal(ApplicationStatus.InEscrow.ToString(), first.Stage);
+        }
+
+        [Fact]
+        public async Task GetRecentQuotes_RefinanceScenario_MapsCorrectly()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var baseDate = new DateTime(2025, 1, 2);
+
+            var quote = new PreApprovalDocument
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CreatedAt = baseDate,
+                LoanType = 1,
+                Status = (int)ApplicationStatus.PreApproved,
+                Scenarios = new List<ScenarioDTO>
+                {
+                    new ScenarioDTO
+                    {
+                        CreatedAt = baseDate,
+                        Refinance = new RefinanceScenarioDTO
+                        {
+                            BorrowerInfo = new RefinanceBorrowerInfoDTO { BorrowerName = "Rita" },
+                            RefinanceInfo = new RefinanceInfoDTO { LoanAmount = 222000 },
+                            LoanStructure = new RefinanceLoanStructureDTO { LoanProgram = (int)LoanProgram.FHA }
+                        }
+                    }
+                }
+            };
+
+            _mockPreApprovalRepository
+                .Setup(x => x.GetAllAsync(userId))
+                .ReturnsAsync(new List<PreApprovalDocument> { quote });
+
+            var request = new RecentQuoteRequest
+            {
+                UserId = userId,
+                Params = new DefaultRequest
+                {
+                    PageNumber = 0,
+                    PageSize = 10,
+                    SortBy = "date",
+                    SortByDirection = "desc"
+                }
+            };
+
+            // Act
+            var result = await _service.GetRecentQuotes(request);
+
+            // Assert
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Quotes);
+
+            var first = result.Quotes.First();
+            Assert.Equal("Rita", first.ClientName);
+            Assert.Equal(222000, first.LoanAmount);
+            Assert.Equal(LoanProgram.FHA.ToString(), first.LoanType);
+            Assert.Equal(ApplicationStatus.PreApproved.ToString(), first.Stage);
         }
 
         #endregion

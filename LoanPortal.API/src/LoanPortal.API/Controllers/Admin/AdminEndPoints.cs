@@ -8,7 +8,7 @@ using static LoanPortal.API.Helper.ResponseHelper;
 
 namespace LoanPortal.API.Controllers.Admin
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "AdminOnly")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "CompanyAdminOrAbove")]
     public class AdminEndPoints : EndpointBase
     {
         private readonly IAdminService _adminService;
@@ -108,6 +108,36 @@ namespace LoanPortal.API.Controllers.Admin
             catch (Exception ex)
             {
                 return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPost("admin/CreateAdmin")]
+        public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminRequest request)
+        {
+            try
+            {
+                var result = await _adminService.CreateAdmin(request);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpGet("admin/GetCompanies")]
+        public async Task<IActionResult> GetCompanies()
+        {
+            try
+            {
+                var result = await _adminService.GetCompanies();
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<List<CompanyEntity>>(500, ex.Message));
             }
         }
     }

@@ -8,5 +8,7 @@ namespace LoanPortal.Core.Interfaces
         Task<PagedAgentsDTO> GetUsers(DefaultRequest request);
         Task<PagedRecentQuotesDTO> GetRecentQuotes(RecentQuoteRequest request);
         Task<QuotesOverviewDTO> GetQuotesOverview(DateTime startDate, DateTime endDate, Guid userId);
+        Task<UserDTO> CreateAdmin(CreateAdminRequest request);
+        Task<List<CompanyEntity>> GetCompanies();
     }
 }

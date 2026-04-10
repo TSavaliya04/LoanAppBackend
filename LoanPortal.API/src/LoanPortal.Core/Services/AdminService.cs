@@ -14,11 +14,17 @@ namespace LoanPortal.Core.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IPreApprovalRepository _preApprovalRepository;
+        private readonly ILoginUserDetails _loginUserDetails;
+        private readonly ICompanyRepository _companyRepository;
+        private readonly IUserService _userService;
 
-        public AdminService(IUserRepository userRepository, IPreApprovalRepository preApprovalRepository)
+        public AdminService(IUserRepository userRepository, IPreApprovalRepository preApprovalRepository, ILoginUserDetails loginUserDetails, ICompanyRepository companyRepository, IUserService userService)
         {
             _userRepository = userRepository;
             _preApprovalRepository = preApprovalRepository;
+            _loginUserDetails = loginUserDetails;
+            _companyRepository = companyRepository;
+            _userService = userService;
         }
 
         public async Task<PagedAgentsDTO> GetUsers(DefaultRequest request)
@@ -26,7 +32,14 @@ namespace LoanPortal.Core.Services
             try
             {
                 var users = await _userRepository.GetAll();
-                users.Remove(users.Find(u => u.Id == IConstants.AdminId));
+                // Filter out SuperAdmins instead of hardcoded AdminId
+                users.RemoveAll(u => u.Role == Shared.Enum.UserRole.SuperAdmin || u.Role == Shared.Enum.UserRole.CompanyAdmin);
+
+                // If this is a CompanyAdmin, filter users tightly to their own company
+                if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin)
+                {
+                    users = users.Where(u => u.CompanyId == _loginUserDetails.CompanyId).ToList();
+                }
 
                 var today = DateTime.UtcNow.Date;
                 var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
@@ -37,17 +50,27 @@ namespace LoanPortal.Core.Services
                     .GroupBy(p => p.UserId)
                     .ToDictionary(g => g.Key, g => g.Count());
 
+                var allCompanies = await _companyRepository.GetAllCompaniesAsync();
+                var companyDict = allCompanies.ToDictionary(c => c.Id, c => c.Name);
+
                 List<AgentDTO> agents = new List<AgentDTO>();
 
                 foreach (UserEntity user in users)
                 {
                     preApprovalsByUser.TryGetValue(user.Id, out var quotesThisWeek);
+                    
+                    string companyName = null;
+                    if (user.CompanyId.HasValue && companyDict.TryGetValue(user.CompanyId.Value, out var cName))
+                    {
+                        companyName = cName;
+                    }
 
                     agents.Add(new AgentDTO
                     {
                         AgentId = user.Id,
                         AgentName = user.FirstName + " " + user.LastName,
-                        Company = user.CompanyName,
+                        CompanyId = user.CompanyId,
+                        Company = companyName,
                         Email = user.Email,
                         LastLogin = user.LastLoginDate,
                         Status = user.IsActive ? "Active" : "InActive",
@@ -62,8 +85,8 @@ namespace LoanPortal.Core.Services
                     var search = request.SearchText.Trim().ToLower();
                     query = query.Where(a =>
                         (!string.IsNullOrEmpty(a.AgentName) && a.AgentName.ToLower().Contains(search)) ||
-                        (!string.IsNullOrEmpty(a.Email) && a.Email.ToLower().Contains(search)) ||
-                        (!string.IsNullOrEmpty(a.Company) && a.Company.ToLower().Contains(search)));
+                        (!string.IsNullOrEmpty(a.Company) && a.Company.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(a.Email) && a.Email.ToLower().Contains(search)));
                 }
 
                 // Apply sorting
@@ -232,10 +255,25 @@ namespace LoanPortal.Core.Services
             List<PreApprovalDocument> quotes = await _preApprovalRepository.GetByDateRangeAdmin(startDate, endDate);
             List<PreApprovalDocument> quotesStatus = await _preApprovalRepository.GetByStatusChangeDateRange(startDate, endDate);
             List<UserEntity> activeUsers = await _userRepository.GetUsersActiveInRange(startDate, endDate);
-            activeUsers.Remove(activeUsers.Find(u => u.Id == IConstants.AdminId));
+            activeUsers.RemoveAll(u => u.Role == Shared.Enum.UserRole.SuperAdmin || u.Role == Shared.Enum.UserRole.CompanyAdmin);
+
+            // Scope logic for Company Admin
+            var allUsers = await _userRepository.GetAll();
+            allUsers.RemoveAll(u => u.Role == Shared.Enum.UserRole.SuperAdmin || u.Role == Shared.Enum.UserRole.CompanyAdmin);
+
+            if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin)
+            {
+                var companyUsers = allUsers.Where(u => u.CompanyId == _loginUserDetails.CompanyId).Select(u => u.Id).ToHashSet();
+                
+                quotes = quotes.Where(q => companyUsers.Contains(q.UserId)).ToList();
+                quotesStatus = quotesStatus.Where(q => companyUsers.Contains(q.UserId)).ToList();
+                activeUsers = activeUsers.Where(u => companyUsers.Contains(u.Id)).ToList();
+                allUsers = allUsers.Where(u => companyUsers.Contains(u.Id)).ToList();
+            }
+
             return new AdminDashboardDTO
             {
-                TotalUser = (await _userRepository.GetAll()).Count,
+                TotalUser = allUsers.Count,
                 ActiveUser = activeUsers.Count,
                 QuotesCreated = quotes.Count(),
                 PreApprovals = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.PreApproved).Count(),
@@ -284,6 +322,40 @@ namespace LoanPortal.Core.Services
                 TotalQuotes = quotes.Count,
                 DailyQuoteCounts = allDates
             };
+        }
+
+        public async Task<UserDTO> CreateAdmin(CreateAdminRequest request)
+        {
+            if (_loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin)
+            {
+                throw new UnauthorizedAccessException("Only SuperAdmins can create Admins.");
+            }
+
+            if (request.Role != Shared.Enum.UserRole.SuperAdmin && request.Role != Shared.Enum.UserRole.CompanyAdmin)
+            {
+                 throw new ValidationException("Invalid admin role requested.");
+            }
+
+            var result = await _userService.SignUp(request);
+
+            // Fetch created user and update role
+            var createdUser = await _userRepository.GetUserByEmail(request.Email);
+            createdUser.Role = request.Role;
+            createdUser.CompanyId = request.CompanyId;
+            
+            await _userRepository.UpdateUserProfileAsync(createdUser.Id, createdUser);
+            result.Role = request.Role;
+            result.CompanyId = request.CompanyId;
+            return result;
+        }
+
+        public async Task<List<CompanyEntity>> GetCompanies()
+        {
+            if (_loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin)
+            {
+                throw new UnauthorizedAccessException("Only SuperAdmins can view all companies.");
+            }
+            return await _companyRepository.GetAllCompaniesAsync();
         }
     }
 }

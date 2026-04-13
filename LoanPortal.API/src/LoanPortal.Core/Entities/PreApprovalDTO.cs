@@ -423,6 +423,60 @@ namespace LoanPortal.Core.Entities
     }
 
     [BsonIgnoreExtraElements]
+    public class RefinanceBorrowerIncomeDTO
+    {
+        public Guid? Id { get; set; }
+
+        [BsonIgnore]
+        public Guid PreApprovalId { get; set; }
+
+        [BsonElement("borrowerName")]
+        public string BorrowerName { get; set; }
+
+        [BsonElement("ficoScore")]
+        public int? FicoScore { get; set; }
+
+        [BsonElement("monthlyIncome")]
+        public decimal? MonthlyIncome { get; set; }
+
+        [BsonElement("debts")]
+        public List<RefinanceDebtBreakdownDTO> Debts { get; set; }
+
+        [BsonElement("createdAt")]
+        public DateTime? CreatedAt { get; set; }
+
+        [BsonElement("updatedAt")]
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class RefinanceDebtBreakdownDTO
+    {
+        public Guid? Id { get; set; }
+
+        [BsonIgnore]
+        public Guid PreApprovalId { get; set; }
+
+        [BsonElement("debtType")]
+        public int DebtType { get; set; }
+
+        [BsonElement("balance")]
+        public decimal Balance { get; set; }
+
+        [BsonElement("monthlyPayment")]
+        public decimal MonthlyPayment { get; set; }
+
+        [BsonElement("debtToBePaidOff")]
+        public bool DebtToBePaidOff { get; set; }
+
+        [BsonElement("createdAt")]
+        public DateTime? CreatedAt { get; set; }
+
+        [BsonElement("updatedAt")]
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
     public class LoanProgramBorrowerIncomeDTO
     {
         public Guid? Id { get; set; }
@@ -817,8 +871,7 @@ namespace LoanPortal.Core.Entities
         public RefinanceLenderFeesDTO? LenderFees { get; set; }
 
         [BsonElement("borrowerIncomes")]
-        //[BsonSerializer(typeof(SingleOrArraySerializer<BorrowerIncomeDTO>))]
-        public List<BorrowerIncomeDTO>? BorrowerIncomes { get; set; }
+        public List<RefinanceBorrowerIncomeDTO>? BorrowerIncomes { get; set; }
 
         [BsonElement("loanProgram")]
         public RefinanceLoanProgramDTO? LoanProgram { get; set; }

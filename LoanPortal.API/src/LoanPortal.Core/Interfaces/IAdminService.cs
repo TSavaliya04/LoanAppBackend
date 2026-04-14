@@ -10,5 +10,6 @@ namespace LoanPortal.Core.Interfaces
         Task<QuotesOverviewDTO> GetQuotesOverview(DateTime startDate, DateTime endDate, Guid userId);
         Task<UserDTO> CreateAdmin(CreateAdminRequest request);
         Task<List<CompanyEntity>> GetCompanies();
+        Task<CompanyDTO> CreateCompany(CreateCompanyRequest request);
     }
 }

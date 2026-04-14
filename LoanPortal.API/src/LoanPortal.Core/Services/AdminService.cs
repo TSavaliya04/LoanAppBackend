@@ -1,4 +1,5 @@
 using LoanPortal.Core.Entities;
+using LoanPortal.Core.Exceptions;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
@@ -356,6 +357,38 @@ namespace LoanPortal.Core.Services
                 throw new UnauthorizedAccessException("Only SuperAdmins can view all companies.");
             }
             return await _companyRepository.GetAllCompaniesAsync();
+        }
+
+        public async Task<CompanyDTO> CreateCompany(CreateCompanyRequest request)
+        {
+            if (_loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin)
+            {
+                throw new UnauthorizedAccessException("Only SuperAdmins can create new companies.");
+            }
+
+            var companyEntity = new CompanyEntity
+            {
+                Id = Guid.NewGuid(),
+                Name = request.Name,
+                Address = request.Address,
+                ContactEmail = request.ContactEmail,
+                ContactPhone = request.ContactPhone,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _companyRepository.CreateCompanyAsync(companyEntity);
+
+            return new CompanyDTO
+            {
+                Id = companyEntity.Id,
+                Name = companyEntity.Name,
+                Address = companyEntity.Address,
+                ContactEmail = companyEntity.ContactEmail,
+                ContactPhone = companyEntity.ContactPhone,
+                IsActive = companyEntity.IsActive,
+                CreatedAt = companyEntity.CreatedAt
+            };
         }
     }
 }

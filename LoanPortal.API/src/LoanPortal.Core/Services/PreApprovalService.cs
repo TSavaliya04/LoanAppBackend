@@ -15,16 +15,19 @@ public class PreApprovalService : IPreApprovalService
     private readonly ILoginUserDetails _loginUserDetails;
     private readonly IPreApprovalRepository _preApprovalRepository;
     private readonly IUserRepository _userRepository;
+    private readonly ICompanyRepository _companyRepository;
 
     public PreApprovalService(
         ILoginUserDetails loginUserDetails,
         IPreApprovalRepository preApprovalRepository,
-        IUserRepository userRepository
+        IUserRepository userRepository,
+        ICompanyRepository companyRepository
     )
     {
         _loginUserDetails = loginUserDetails;
         _preApprovalRepository = preApprovalRepository;
         _userRepository = userRepository;
+        _companyRepository = companyRepository;
     }
 
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)
@@ -110,9 +113,16 @@ public class PreApprovalService : IPreApprovalService
 
             UserDTO agent = UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
             
-            if(agent != null && !string.IsNullOrEmpty(agent.Profile))
+            if (agent != null && !string.IsNullOrEmpty(agent.Profile))
             {
                 agent.Profile = agent.Profile + "?" + IConstants.AzureToken;
+            }
+
+            string companyName = string.Empty;
+            if (agent?.CompanyId != null)
+            {
+                var company = await _companyRepository.GetCompanyByIdAsync(agent.CompanyId.Value);
+                if (company != null) companyName = company.Name;
             }
 
             if (preApproval.LoanType == 1) // Refinance
@@ -136,7 +146,7 @@ public class PreApprovalService : IPreApprovalService
                     LoanProgram = refi.LoanStructure?.LoanProgram ?? 0,
                     PropertyType = 0,
                     Borrowers = new List<string>(),
-                    LendingCompany = agent?.CompanyName,
+                    LendingCompany = companyName,
                     OccupancyStatus = refi.RefinanceInfo?.OccupancyStatus ?? 0,
                     AgentName = string.Empty,
                     AgentInfo = agent
@@ -165,7 +175,7 @@ public class PreApprovalService : IPreApprovalService
                     LoanProgram = scenario.Purchase.LoanProgram.LoanProgram,
                     PropertyType = scenario.Purchase.PurchaseInfo.PropertyType,
                     Borrowers = borrowers,
-                    LendingCompany = agent.CompanyName,
+                    LendingCompany = companyName,
                     OccupancyStatus = scenario.Purchase.PurchaseInfo.OccupancyStatus,
                     AgentName = scenario.Purchase.LenderFees.AgentName,
                     AgentInfo = agent

@@ -15,6 +15,7 @@ namespace LoanPortal.Core.Entities
         public Guid AgentId { get; set; }
         public string AgentName { get; set; }
         public string Email { get; set; }
+        public Guid? CompanyId { get; set; }
         public string Company { get; set; }
         public DateTime? LastLogin { get; set; }
         public int QuotesThisWeek { get; set; }

@@ -19,7 +19,14 @@ public class LoginUserDetails : ILoginUserDetails
   
   private string _email;
   public string Email { get { return _email; } set => _email = value; }
-    public LoginUserDetails()
+  
+  private LoanPortal.Shared.Enum.UserRole _role;
+  public LoanPortal.Shared.Enum.UserRole Role { get { return _role; } set => _role = value; }
+  
+  private Guid? _companyId;
+  public Guid? CompanyId { get { return _companyId; } set => _companyId = value; }
+
+  public LoginUserDetails()
   {
   }
 }

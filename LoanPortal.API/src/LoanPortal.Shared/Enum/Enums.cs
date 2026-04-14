@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace LoanPortal.Shared.Enum
 {
+    public enum UserRole
+    {
+        SuperAdmin = 0,
+        CompanyAdmin = 1,
+        User = 2
+    }
+
     public enum UserStatus
     {
         InActive,

@@ -11,5 +11,7 @@ public interface ILoginUserDetails
   public string UserName { get; set; }
   public string Phone { get; set; }
   public string Email { get; set; }
+  public LoanPortal.Shared.Enum.UserRole Role { get; set; }
+  public Guid? CompanyId { get; set; }
 
 }

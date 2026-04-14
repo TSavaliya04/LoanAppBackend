@@ -65,6 +65,18 @@ public class JwtMiddleware
                 {
                     _userDetailService.Phone = Convert.ToString(phone);
                 }
+
+                object role;
+                if (decodedToken.Claims.TryGetValue("Role", out role))
+                {
+                    _userDetailService.Role = (LoanPortal.Shared.Enum.UserRole)Convert.ToInt32(role);
+                }
+                
+                object companyId;
+                if (decodedToken.Claims.TryGetValue("CompanyId", out companyId))
+                {
+                    _userDetailService.CompanyId = new Guid(companyId.ToString());
+                }
             }
             catch (FirebaseAuthException)
             {

@@ -23,9 +23,12 @@ namespace LoanPortal.Infrastructure
         }
 
         public IMongoCollection<PreApprovalDocument> PreApprovals =>
-            _database.GetCollection<PreApprovalDocument>(_settings.PreApprovalCollectionName);
+            _database.GetCollection<PreApprovalDocument>("PreApprovals");
 
         public IMongoCollection<UserEntity> Users =>
-            _database.GetCollection<UserEntity>(_settings.UserCollectionName);
+            _database.GetCollection<UserEntity>("Users");
+
+        public IMongoCollection<CompanyEntity> Companies =>
+            _database.GetCollection<CompanyEntity>("Companies");
     }
 }

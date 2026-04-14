@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using LoanPortal.Shared.Enum;
+using Microsoft.AspNetCore.Http;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace LoanPortal.Core.Entities
@@ -10,6 +11,12 @@ namespace LoanPortal.Core.Entities
         public string Email { get; set; }
         public string Password { get; set; }
         public string? Phone { get; set; }
+        public Guid? CompanyId { get; set; }
+    }
+
+    public class CreateAdminRequest : CreateUserRequest
+    {
+        public UserRole Role { get; set; }
     }
 
     public class UserDTO
@@ -25,9 +32,10 @@ namespace LoanPortal.Core.Entities
         public string? JobTitle { get; set; }
         public string? Address { get; set; }
         public string? Profile { get; set; }
-        public string? CompanyName { get; set; }
         public string? NMLS { get; set; }
         public DateTime? LastLoginDate { get; set; }
+        public UserRole Role { get; set; }
+        public Guid? CompanyId { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -54,6 +62,12 @@ namespace LoanPortal.Core.Entities
         [BsonElement("firebaseId")]
         public string FirebaseId { get; set; }
 
+        [BsonElement("role")]
+        public UserRole Role { get; set; } = UserRole.User;
+
+        [BsonElement("companyId")]
+        public Guid? CompanyId { get; set; }
+
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; }
 
@@ -68,9 +82,6 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("jobTitle")]
         public string JobTitle { get; set; }
-
-        [BsonElement("companyName")]
-        public string CompanyName { get; set; }
 
         [BsonElement("nmls")]
         public string? NMLS { get; set; }
@@ -93,8 +104,8 @@ namespace LoanPortal.Core.Entities
         public string? JobTitle { get; set; }
         public string? Address { get; set; }
         public IFormFile? Profile { get; set; }
-        public string? CompanyName { get; set; }
         public string? NMLS { get; set; }
         public string? Phone { get; set; }
+        public Guid? CompanyId { get; set; }
     }
 }

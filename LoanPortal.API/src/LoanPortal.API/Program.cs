@@ -43,11 +43,39 @@ builder
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy =>
+    options.AddPolicy("SuperAdminOnly", policy =>
         policy.RequireAssertion(context =>
         {
-            var userIdClaim = context.User.FindFirst("UserId")?.Value;
-            return userIdClaim == LoanPortal.Shared.Constants.IConstants.AdminId.ToString();
+            var roleClaim = context.User.FindFirst("Role")?.Value;
+            if (int.TryParse(roleClaim, out int roleValue))
+            {
+                return roleValue == (int)LoanPortal.Shared.Enum.UserRole.SuperAdmin;
+            }
+            return false;
+        }));
+
+    options.AddPolicy("CompanyAdminOrAbove", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleClaim = context.User.FindFirst("Role")?.Value;
+            if (int.TryParse(roleClaim, out int roleValue))
+            {
+                return roleValue == (int)LoanPortal.Shared.Enum.UserRole.SuperAdmin || 
+                       roleValue == (int)LoanPortal.Shared.Enum.UserRole.CompanyAdmin;
+            }
+            return false;
+        }));
+
+    options.AddPolicy("AnyAdmin", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleClaim = context.User.FindFirst("Role")?.Value;
+            if (int.TryParse(roleClaim, out int roleValue))
+            {
+                return roleValue == (int)LoanPortal.Shared.Enum.UserRole.SuperAdmin || 
+                       roleValue == (int)LoanPortal.Shared.Enum.UserRole.CompanyAdmin;
+            }
+            return false;
         }));
 });
 
@@ -71,8 +99,6 @@ builder.Services.Configure<MongoDbSettings>(options =>
 {
     options.ConnectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING") ?? (mongoSettings != null ? mongoSettings["ConnectionString"] : "");
     options.DatabaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? (mongoSettings != null ? mongoSettings["DatabaseName"] : "");
-    options.PreApprovalCollectionName = Environment.GetEnvironmentVariable("MONGODB_PRE_APPROVAL_COLLECTION_NAME") ?? (mongoSettings != null ? mongoSettings["PreApprovalCollectionName"] : "");
-    options.UserCollectionName = Environment.GetEnvironmentVariable("MONGODB_USER_COLLECTION_NAME") ?? (mongoSettings != null ? mongoSettings["UserCollectionName"] : "");
 });
 builder.Services.Configure<SMTPConfigModel>(builder.Configuration.GetSection("SMTPConfig"));
 builder.Services.Configure<BlobStorageSettings>(builder.Configuration.GetSection("BlobStorageSettings"));
@@ -96,6 +122,7 @@ builder.Services.AddSingleton<IUserHelper, UserHelper>();
 builder.Services.AddSingleton<IBlobStorageHelper, BlobStorageHelper>();
 builder.Services.AddScoped<IFirebaseAuthService, FirebaseAuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddSingleton<ICompanyRepository, CompanyRepository>();
 
 builder.Services.AddSwaggerGen(c =>
 {

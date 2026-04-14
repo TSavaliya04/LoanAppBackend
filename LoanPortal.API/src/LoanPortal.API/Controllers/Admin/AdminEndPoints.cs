@@ -140,5 +140,20 @@ namespace LoanPortal.API.Controllers.Admin
                 return StatusCode(500, ErrorResponse<List<CompanyEntity>>(500, ex.Message));
             }
         }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPost("admin/CreateCompany")]
+        public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyRequest request)
+        {
+            try
+            {
+                var result = await _adminService.CreateCompany(request);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
+            }
+        }
     }
 }

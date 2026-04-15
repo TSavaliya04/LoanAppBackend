@@ -77,6 +77,19 @@ builder.Services.AddAuthorization(options =>
             }
             return false;
         }));
+
+    options.AddPolicy("AnyUser", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var roleClaim = context.User.FindFirst("Role")?.Value;
+            if (int.TryParse(roleClaim, out int roleValue))
+            {
+                return roleValue == (int)LoanPortal.Shared.Enum.UserRole.SuperAdmin || 
+                       roleValue == (int)LoanPortal.Shared.Enum.UserRole.CompanyAdmin ||
+                       roleValue == (int)LoanPortal.Shared.Enum.UserRole.User;
+            }
+            return false;
+        }));
 });
 
 // Add services to the container.

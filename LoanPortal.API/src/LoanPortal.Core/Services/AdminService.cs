@@ -350,13 +350,74 @@ namespace LoanPortal.Core.Services
             return result;
         }
 
-        public async Task<List<CompanyEntity>> GetCompanies()
+        public async Task<PagedCompaniesDTO> GetCompanies(DefaultRequest request)
         {
             if (_loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin)
             {
                 throw new UnauthorizedAccessException("Only SuperAdmins can view all companies.");
             }
-            return await _companyRepository.GetAllCompaniesAsync();
+
+            var allCompanies = await _companyRepository.GetAllCompaniesAsync();
+            var companiesDto = allCompanies.Select(c => new CompanyDTO
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Address = c.Address,
+                ContactEmail = c.ContactEmail,
+                ContactPhone = c.ContactPhone,
+                IsActive = c.IsActive,
+                CreatedAt = c.CreatedAt
+            }).ToList();
+
+            IEnumerable<CompanyDTO> query = companiesDto;
+
+            // Apply search
+            if (!string.IsNullOrWhiteSpace(request.SearchText))
+            {
+                var search = request.SearchText.Trim().ToLower();
+                query = query.Where(c =>
+                    (!string.IsNullOrEmpty(c.Name) && c.Name.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(c.Address) && c.Address.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(c.ContactEmail) && c.ContactEmail.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(c.ContactPhone) && c.ContactPhone.ToLower().Contains(search)));
+            }
+
+            // Apply sorting
+            bool desc = string.Equals(request.SortByDirection, "desc", StringComparison.OrdinalIgnoreCase);
+            switch (request.SortBy?.ToLower())
+            {
+                case "name":
+                    query = desc ? query.OrderByDescending(c => c.Name) : query.OrderBy(c => c.Name);
+                    break;
+                case "contactemail":
+                    query = desc ? query.OrderByDescending(c => c.ContactEmail) : query.OrderBy(c => c.ContactEmail);
+                    break;
+                case "isactive":
+                    query = desc ? query.OrderByDescending(c => c.IsActive) : query.OrderBy(c => c.IsActive);
+                    break;
+                case "createdat":
+                default:
+                    query = desc ? query.OrderByDescending(c => c.CreatedAt) : query.OrderBy(c => c.CreatedAt);
+                    break;
+            }
+
+            var totalCount = query.Count();
+
+            var pageNumber = request.PageNumber < 0 ? 0 : request.PageNumber;
+            var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+            var items = query
+                .Skip(pageNumber * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedCompaniesDTO
+            {
+                Companies = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<CompanyDTO> CreateCompany(CreateCompanyRequest request)
@@ -388,6 +449,23 @@ namespace LoanPortal.Core.Services
                 ContactPhone = companyEntity.ContactPhone,
                 IsActive = companyEntity.IsActive,
                 CreatedAt = companyEntity.CreatedAt
+            };
+        }
+
+        public async Task<CompanyDTO> GetCompanyById(Guid id)
+        {
+            var company = await _companyRepository.GetCompanyByIdAsync(id);
+            if (company == null) return null;
+
+            return new CompanyDTO
+            {
+                Id = company.Id,
+                Name = company.Name,
+                Address = company.Address,
+                ContactEmail = company.ContactEmail,
+                ContactPhone = company.ContactPhone,
+                IsActive = company.IsActive,
+                CreatedAt = company.CreatedAt
             };
         }
     }

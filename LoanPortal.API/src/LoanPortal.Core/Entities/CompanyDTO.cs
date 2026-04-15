@@ -49,4 +49,12 @@ namespace LoanPortal.Core.Entities
         public string? ContactEmail { get; set; }
         public string? ContactPhone { get; set; }
     }
+
+    public class PagedCompaniesDTO
+    {
+        public List<CompanyDTO> Companies { get; set; }
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+    }
 }

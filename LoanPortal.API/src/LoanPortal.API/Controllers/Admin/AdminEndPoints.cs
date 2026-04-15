@@ -127,17 +127,34 @@ namespace LoanPortal.API.Controllers.Admin
         }
 
         [Authorize(Policy = "AnyUser")]
-        [HttpGet("admin/GetCompanies")]
-        public async Task<IActionResult> GetCompanies()
+        [HttpPost("admin/GetCompanies")]
+        public async Task<IActionResult> GetCompanies([FromBody] DefaultRequestWrapper request)
         {
             try
             {
-                var result = await _adminService.GetCompanies();
+                var result = await _adminService.GetCompanies(request.Params);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<List<CompanyEntity>>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<PagedCompaniesDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "AnyUser")]
+        [HttpGet("admin/GetCompanyById/{id}")]
+        public async Task<IActionResult> GetCompanyById(Guid id)
+        {
+            try
+            {
+                var result = await _adminService.GetCompanyById(id);
+                if (result == null)
+                    return NotFound(ErrorResponse<CompanyDTO>(404, "Company not found."));
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
             }
         }
 

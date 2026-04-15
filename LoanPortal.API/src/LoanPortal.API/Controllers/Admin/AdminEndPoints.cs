@@ -126,7 +126,7 @@ namespace LoanPortal.API.Controllers.Admin
             }
         }
 
-        [Authorize(Policy = "SuperAdminOnly")]
+        [Authorize(Policy = "AnyUser")]
         [HttpGet("admin/GetCompanies")]
         public async Task<IActionResult> GetCompanies()
         {

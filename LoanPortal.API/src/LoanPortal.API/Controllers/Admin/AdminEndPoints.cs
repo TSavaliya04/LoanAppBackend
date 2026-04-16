@@ -172,5 +172,26 @@ namespace LoanPortal.API.Controllers.Admin
                 return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
             }
         }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPut("admin/UpdateCompany")]
+        public async Task<IActionResult> UpdateCompany([FromBody] UpdateCompanyRequest request)
+        {
+            try
+            {
+                var result = await _adminService.UpdateCompany(request);
+                if (result == null)
+                    return NotFound(ErrorResponse<CompanyDTO>(404, "Company not found."));
+                return Ok(SuccessResponse(result));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ErrorResponse<CompanyDTO>(403, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
+            }
+        }
     }
 }

@@ -57,4 +57,14 @@ namespace LoanPortal.Core.Entities
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
     }
+
+    public class UpdateCompanyRequest
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string? Address { get; set; }
+        public string? ContactEmail { get; set; }
+        public string? ContactPhone { get; set; }
+        public bool IsActive { get; set; }
+    }
 }

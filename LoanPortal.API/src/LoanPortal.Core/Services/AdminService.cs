@@ -468,5 +468,39 @@ namespace LoanPortal.Core.Services
                 CreatedAt = company.CreatedAt
             };
         }
+
+        public async Task<CompanyDTO> UpdateCompany(UpdateCompanyRequest request)
+        {
+            if (_loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin && !(_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin && _loginUserDetails.CompanyId == request.Id))
+            {
+                throw new UnauthorizedAccessException("You are not authorized to update this company.");
+            }
+
+            var companyEntity = await _companyRepository.GetCompanyByIdAsync(request.Id);
+            if (companyEntity == null)
+            {
+                return null;
+            }
+
+            companyEntity.Name = request.Name;
+            companyEntity.Address = request.Address;
+            companyEntity.ContactEmail = request.ContactEmail;
+            companyEntity.ContactPhone = request.ContactPhone;
+            companyEntity.IsActive = request.IsActive;
+            companyEntity.UpdatedAt = DateTime.UtcNow;
+
+            await _companyRepository.UpdateCompanyAsync(request.Id, companyEntity);
+
+            return new CompanyDTO
+            {
+                Id = companyEntity.Id,
+                Name = companyEntity.Name,
+                Address = companyEntity.Address,
+                ContactEmail = companyEntity.ContactEmail,
+                ContactPhone = companyEntity.ContactPhone,
+                IsActive = companyEntity.IsActive,
+                CreatedAt = companyEntity.CreatedAt
+            };
+        }
     }
 }

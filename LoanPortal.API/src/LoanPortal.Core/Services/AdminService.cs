@@ -142,6 +142,104 @@ namespace LoanPortal.Core.Services
             }
         }
 
+        public async Task<PagedAgentsDTO> GetCompanyAdmins(DefaultRequest request)
+        {
+            try
+            {
+                if (_loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin)
+                {
+                    throw new UnauthorizedAccessException("Only SuperAdmins can view company admins.");
+                }
+
+                var users = await _userRepository.GetAll();
+                // Filter only CompanyAdmins
+                users = users.Where(u => u.Role == Shared.Enum.UserRole.CompanyAdmin).ToList();
+
+                var allCompanies = await _companyRepository.GetAllCompaniesAsync();
+                var companyDict = allCompanies.ToDictionary(c => c.Id, c => c.Name);
+
+                List<AgentDTO> admins = new List<AgentDTO>();
+
+                foreach (UserEntity user in users)
+                {
+                    string companyName = null;
+                    if (user.CompanyId.HasValue && companyDict.TryGetValue(user.CompanyId.Value, out var cName))
+                    {
+                        companyName = cName;
+                    }
+
+                    admins.Add(new AgentDTO
+                    {
+                        AgentId = user.Id,
+                        AgentName = user.FirstName + " " + user.LastName,
+                        CompanyId = user.CompanyId,
+                        Company = companyName,
+                        Email = user.Email,
+                        LastLogin = user.LastLoginDate,
+                        Status = user.IsActive ? "Active" : "InActive",
+                        QuotesThisWeek = 0 // Admins typically don't create quotes directly, or you can map it similarly
+                    });
+                }
+
+                // Apply search
+                IEnumerable<AgentDTO> query = admins;
+                if (!string.IsNullOrWhiteSpace(request.SearchText))
+                {
+                    var search = request.SearchText.Trim().ToLower();
+                    query = query.Where(a =>
+                        (!string.IsNullOrEmpty(a.AgentName) && a.AgentName.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(a.Company) && a.Company.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(a.Email) && a.Email.ToLower().Contains(search)));
+                }
+
+                // Apply sorting
+                bool desc = string.Equals(request.SortByDirection, "desc", StringComparison.OrdinalIgnoreCase);
+                switch (request.SortBy?.ToLower())
+                {
+                    case "email":
+                        query = desc ? query.OrderByDescending(a => a.Email) : query.OrderBy(a => a.Email);
+                        break;
+                    case "company":
+                        query = desc ? query.OrderByDescending(a => a.Company) : query.OrderBy(a => a.Company);
+                        break;
+                    case "lastlogin":
+                        query = desc ? query.OrderByDescending(a => a.LastLogin) : query.OrderBy(a => a.LastLogin);
+                        break;
+                    case "status":
+                        query = desc ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status);
+                        break;
+                    case "agentname":
+                        query = desc ? query.OrderByDescending(a => a.AgentName) : query.OrderBy(a => a.AgentName);
+                        break;
+                    default:
+                        query = query.OrderByDescending(a => a.LastLogin);
+                        break;
+                }
+
+                var totalCount = query.Count();
+
+                var pageNumber = request.PageNumber < 0 ? 0 : request.PageNumber;
+                var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+                var items = query
+                    .Skip(pageNumber * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new PagedAgentsDTO
+                {
+                    Users = items,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred while retrieving company admins.", ex);
+            }
+        }
+
         public async Task<PagedRecentQuotesDTO> GetRecentQuotes(RecentQuoteRequest request)
         {
             var quotes = await _preApprovalRepository.GetAllAsync(request.UserId);
@@ -482,11 +580,12 @@ namespace LoanPortal.Core.Services
                 return null;
             }
 
-            companyEntity.Name = request.Name;
-            companyEntity.Address = request.Address;
-            companyEntity.ContactEmail = request.ContactEmail;
-            companyEntity.ContactPhone = request.ContactPhone;
-            companyEntity.IsActive = request.IsActive;
+            companyEntity.Name = string.IsNullOrWhiteSpace(request.Name) ? companyEntity.Name : request.Name;
+            companyEntity.Address = request.Address ?? companyEntity.Address;
+            companyEntity.ContactEmail = request.ContactEmail ?? companyEntity.ContactEmail;
+            companyEntity.ContactPhone = request.ContactPhone ?? companyEntity.ContactPhone;
+            companyEntity.IsActive = request.IsActive ?? companyEntity.IsActive;
+
             companyEntity.UpdatedAt = DateTime.UtcNow;
 
             await _companyRepository.UpdateCompanyAsync(request.Id, companyEntity);

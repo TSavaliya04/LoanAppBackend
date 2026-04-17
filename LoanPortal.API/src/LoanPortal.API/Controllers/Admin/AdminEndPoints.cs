@@ -126,6 +126,55 @@ namespace LoanPortal.API.Controllers.Admin
             }
         }
 
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPost("admin/GetCompanyAdmins")]
+        public async Task<IActionResult> GetCompanyAdmins([FromBody] DefaultRequestWrapper request)
+        {
+            try
+            {
+                var result = await _adminService.GetCompanyAdmins(request.Params);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<PagedAgentsDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpGet("admin/GetCompanyAdminById/{id}")]
+        public async Task<IActionResult> GetCompanyAdminById(Guid id)
+        {
+            try
+            {
+                var result = await _userService.GetUserProfile(id);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPut("admin/UpdateCompanyAdmin")]
+        public async Task<IActionResult> UpdateCompanyAdmin([FromForm] UpdateProfileRequest request)
+        {
+            try
+            {
+                var result = await _userService.UpdateProfile(request);
+                return Ok(SuccessResponse(result));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ErrorResponse<UserDTO>(403, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
         [Authorize(Policy = "AnyUser")]
         [HttpPost("admin/GetCompanies")]
         public async Task<IActionResult> GetCompanies([FromBody] DefaultRequestWrapper request)

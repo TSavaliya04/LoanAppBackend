@@ -150,6 +150,57 @@ namespace LoanPortal.Tests.Services
         }
 
         [Fact]
+        public async Task GetQuoteList_Refinance_ReturnsOpportunities()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+            var documents = new List<PreApprovalDocument>
+            {
+                new PreApprovalDocument
+                {
+                    Id = Guid.NewGuid(),
+                    CreatedAt = DateTime.UtcNow,
+                    LoanType = 1,
+                    Status = 1,
+                    Scenarios = new List<ScenarioDTO>
+                    {
+                        new ScenarioDTO
+                        {
+                            Id = scenarioId,
+                            Refinance = new RefinanceScenarioDTO
+                            {
+                                BorrowerInfo = new RefinanceBorrowerInfoDTO { BorrowerName = "Jane Refi" },
+                                RefinanceInfo = new RefinanceInfoDTO { LoanAmount = 250000 },
+                                LoanStructure = new RefinanceLoanStructureDTO { InterestRate = 4.0m, LoanProgram = (int)LoanProgram.Conventional },
+                                LoanProgram = new RefinanceLoanProgramDTO { MonthlyTotal = 1200m }
+                            },
+                            LastSubmittedFormNo = (int)LoanPortal.Shared.Enum.FormType.LoanProgram
+                        }
+                    }
+                }
+            };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockPreApprovalRepository.Setup(x => x.GetAllAsync(userId))
+                .ReturnsAsync(documents);
+
+            // Act
+            var result = await _service.GetQuoteList(0);
+
+            // Assert
+            Assert.Single(result);
+            Assert.Equal(documents[0].Id, result[0].PreApprovalId);
+            Assert.Equal("Jane Refi", result[0].BorrowerName);
+            Assert.Equal("Refinance", result[0].LoanType);
+            Assert.NotNull(result[0].Scenarios);
+            Assert.Single(result[0].Scenarios);
+            Assert.Equal(250000, result[0].Scenarios[0].LoanAmount);
+            Assert.Equal(4.0m, result[0].Scenarios[0].AnnualInterestRate);
+            Assert.Equal("Conventional", result[0].Scenarios[0].LoanProgram);
+        }
+
+        [Fact]
         public async Task GetPreApprovalReport_ValidIds_ReturnsReport()
         {
             // Arrange
@@ -215,6 +266,70 @@ namespace LoanPortal.Tests.Services
             Assert.Equal((int)PropertyType.TwoUnit, result.PropertyType);
             Assert.Single(result.Borrowers);
             Assert.Equal("Test Company", result.LendingCompany);
+        }
+
+        [Fact]
+        public async Task GetPreApprovalReport_Refinance_ReturnsReport()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                LoanType = 1, // Refinance
+                Scenarios = new List<ScenarioDTO>
+                {
+                    new ScenarioDTO
+                    {
+                        Id = scenarioId,
+                        Refinance = new RefinanceScenarioDTO
+                        {
+                            BorrowerInfo = new RefinanceBorrowerInfoDTO { BorrowerName = "Jane Refi" },
+                            RefinanceInfo = new RefinanceInfoDTO
+                            {
+                                EstimatedPropertyValue = 400000,
+                                LoanAmount = 300000,
+                                OccupancyStatus = 1
+                            },
+                            LoanStructure = new RefinanceLoanStructureDTO
+                            {
+                                LoanProgram = (int)LoanProgram.FHA
+                            },
+                            LoanProgram = new RefinanceLoanProgramDTO()
+                        }
+                    }
+                }
+            };
+
+            var user = new UserEntity
+            {
+                Id = userId,
+                CompanyName = "Refi Lending Co"
+            };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+            _mockUserRepository.Setup(x => x.GetUserById(userId))
+                .ReturnsAsync(user);
+
+            // Act
+            var result = await _service.GetPreApprovalReport(preApprovalId, scenarioId);
+
+            // Assert
+            Assert.Equal(preApprovalId, result.PreApprovalId);
+            Assert.Equal("Jane Refi", result.BorrowerName);
+            Assert.Equal(300000, result.FirstMortgageAmount);
+            Assert.Equal(0, result.DownPaymentPercentage);
+            Assert.Equal(0, result.DownPaymentAmount);
+            Assert.Equal(400000, result.PurchasePrice);
+            Assert.Equal((int)LoanProgram.FHA, result.LoanProgram);
+            Assert.Equal(0, result.PropertyType);
+            Assert.Empty(result.Borrowers);
+            Assert.Equal("Refi Lending Co", result.LendingCompany);
+            Assert.Equal(1, result.OccupancyStatus);
         }
 
         [Fact]
@@ -313,6 +428,81 @@ namespace LoanPortal.Tests.Services
             Assert.Equal(3000, result.PropertyTax);
             Assert.Equal(1200, result.HazardInsurancePremium);
             Assert.Equal(1.75m, result.CoverageRate);
+        }
+
+        [Fact]
+        public async Task GetFHAReport_Refinance_ReturnsReport()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                LoanType = 1, // Refinance
+                Scenarios = new List<ScenarioDTO>
+                {
+                    new ScenarioDTO
+                    {
+                        Id = scenarioId,
+                        Refinance = new RefinanceScenarioDTO
+                        {
+                            BorrowerInfo = new RefinanceBorrowerInfoDTO { BorrowerName = "Jane Refi" },
+                            RefinanceInfo = new RefinanceInfoDTO
+                            {
+                                EstimatedPropertyValue = 400000,
+                                LoanAmount = 300000
+                            },
+                            LoanStructure = new RefinanceLoanStructureDTO
+                            {
+                                InterestRate = 4.0m,
+                                LoanProgram = (int)LoanProgram.FHA,
+                                MonthlyTaxAmount = 250,
+                                HazardInsurance = 100,
+                                MI = 50,
+                                AssociationFee = 25
+                            },
+                            LoanProgram = new RefinanceLoanProgramDTO
+                            {
+                                UPMIPRate = 1.75m,
+                                Term = 30,
+                                MMI = 0.85m,
+                                ClosingCosts = 5000
+                            }
+                        }
+                    }
+                }
+            };
+
+            var user = new UserEntity { Id = userId };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+            _mockUserRepository.Setup(x => x.GetUserById(userId))
+                .ReturnsAsync(user);
+
+            // Act
+            var result = await _service.GetFHAReport(preApprovalId, scenarioId);
+
+            // Assert
+            Assert.Equal(preApprovalId, result.PreApprovalId);
+            Assert.Equal("Jane Refi", result.BorrowerName);
+            Assert.Equal(0, result.DownPaymentAmount);
+            Assert.Equal(400000, result.SalePrice);
+            Assert.Equal(1.75m, result.UpfrontMipPercent);
+            Assert.Equal(5250, result.UpfrontMipAmount); // 300000 * 0.0175
+            Assert.Equal(300000, result.TotalLoanAmount);
+            Assert.Equal(4.0m, result.InterestRate);
+            Assert.Equal(30, result.LoanTerm);
+            Assert.Equal(250, result.PropertyTax);
+            Assert.Equal(100, result.HazardInsurancePremium);
+            Assert.Equal(1.75m, result.CoverageRate);
+            Assert.Equal(50, result.MortgageInsurance);
+            Assert.Equal((int)LoanProgram.FHA, result.LoanProgram);
+            Assert.Equal(25, result.HOADues);
+            Assert.Equal(5000, result.estimatedClosingCost.TotalEstSettlementCharges);
         }
 
         [Fact]
@@ -674,6 +864,82 @@ namespace LoanPortal.Tests.Services
             Assert.Equal(0m, result.LenderCredit);
             Assert.Equal(0m, result.EarnestMoneyDeposit);
             Assert.Equal(0m, result.MiscFee4);
+        }
+
+        [Fact]
+        public async Task GetQuickQuote_Refinance_ReturnsQuote()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+            
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                LoanType = 1, // Refinance
+                Scenarios = new List<ScenarioDTO>
+                {
+                    new ScenarioDTO
+                    {
+                        Id = scenarioId,
+                        Refinance = new RefinanceScenarioDTO
+                        {
+                            RefinanceInfo = new RefinanceInfoDTO
+                            {
+                                EstimatedPropertyValue = 400000,
+                                LoanAmount = 300000
+                            },
+                            LoanStructure = new RefinanceLoanStructureDTO
+                            {
+                                InterestRate = 4.0m,
+                                LoanProgram = (int)LoanProgram.FHA,
+                                MonthlyTaxAmount = 250,
+                                HazardInsurance = 100,
+                                MI = 50,
+                                AssociationFee = 25
+                            },
+                            LoanProgram = new RefinanceLoanProgramDTO
+                            {
+                                UPMIPRate = 1.75m,
+                                Term = 30,
+                                ClosingCosts = 5000
+                            }
+                        }
+                    }
+                }
+            };
+
+            _mockPreApprovalRepository
+                .Setup(x => x.GetByIdAsync(preApprovalId))
+                .ReturnsAsync(preApproval);
+
+            var loanAmount = 300000m;
+            var upmipAmount = loanAmount * (1.75m / 100m); // 5250
+            var expectedPI = (decimal)PreApprovalHelper.CalculateMonthlyPI(loanAmount + upmipAmount, 4.0m, 30);
+            var expectedMonthlyTotal = expectedPI + 250 + 100 + 50 + 25;
+
+            // Act
+            var result = await _service.GetQuickQuote(preApprovalId, scenarioId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(400000, result.HomeValue);
+            Assert.Equal(4.0m, result.InterestRate);
+            Assert.Equal(0, result.DownPaymentPercent);
+            Assert.Equal(0, result.DownPayment);
+            Assert.Equal(expectedPI, result.PrincipalAndInterest);
+            Assert.Equal(250, result.PropertyTax);
+            Assert.Equal(100, result.HazardInsurance);
+            Assert.Equal(50, result.MortgageInsurance);
+            Assert.Equal(25, result.HoaFee);
+            Assert.Equal(expectedMonthlyTotal, result.MonthlyTotal);
+            Assert.Equal(5000, result.ClosingCosts);
+            Assert.Equal(5000, result.TotalRequired); // totalRequired = closingCosts
+            Assert.Equal(0, result.SellerCredit);
+            Assert.Equal(0, result.LenderCredit);
+            Assert.Equal(0, result.EarnestMoneyDeposit);
+            Assert.Equal(0, result.MiscFee4);
+            Assert.Equal((int)LoanProgram.FHA, result.LoanProgram);
         }
     }
 } 

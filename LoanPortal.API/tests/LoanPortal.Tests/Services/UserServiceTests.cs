@@ -245,7 +245,7 @@ namespace LoanPortal.Tests.Services
         public async Task UpdateProfile_NullRequest_ThrowsArgumentNullException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.UpdateProfile(null));
+            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.UpdateProfile(null!));
         }
 
         [Fact]
@@ -283,7 +283,7 @@ namespace LoanPortal.Tests.Services
             // Arrange
             var userId = Guid.NewGuid();
             _mockUserRepository.Setup(x => x.GetUserById(userId))
-                .ReturnsAsync((UserEntity)null);
+                .ReturnsAsync((UserEntity?)null);
 
             // Act & Assert
             await Assert.ThrowsAsync<NullReferenceException>(() => _userService.GetUserProfile(userId));
@@ -372,7 +372,7 @@ namespace LoanPortal.Tests.Services
         public async Task SignUp_NullRequest_ThrowsArgumentNullException()
         {
             // Arrange
-            CreateUserRequest createUserRequest = null;
+            CreateUserRequest createUserRequest = null!;
 
             // Act & Assert
             await Assert.ThrowsAsync<NullReferenceException>(() => _userService.SignUp(createUserRequest));
@@ -448,6 +448,22 @@ namespace LoanPortal.Tests.Services
             // Act & Assert
             var ex = await Assert.ThrowsAsync<ValidationException>(() => _userService.ValidateUserToken(token));
             Assert.Equal("Invalid token", ex.Message);
+        }
+
+        [Fact]
+        public async Task ValidateAdminToken_VerifyIdTokenFails_ThrowsValidationException()
+        {
+            // Arrange
+            var token = "invalid-admin-token";
+            var validationException = new ValidationException("Invalid admin token");
+
+            _mockFirebaseAuthService
+                .Setup(x => x.VerifyIdTokenAsync(token))
+                .ThrowsAsync(validationException);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ValidationException>(() => _userService.ValidateAdminToken(token));
+            Assert.Equal("Invalid admin token", ex.Message);
         }
 
         [Fact]

@@ -207,7 +207,6 @@ namespace LoanPortal.Core.Services
                 // Create a new UserEntity with update data
                 var updateEntity = new UserEntity
                 {
-                    Id = existingUser.Id,
                     FirstName = request.FirstName ?? existingUser.FirstName,
                     LastName = request.LastName ?? existingUser.LastName,
                     Email = existingUser.Email,

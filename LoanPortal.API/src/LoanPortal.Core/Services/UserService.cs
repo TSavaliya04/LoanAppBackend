@@ -207,6 +207,8 @@ namespace LoanPortal.Core.Services
                 // Create a new UserEntity with update data
                 var updateEntity = new UserEntity
                 {
+                    Id = existingUser.Id,           // must match the document's _id for ReplaceOneAsync
+                    Role = existingUser.Role,        // preserve role — never overwrite via profile update
                     FirstName = request.FirstName ?? existingUser.FirstName,
                     LastName = request.LastName ?? existingUser.LastName,
                     Email = existingUser.Email,
@@ -214,6 +216,7 @@ namespace LoanPortal.Core.Services
                     IsActive = existingUser.IsActive,
                     FirebaseId = existingUser.FirebaseId,
                     CreatedAt = existingUser.CreatedAt,
+                    LastLoginDate = existingUser.LastLoginDate,
                     Address = request.Address ?? existingUser.Address,
                     Profile = !string.IsNullOrEmpty(url) ? url.Split("?")[0] : existingUser.Profile,
                     JobTitle = request.JobTitle ?? existingUser.JobTitle,
@@ -226,7 +229,7 @@ namespace LoanPortal.Core.Services
                 //UpdateHelper.UpdateEntity(existingUser, updateEntity);
 
                 // Update the user document
-                await _userRepository.UpdateUserProfileAsync(_loginUserDetails.UserID, updateEntity);
+                await _userRepository.UpdateUserProfileAsync(targetUserId, updateEntity);
 
                 // Update Firebase user if phone or display name changed
                 bool shouldUpdateFirebase = false;
@@ -258,7 +261,7 @@ namespace LoanPortal.Core.Services
                 }
 
                 // Return updated user data
-                return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
+                return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(targetUserId));
             }
             catch (ValidationException ex)
             {

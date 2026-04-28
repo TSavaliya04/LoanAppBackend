@@ -4,7 +4,7 @@ namespace LoanPortal.Core.Interfaces
 {
     public interface IAdminService
     {
-        Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate);
+        Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate, Guid? companyId = null);
         Task<PagedAgentsDTO> GetUsers(DefaultRequest request);
         Task<PagedRecentQuotesDTO> GetRecentQuotes(RecentQuoteRequest request);
         Task<QuotesOverviewDTO> GetQuotesOverview(DateTime startDate, DateTime endDate, Guid userId);

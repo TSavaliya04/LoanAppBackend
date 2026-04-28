@@ -51,11 +51,11 @@ namespace LoanPortal.API.Controllers.Admin
         }
 
         [HttpGet("admin/GetAdminDashboard")]
-        public async Task<IActionResult> GetAdminDashboard(DateTime startDate, DateTime endDate)
+        public async Task<IActionResult> GetAdminDashboard([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] Guid? companyId = null)
         {
             try
             {
-                var result = await _adminService.GetAdminDashboard(startDate, endDate);
+                var result = await _adminService.GetAdminDashboard(startDate, endDate, companyId);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)

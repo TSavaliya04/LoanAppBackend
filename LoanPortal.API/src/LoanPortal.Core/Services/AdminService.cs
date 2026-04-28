@@ -42,6 +42,12 @@ namespace LoanPortal.Core.Services
                     users = users.Where(u => u.CompanyId == _loginUserDetails.CompanyId).ToList();
                 }
 
+                // If a specific CompanyId is requested, filter to that company's users
+                if (request.CompanyId.HasValue)
+                {
+                    users = users.Where(u => u.CompanyId == request.CompanyId.Value).ToList();
+                }
+
                 var today = DateTime.UtcNow.Date;
                 var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
                 var endOfWeek = startOfWeek.AddDays(7);
@@ -343,7 +349,7 @@ namespace LoanPortal.Core.Services
             };
         }
 
-        public async Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate)
+        public async Task<AdminDashboardDTO> GetAdminDashboard(DateTime startDate, DateTime endDate, Guid? companyId = null)
         {
             if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
             {
@@ -368,6 +374,17 @@ namespace LoanPortal.Core.Services
                 quotesStatus = quotesStatus.Where(q => companyUsers.Contains(q.UserId)).ToList();
                 activeUsers = activeUsers.Where(u => companyUsers.Contains(u.Id)).ToList();
                 allUsers = allUsers.Where(u => companyUsers.Contains(u.Id)).ToList();
+            }
+
+            // If a specific companyId is requested, further scope all data to that company
+            if (companyId.HasValue)
+            {
+                var filteredUserIds = allUsers.Where(u => u.CompanyId == companyId.Value).Select(u => u.Id).ToHashSet();
+
+                quotes = quotes.Where(q => filteredUserIds.Contains(q.UserId)).ToList();
+                quotesStatus = quotesStatus.Where(q => filteredUserIds.Contains(q.UserId)).ToList();
+                activeUsers = activeUsers.Where(u => filteredUserIds.Contains(u.Id)).ToList();
+                allUsers = allUsers.Where(u => filteredUserIds.Contains(u.Id)).ToList();
             }
 
             return new AdminDashboardDTO

@@ -100,6 +100,7 @@ namespace LoanPortal.Core.Helper
                 NMLS = entity.NMLS,
                 CompanyId = entity.CompanyId,
                 LastLoginDate = entity.LastLoginDate,
+                Role = entity.Role,
             };
         }
 

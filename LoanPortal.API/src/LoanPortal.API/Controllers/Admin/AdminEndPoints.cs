@@ -137,7 +137,7 @@ namespace LoanPortal.API.Controllers.Admin
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<PagedAgentsDTO>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<PagedUserDTO>(500, ex.Message));
             }
         }
 

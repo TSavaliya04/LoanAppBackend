@@ -164,11 +164,17 @@ namespace LoanPortal.Core.Services
                 var allCompanies = await _companyRepository.GetAllCompaniesAsync();
                 var companyDict = allCompanies.ToDictionary(c => c.Id, c => c.Name);
 
-                List<UserDTO> admins = new List<UserDTO>();
+                List<CompanyAdminDTO> admins = new List<CompanyAdminDTO>();
 
                 foreach (UserEntity user in users)
                 {
-                    admins.Add(new UserDTO
+                    string companyName = null;
+                    if (user.CompanyId.HasValue && companyDict.TryGetValue(user.CompanyId.Value, out var cName))
+                    {
+                        companyName = cName;
+                    }
+
+                    admins.Add(new CompanyAdminDTO
                     {
                         Id = user.Id,
                         FirstName = user.FirstName,
@@ -176,20 +182,15 @@ namespace LoanPortal.Core.Services
                         Email = user.Email,
                         Phone = user.Phone,
                         IsActive = user.IsActive,
-                        CreatedAt = user.CreatedAt,
-                        UpdatedAt = user.UpdatedAt,
-                        JobTitle = user.JobTitle,
-                        Address = user.Address,
-                        Profile = user.Profile,
-                        NMLS = user.NMLS,
                         LastLoginDate = user.LastLoginDate,
-                        Role = user.Role,
-                        CompanyId = user.CompanyId
+                        CompanyId = user.CompanyId,
+                        CompanyName = companyName,
+                        Role = user.Role
                     });
                 }
 
                 // Apply search
-                IEnumerable<UserDTO> query = admins;
+                IEnumerable<CompanyAdminDTO> query = admins;
                 if (!string.IsNullOrWhiteSpace(request.SearchText))
                 {
                     var search = request.SearchText.Trim().ToLower();

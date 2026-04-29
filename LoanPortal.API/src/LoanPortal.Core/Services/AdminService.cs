@@ -158,8 +158,11 @@ namespace LoanPortal.Core.Services
                 }
 
                 var users = await _userRepository.GetAll();
-                // Filter only CompanyAdmins
-                users = users.Where(u => u.Role == Shared.Enum.UserRole.CompanyAdmin).ToList();
+                // Include both CompanyAdmins and SuperAdmins, but exclude the currently logged-in user
+                users = users.Where(u =>
+                    (u.Role == Shared.Enum.UserRole.CompanyAdmin || u.Role == Shared.Enum.UserRole.SuperAdmin)
+                    && u.Id != _loginUserDetails.UserID
+                ).ToList();
 
                 var allCompanies = await _companyRepository.GetAllCompaniesAsync();
                 var companyDict = allCompanies.ToDictionary(c => c.Id, c => c.Name);

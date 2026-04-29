@@ -107,5 +107,6 @@ namespace LoanPortal.Core.Entities
         public string? NMLS { get; set; }
         public string? Phone { get; set; }
         public Guid? CompanyId { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

@@ -148,7 +148,7 @@ namespace LoanPortal.Core.Services
             }
         }
 
-        public async Task<PagedAgentsDTO> GetCompanyAdmins(DefaultRequest request)
+        public async Task<PagedUserDTO> GetCompanyAdmins(DefaultRequest request)
         {
             try
             {
@@ -164,37 +164,38 @@ namespace LoanPortal.Core.Services
                 var allCompanies = await _companyRepository.GetAllCompaniesAsync();
                 var companyDict = allCompanies.ToDictionary(c => c.Id, c => c.Name);
 
-                List<AgentDTO> admins = new List<AgentDTO>();
+                List<UserDTO> admins = new List<UserDTO>();
 
                 foreach (UserEntity user in users)
                 {
-                    string companyName = null;
-                    if (user.CompanyId.HasValue && companyDict.TryGetValue(user.CompanyId.Value, out var cName))
+                    admins.Add(new UserDTO
                     {
-                        companyName = cName;
-                    }
-
-                    admins.Add(new AgentDTO
-                    {
-                        AgentId = user.Id,
-                        AgentName = user.FirstName + " " + user.LastName,
-                        CompanyId = user.CompanyId,
-                        Company = companyName,
+                        Id = user.Id,
+                        FirstName = user.FirstName,
+                        LastName = user.LastName,
                         Email = user.Email,
-                        LastLogin = user.LastLoginDate,
-                        Status = user.IsActive ? "Active" : "InActive",
-                        QuotesThisWeek = 0 // Admins typically don't create quotes directly, or you can map it similarly
+                        Phone = user.Phone,
+                        IsActive = user.IsActive,
+                        CreatedAt = user.CreatedAt,
+                        UpdatedAt = user.UpdatedAt,
+                        JobTitle = user.JobTitle,
+                        Address = user.Address,
+                        Profile = user.Profile,
+                        NMLS = user.NMLS,
+                        LastLoginDate = user.LastLoginDate,
+                        Role = user.Role,
+                        CompanyId = user.CompanyId
                     });
                 }
 
                 // Apply search
-                IEnumerable<AgentDTO> query = admins;
+                IEnumerable<UserDTO> query = admins;
                 if (!string.IsNullOrWhiteSpace(request.SearchText))
                 {
                     var search = request.SearchText.Trim().ToLower();
                     query = query.Where(a =>
-                        (!string.IsNullOrEmpty(a.AgentName) && a.AgentName.ToLower().Contains(search)) ||
-                        (!string.IsNullOrEmpty(a.Company) && a.Company.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(a.FirstName) && a.FirstName.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(a.LastName) && a.LastName.ToLower().Contains(search)) ||
                         (!string.IsNullOrEmpty(a.Email) && a.Email.ToLower().Contains(search)));
                 }
 
@@ -205,20 +206,23 @@ namespace LoanPortal.Core.Services
                     case "email":
                         query = desc ? query.OrderByDescending(a => a.Email) : query.OrderBy(a => a.Email);
                         break;
-                    case "company":
-                        query = desc ? query.OrderByDescending(a => a.Company) : query.OrderBy(a => a.Company);
+                    case "firstname":
+                        query = desc ? query.OrderByDescending(a => a.FirstName) : query.OrderBy(a => a.FirstName);
                         break;
-                    case "lastlogin":
-                        query = desc ? query.OrderByDescending(a => a.LastLogin) : query.OrderBy(a => a.LastLogin);
+                    case "lastname":
+                        query = desc ? query.OrderByDescending(a => a.LastName) : query.OrderBy(a => a.LastName);
                         break;
-                    case "status":
-                        query = desc ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status);
+                    case "lastlogindate":
+                        query = desc ? query.OrderByDescending(a => a.LastLoginDate) : query.OrderBy(a => a.LastLoginDate);
                         break;
-                    case "agentname":
-                        query = desc ? query.OrderByDescending(a => a.AgentName) : query.OrderBy(a => a.AgentName);
+                    case "isactive":
+                        query = desc ? query.OrderByDescending(a => a.IsActive) : query.OrderBy(a => a.IsActive);
+                        break;
+                    case "role":
+                        query = desc ? query.OrderByDescending(a => a.Role) : query.OrderBy(a => a.Role);
                         break;
                     default:
-                        query = query.OrderByDescending(a => a.LastLogin);
+                        query = query.OrderByDescending(a => a.LastLoginDate);
                         break;
                 }
 
@@ -232,7 +236,7 @@ namespace LoanPortal.Core.Services
                     .Take(pageSize)
                     .ToList();
 
-                return new PagedAgentsDTO
+                return new PagedUserDTO
                 {
                     Users = items,
                     TotalCount = totalCount,

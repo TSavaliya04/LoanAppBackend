@@ -192,6 +192,26 @@ namespace LoanPortal.Core.Services
                         throw new UnauthorizedAccessException("You can only update users within your company.");
                     }
                 }
+
+                // Status change guards
+                if (request.IsActive.HasValue)
+                {
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.User)
+                    {
+                        throw new UnauthorizedAccessException("You are not allowed to change user status.");
+                    }
+
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin)
+                    {
+                        if (existingUser.Role != Shared.Enum.UserRole.User)
+                            throw new UnauthorizedAccessException("Company admins can only change the status of users in their company.");
+
+                        if (existingUser.CompanyId != _loginUserDetails.CompanyId)
+                            throw new UnauthorizedAccessException("You can only change the status of users within your company.");
+                    }
+
+                    // SuperAdmin can change status of both CompanyAdmin and User — no extra guard needed
+                }
                 
                 request.UserId = targetUserId;
 
@@ -213,7 +233,7 @@ namespace LoanPortal.Core.Services
                     LastName = request.LastName ?? existingUser.LastName,
                     Email = existingUser.Email,
                     Phone = request.Phone ?? existingUser.Phone,
-                    IsActive = existingUser.IsActive,
+                    IsActive = request.IsActive ?? existingUser.IsActive,
                     FirebaseId = existingUser.FirebaseId,
                     CreatedAt = existingUser.CreatedAt,
                     LastLoginDate = existingUser.LastLoginDate,

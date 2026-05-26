@@ -46,6 +46,7 @@ namespace LoanPortal.Shared.Enum
     {
         BorrowerInfo = 1,
         PurchaseInfo = 2,   
+        PropertyIncomeOffset = 8,
         LenderFees = 3,
         PrepaidItems = 4,
         MiscFees = 5,

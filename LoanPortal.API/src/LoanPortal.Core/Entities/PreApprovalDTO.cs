@@ -830,6 +830,25 @@ namespace LoanPortal.Core.Entities
     }
 
     [BsonIgnoreExtraElements]
+    public class PropertyIncomeOffsetDTO
+    {
+        [BsonElement("monthlyGrossRentalIncome")]
+        public decimal? MonthlyGrossRentalIncome { get; set; }
+
+        [BsonElement("rentalPercentage")]
+        public decimal? RentalPercentage { get; set; }
+
+        [BsonElement("subjectPropertyPITIA")]
+        public decimal? SubjectPropertyPITIA { get; set; }
+
+        [BsonElement("qualifyingRentalIncome")]
+        public decimal? QualifyingRentalIncome { get; set; }
+
+        [BsonElement("netMonthlyImpactToDTI")]
+        public decimal? NetMonthlyImpactToDTI { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
     public class PurchaseScenarioDTO
     {
         [BsonElement("borrowerInfo")]
@@ -853,6 +872,9 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("loanProgram")]
         public LoanProgramDTO? LoanProgram { get; set; }
+
+        [BsonElement("propertyIncomeOffset")]
+        public PropertyIncomeOffsetDTO? PropertyIncomeOffset { get; set; }
     }
 
     [BsonIgnoreExtraElements]

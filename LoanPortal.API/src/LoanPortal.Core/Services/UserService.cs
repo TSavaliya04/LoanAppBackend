@@ -203,14 +203,41 @@ namespace LoanPortal.Core.Services
 
                     if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin)
                     {
-                        if (existingUser.Role != Shared.Enum.UserRole.User)
-                            throw new UnauthorizedAccessException("Company admins can only change the status of users in their company.");
+                        if (existingUser.Role == Shared.Enum.UserRole.SuperAdmin)
+                            throw new UnauthorizedAccessException("Company admins cannot change the status of a SuperAdmin.");
 
                         if (existingUser.CompanyId != _loginUserDetails.CompanyId)
                             throw new UnauthorizedAccessException("You can only change the status of users within your company.");
                     }
 
                     // SuperAdmin can change status of both CompanyAdmin and User — no extra guard needed
+                }
+
+                // Role change guards
+                if (request.Role.HasValue)
+                {
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.User)
+                    {
+                        throw new UnauthorizedAccessException("You are not allowed to change user roles.");
+                    }
+
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin)
+                    {
+                        if (request.Role.Value == Shared.Enum.UserRole.SuperAdmin)
+                        {
+                            throw new UnauthorizedAccessException("Company admins cannot assign the SuperAdmin role.");
+                        }
+
+                        if (existingUser.Role == Shared.Enum.UserRole.SuperAdmin)
+                        {
+                            throw new UnauthorizedAccessException("Company admins cannot change the role of a SuperAdmin.");
+                        }
+
+                        if (existingUser.CompanyId != _loginUserDetails.CompanyId)
+                        {
+                            throw new UnauthorizedAccessException("You can only change the role of users within your company.");
+                        }
+                    }
                 }
                 
                 request.UserId = targetUserId;
@@ -228,7 +255,7 @@ namespace LoanPortal.Core.Services
                 var updateEntity = new UserEntity
                 {
                     Id = existingUser.Id,           // must match the document's _id for ReplaceOneAsync
-                    Role = existingUser.Role,        // preserve role — never overwrite via profile update
+                    Role = request.Role ?? existingUser.Role,
                     FirstName = request.FirstName ?? existingUser.FirstName,
                     LastName = request.LastName ?? existingUser.LastName,
                     Email = existingUser.Email,

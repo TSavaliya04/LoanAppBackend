@@ -15,6 +15,7 @@ namespace LoanPortal.Core.Entities
         public Guid AgentId { get; set; }
         public string AgentName { get; set; }
         public string Email { get; set; }
+        public Guid? CompanyId { get; set; }
         public string Company { get; set; }
         public DateTime? LastLogin { get; set; }
         public int QuotesThisWeek { get; set; }
@@ -33,11 +34,34 @@ namespace LoanPortal.Core.Entities
         public string? SearchText { get; set; }
         public string? SortBy { get; set; }
         public string? SortByDirection { get; set; } = "asc";
+        public Guid? CompanyId { get; set; }
     }
 
     public class PagedAgentsDTO
     {
         public List<AgentDTO> Users { get; set; }
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+    }
+
+    public class CompanyAdminDTO
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+        public Guid? CompanyId { get; set; }
+        public string? CompanyName { get; set; }
+        public Shared.Enum.UserRole Role { get; set; }
+    }
+
+    public class PagedUserDTO
+    {
+        public List<CompanyAdminDTO> Users { get; set; }
         public int TotalCount { get; set; }
         public int PageNumber { get; set; }
         public int PageSize { get; set; }

@@ -1,4 +1,4 @@
-﻿using FirebaseAdmin.Auth;
+using FirebaseAdmin.Auth;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
@@ -147,7 +147,12 @@ namespace LoanPortal.Core.Services
                     { "Phone", user.Phone },
                     { "Email", user.Email },
                     { "UserName", user.FirstName + " " + user.LastName },
+                    { "Role", (int)user.Role }
                 };
+                if (user.CompanyId.HasValue)
+                {
+                    claims.Add("CompanyId", user.CompanyId.Value.ToString());
+                }
                 await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
 
                 return new LoginResponse
@@ -166,16 +171,76 @@ namespace LoanPortal.Core.Services
         {
             try
             {
-                Guid userId = _loginUserDetails.UserID;
-                UserEntity existingUser = null;
-                if (userId == IConstants.AdminId)
+                Guid currentUserId = _loginUserDetails.UserID;
+                Guid targetUserId = request.UserId ?? currentUserId;
+                UserEntity existingUser = await _userRepository.GetUserById(targetUserId);
+
+                if (existingUser == null)
                 {
-                    existingUser = await _userRepository.GetUserById(request.UserId.Value);
+                    throw new ValidationException("User not found.");
                 }
-                else
+
+                if (targetUserId != currentUserId)
                 {
-                    existingUser = await _userRepository.GetUserById(userId);
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.User)
+                    {
+                        throw new UnauthorizedAccessException("You can only update your own profile.");
+                    }
+
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin && existingUser.CompanyId != _loginUserDetails.CompanyId)
+                    {
+                        throw new UnauthorizedAccessException("You can only update users within your company.");
+                    }
                 }
+
+                // Status change guards
+                if (request.IsActive.HasValue)
+                {
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.User)
+                    {
+                        throw new UnauthorizedAccessException("You are not allowed to change user status.");
+                    }
+
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin)
+                    {
+                        if (existingUser.Role == Shared.Enum.UserRole.SuperAdmin)
+                            throw new UnauthorizedAccessException("Company admins cannot change the status of a SuperAdmin.");
+
+                        if (existingUser.CompanyId != _loginUserDetails.CompanyId)
+                            throw new UnauthorizedAccessException("You can only change the status of users within your company.");
+                    }
+
+                    // SuperAdmin can change status of both CompanyAdmin and User — no extra guard needed
+                }
+
+                // Role change guards
+                if (request.Role.HasValue)
+                {
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.User)
+                    {
+                        throw new UnauthorizedAccessException("You are not allowed to change user roles.");
+                    }
+
+                    if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin)
+                    {
+                        if (request.Role.Value == Shared.Enum.UserRole.SuperAdmin)
+                        {
+                            throw new UnauthorizedAccessException("Company admins cannot assign the SuperAdmin role.");
+                        }
+
+                        if (existingUser.Role == Shared.Enum.UserRole.SuperAdmin)
+                        {
+                            throw new UnauthorizedAccessException("Company admins cannot change the role of a SuperAdmin.");
+                        }
+
+                        if (existingUser.CompanyId != _loginUserDetails.CompanyId)
+                        {
+                            throw new UnauthorizedAccessException("You can only change the role of users within your company.");
+                        }
+                    }
+                }
+                
+                request.UserId = targetUserId;
 
 
                 string url = "";
@@ -189,19 +254,21 @@ namespace LoanPortal.Core.Services
                 // Create a new UserEntity with update data
                 var updateEntity = new UserEntity
                 {
-                    Id = existingUser.Id,
+                    Id = existingUser.Id,           // must match the document's _id for ReplaceOneAsync
+                    Role = request.Role ?? existingUser.Role,
                     FirstName = request.FirstName ?? existingUser.FirstName,
                     LastName = request.LastName ?? existingUser.LastName,
                     Email = existingUser.Email,
                     Phone = request.Phone ?? existingUser.Phone,
-                    IsActive = existingUser.IsActive,
+                    IsActive = request.IsActive ?? existingUser.IsActive,
                     FirebaseId = existingUser.FirebaseId,
                     CreatedAt = existingUser.CreatedAt,
+                    LastLoginDate = existingUser.LastLoginDate,
                     Address = request.Address ?? existingUser.Address,
                     Profile = !string.IsNullOrEmpty(url) ? url.Split("?")[0] : existingUser.Profile,
                     JobTitle = request.JobTitle ?? existingUser.JobTitle,
-                    CompanyName = request.CompanyName ?? existingUser.CompanyName,
                     NMLS = request.NMLS ?? existingUser.NMLS,
+                    CompanyId = request.CompanyId ?? existingUser.CompanyId,
                     UpdatedAt = DateTime.UtcNow
                 };
 
@@ -209,7 +276,7 @@ namespace LoanPortal.Core.Services
                 //UpdateHelper.UpdateEntity(existingUser, updateEntity);
 
                 // Update the user document
-                await _userRepository.UpdateUserProfileAsync(_loginUserDetails.UserID, updateEntity);
+                await _userRepository.UpdateUserProfileAsync(targetUserId, updateEntity);
 
                 // Update Firebase user if phone or display name changed
                 bool shouldUpdateFirebase = false;
@@ -241,7 +308,7 @@ namespace LoanPortal.Core.Services
                 }
 
                 // Return updated user data
-                return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(_loginUserDetails.UserID));
+                return UserHelper.MaptoUserDTO(await _userRepository.GetUserById(targetUserId));
             }
             catch (ValidationException ex)
             {
@@ -297,7 +364,7 @@ namespace LoanPortal.Core.Services
                     throw new ValidationException($"User with email {user.Email} not found.");
                 }
 
-                if (user.Id == IConstants.AdminId)
+                if (user.Role == Shared.Enum.UserRole.SuperAdmin || user.Role == Shared.Enum.UserRole.CompanyAdmin)
                 {
                     throw new UnauthorizedAccessException("Admin can't login in user portal");
                 }
@@ -308,7 +375,12 @@ namespace LoanPortal.Core.Services
                     { "Phone", user.Phone },
                     { "Email", user.Email },
                     { "UserName", user.FirstName + " " + user.LastName },
+                    { "Role", (int)user.Role }
                 };
+                if (user.CompanyId.HasValue)
+                {
+                    claims.Add("CompanyId", user.CompanyId.Value.ToString());
+                }
 
                 // Track login activity
                 await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);
@@ -349,7 +421,7 @@ namespace LoanPortal.Core.Services
                     throw new ValidationException($"User with email {user.Email} not found.");
                 }
 
-                if (user.Id != IConstants.AdminId)
+                if (user.Role == Shared.Enum.UserRole.User)
                 {
                     throw new UnauthorizedAccessException("User can't login in admin portal");
                 }
@@ -360,8 +432,12 @@ namespace LoanPortal.Core.Services
                     { "Phone", user.Phone },
                     { "Email", user.Email },
                     { "UserName", user.FirstName + " " + user.LastName },
-                    { "isAdmin",  true }
+                    { "Role", (int)user.Role }
                 };
+                if (user.CompanyId.HasValue)
+                {
+                    claims.Add("CompanyId", user.CompanyId.Value.ToString());
+                }
 
                 // Track login activity
                 await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);
@@ -412,11 +488,11 @@ namespace LoanPortal.Core.Services
                     { "Phone", user.Phone },
                     { "Email", user.Email },
                     { "UserName", user.FirstName + " " + user.LastName },
+                    { "Role", (int)user.Role }
                 };
-
-                if (user.Id == IConstants.AdminId)
+                if (user.CompanyId.HasValue)
                 {
-                    claims["isAdmin"] = true;
+                    claims.Add("CompanyId", user.CompanyId.Value.ToString());
                 }
 
                 await _firebaseAuthService.SetCustomUserClaimsAsync(userId, claims);

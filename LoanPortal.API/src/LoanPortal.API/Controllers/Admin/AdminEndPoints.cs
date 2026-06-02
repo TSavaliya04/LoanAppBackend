@@ -8,7 +8,7 @@ using static LoanPortal.API.Helper.ResponseHelper;
 
 namespace LoanPortal.API.Controllers.Admin
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "AdminOnly")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "CompanyAdminOrAbove")]
     public class AdminEndPoints : EndpointBase
     {
         private readonly IAdminService _adminService;
@@ -51,11 +51,11 @@ namespace LoanPortal.API.Controllers.Admin
         }
 
         [HttpGet("admin/GetAdminDashboard")]
-        public async Task<IActionResult> GetAdminDashboard(DateTime startDate, DateTime endDate)
+        public async Task<IActionResult> GetAdminDashboard([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] Guid? companyId = null)
         {
             try
             {
-                var result = await _adminService.GetAdminDashboard(startDate, endDate);
+                var result = await _adminService.GetAdminDashboard(startDate, endDate, companyId);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
@@ -108,6 +108,138 @@ namespace LoanPortal.API.Controllers.Admin
             catch (Exception ex)
             {
                 return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPost("admin/CreateAdmin")]
+        public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminRequest request)
+        {
+            try
+            {
+                var result = await _adminService.CreateAdmin(request);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPost("admin/GetCompanyAdmins")]
+        public async Task<IActionResult> GetCompanyAdmins([FromBody] DefaultRequestWrapper request)
+        {
+            try
+            {
+                var result = await _adminService.GetCompanyAdmins(request.Params);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<PagedUserDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpGet("admin/GetCompanyAdminById/{id}")]
+        public async Task<IActionResult> GetCompanyAdminById(Guid id)
+        {
+            try
+            {
+                var result = await _userService.GetUserProfile(id);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPut("admin/UpdateCompanyAdmin")]
+        public async Task<IActionResult> UpdateCompanyAdmin([FromForm] UpdateProfileRequest request)
+        {
+            try
+            {
+                var result = await _userService.UpdateProfile(request);
+                return Ok(SuccessResponse(result));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ErrorResponse<UserDTO>(403, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "AnyUser")]
+        [HttpPost("admin/GetCompanies")]
+        public async Task<IActionResult> GetCompanies([FromBody] DefaultRequestWrapper request)
+        {
+            try
+            {
+                var result = await _adminService.GetCompanies(request.Params);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<PagedCompaniesDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "AnyUser")]
+        [HttpGet("admin/GetCompanyById/{id}")]
+        public async Task<IActionResult> GetCompanyById(Guid id)
+        {
+            try
+            {
+                var result = await _adminService.GetCompanyById(id);
+                if (result == null)
+                    return NotFound(ErrorResponse<CompanyDTO>(404, "Company not found."));
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPost("admin/CreateCompany")]
+        public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyRequest request)
+        {
+            try
+            {
+                var result = await _adminService.CreateCompany(request);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
+            }
+        }
+
+        [Authorize(Policy = "SuperAdminOnly")]
+        [HttpPut("admin/UpdateCompany")]
+        public async Task<IActionResult> UpdateCompany([FromBody] UpdateCompanyRequest request)
+        {
+            try
+            {
+                var result = await _adminService.UpdateCompany(request);
+                if (result == null)
+                    return NotFound(ErrorResponse<CompanyDTO>(404, "Company not found."));
+                return Ok(SuccessResponse(result));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ErrorResponse<CompanyDTO>(403, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using LoanPortal.Core.Repositories;
 using Microsoft.Extensions.Options;
 using System;
@@ -97,9 +97,10 @@ namespace LoanPortal.Core.Helper
                 JobTitle = entity.JobTitle,
                 Address = entity.Address,
                 Profile = entity.Profile,
-                CompanyName = entity.CompanyName,
                 NMLS = entity.NMLS,
+                CompanyId = entity.CompanyId,
                 LastLoginDate = entity.LastLoginDate,
+                Role = entity.Role,
             };
         }
 

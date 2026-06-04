@@ -475,12 +475,13 @@ namespace LoanPortal.Core.Services
 
         public async Task<PagedCompaniesDTO> GetCompanies(DefaultRequest request)
         {
+            var allCompanies = await _companyRepository.GetAllCompaniesAsync();
+            
             if (_loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin)
             {
-                throw new UnauthorizedAccessException("Only SuperAdmins can view all companies.");
+                allCompanies = allCompanies.Where(x => x.IsActive).ToList();
             }
 
-            var allCompanies = await _companyRepository.GetAllCompaniesAsync();
             var companiesDto = allCompanies.Select(c => new CompanyDTO
             {
                 Id = c.Id,

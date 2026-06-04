@@ -473,7 +473,7 @@ namespace LoanPortal.Core.Services
             return result;
         }
 
-        public async Task<PagedCompaniesDTO> GetCompanies(DefaultRequest request)
+        public async Task<PagedCompaniesDTO> GetCompanies(DefaultRequest request, string companyName = null)
         {
             if (_loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin)
             {
@@ -493,6 +493,12 @@ namespace LoanPortal.Core.Services
             }).ToList();
 
             IEnumerable<CompanyDTO> query = companiesDto;
+
+            if (!string.IsNullOrWhiteSpace(companyName))
+            {
+                var searchName = companyName.Trim();
+                query = query.Where(c => string.Equals(c.Name, searchName, StringComparison.OrdinalIgnoreCase));
+            }
 
             // Apply search
             if (!string.IsNullOrWhiteSpace(request.SearchText))

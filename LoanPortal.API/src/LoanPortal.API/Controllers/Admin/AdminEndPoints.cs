@@ -177,11 +177,11 @@ namespace LoanPortal.API.Controllers.Admin
 
         [Authorize(Policy = "AnyUser")]
         [HttpPost("admin/GetCompanies")]
-        public async Task<IActionResult> GetCompanies([FromBody] DefaultRequestWrapper request)
+        public async Task<IActionResult> GetCompanies([FromBody] DefaultRequestWrapper request, [FromQuery] string companyName = null)
         {
             try
             {
-                var result = await _adminService.GetCompanies(request.Params);
+                var result = await _adminService.GetCompanies(request.Params, companyName);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)

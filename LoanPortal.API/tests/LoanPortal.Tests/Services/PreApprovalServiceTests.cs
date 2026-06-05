@@ -19,6 +19,7 @@ namespace LoanPortal.Tests.Services
         private readonly Mock<ILoginUserDetails> _mockLoginUserDetails;
         private readonly Mock<IPreApprovalRepository> _mockPreApprovalRepository;
         private readonly Mock<IUserRepository> _mockUserRepository;
+        private readonly Mock<ICompanyRepository> _mockCompanyRepository;
         private readonly PreApprovalService _service;
 
         public PreApprovalServiceTests()
@@ -26,10 +27,12 @@ namespace LoanPortal.Tests.Services
             _mockLoginUserDetails = new Mock<ILoginUserDetails>();
             _mockPreApprovalRepository = new Mock<IPreApprovalRepository>();
             _mockUserRepository = new Mock<IUserRepository>();
+            _mockCompanyRepository = new Mock<ICompanyRepository>();
             _service = new PreApprovalService(
                 _mockLoginUserDetails.Object,
                 _mockPreApprovalRepository.Object,
-                _mockUserRepository.Object
+                _mockUserRepository.Object,
+                _mockCompanyRepository.Object
             );
         }
 
@@ -59,7 +62,7 @@ namespace LoanPortal.Tests.Services
             // Arrange
             var id = Guid.NewGuid();
             _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(id))
-                .ReturnsAsync((PreApprovalDocument?)null);
+                .ReturnsAsync((PreApprovalDocument)null!);
 
             // Act & Assert
             await Assert.ThrowsAsync<NotFoundException>(() => _service.GetPreApproval(id));
@@ -240,10 +243,17 @@ namespace LoanPortal.Tests.Services
                 }
             };
 
+            var companyId = Guid.NewGuid();
             var user = new UserEntity
             {
                 Id = userId,
-                CompanyName = "Test Company"
+                CompanyId = companyId
+            };
+
+            var company = new CompanyEntity
+            {
+                Id = companyId,
+                Name = "Test Company"
             };
 
             _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
@@ -251,6 +261,8 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(preApproval);
             _mockUserRepository.Setup(x => x.GetUserById(userId))
                 .ReturnsAsync(user);
+            _mockCompanyRepository.Setup(x => x.GetCompanyByIdAsync(companyId))
+                .ReturnsAsync(company);
 
             // Act
             var result = await _service.GetPreApprovalReport(preApprovalId, scenarioId);
@@ -303,10 +315,17 @@ namespace LoanPortal.Tests.Services
                 }
             };
 
+            var companyId = Guid.NewGuid();
             var user = new UserEntity
             {
                 Id = userId,
-                CompanyName = "Refi Lending Co"
+                CompanyId = companyId
+            };
+
+            var company = new CompanyEntity
+            {
+                Id = companyId,
+                Name = "Refi Lending Co"
             };
 
             _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
@@ -314,6 +333,8 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(preApproval);
             _mockUserRepository.Setup(x => x.GetUserById(userId))
                 .ReturnsAsync(user);
+            _mockCompanyRepository.Setup(x => x.GetCompanyByIdAsync(companyId))
+                .ReturnsAsync(company);
 
             // Act
             var result = await _service.GetPreApprovalReport(preApprovalId, scenarioId);
@@ -651,7 +672,7 @@ namespace LoanPortal.Tests.Services
             var missingId = Guid.NewGuid();
             _mockPreApprovalRepository
                 .Setup(x => x.GetByIdAsync(missingId))
-                .ReturnsAsync((PreApprovalDocument?)null);
+                .ReturnsAsync((PreApprovalDocument)null!);
 
             // Act
             await _service.ClonePreApproval(missingId);

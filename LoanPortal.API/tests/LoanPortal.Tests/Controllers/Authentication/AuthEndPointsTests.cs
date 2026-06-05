@@ -182,18 +182,19 @@ namespace LoanPortal.Tests.Controllers.Authentication
         [Fact]
         public async Task UpdateProfile_ValidRequest_ReturnsOkResult()
         {
+            var companyId = Guid.NewGuid();
             var updateRequest = new UpdateProfileRequest
             {
                 Address = "123 Main St",
                 JobTitle = "Software Engineer",
-                CompanyName = "Tech Corp"
+                CompanyId = companyId
             };
 
             var expectedUser = new UserDTO
             {
                 Address = updateRequest.Address,
                 JobTitle = updateRequest.JobTitle,
-                CompanyName = updateRequest.CompanyName
+                CompanyId = updateRequest.CompanyId
             };
 
             _mockUserService.Setup(x => x.UpdateProfile(updateRequest))

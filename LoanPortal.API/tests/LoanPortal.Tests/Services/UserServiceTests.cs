@@ -9,6 +9,7 @@ using LoanPortal.Core.Repositories;
 using LoanPortal.Core.Services;
 using LoanPortal.Shared;
 using LoanPortal.Shared.Constants;
+using LoanPortal.Shared.Enum;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using System.ComponentModel.DataAnnotations;
@@ -27,6 +28,7 @@ namespace LoanPortal.Tests.Services
         private readonly Mock<IBlobStorageHelper> _mockBlobStorageHelper;
         private readonly Mock<IFirebaseAuthService> _mockFirebaseAuthService;
         private readonly Mock<ILoginUserDetails> _mockLoginUserDetails;
+        private readonly Mock<ICompanyRepository> _mockCompanyRepository;
         private readonly UserService _userService;
 
         public UserServiceTests()
@@ -38,6 +40,7 @@ namespace LoanPortal.Tests.Services
             _mockBlobStorageHelper = new Mock<IBlobStorageHelper>();
             _mockFirebaseAuthService = new Mock<IFirebaseAuthService>();
             _mockLoginUserDetails = new Mock<ILoginUserDetails>();
+            _mockCompanyRepository = new Mock<ICompanyRepository>();
 
             _userService = new UserService(
                 _mockUserHelper.Object,
@@ -46,7 +49,8 @@ namespace LoanPortal.Tests.Services
                 _mockUserRepository.Object,
                 _mockBlobStorageHelper.Object,
                 _mockFirebaseAuthService.Object,
-                _mockLoginUserDetails.Object
+                _mockLoginUserDetails.Object,
+                _mockCompanyRepository.Object
             );
 
             // Initialize IUserHelper
@@ -192,11 +196,12 @@ namespace LoanPortal.Tests.Services
         {
             // Arrange
             var userId = Guid.NewGuid();
+            var companyId = Guid.NewGuid();
             var updateRequest = new UpdateProfileRequest
             {
                 Address = "123 Main St",
                 JobTitle = "Developer",
-                CompanyName = "Tech Corp"
+                CompanyId = companyId
             };
 
             var existingUser = new UserEntity
@@ -215,6 +220,9 @@ namespace LoanPortal.Tests.Services
                 .Returns(Task.CompletedTask);
 
             _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            
+            _mockCompanyRepository.Setup(x => x.GetCompanyByIdAsync(companyId))
+                .ReturnsAsync(new CompanyEntity { Id = companyId, Name = "Tech Corp" });
 
             // Setup mock to return updated user data
             var updatedUser = new UserEntity
@@ -226,7 +234,7 @@ namespace LoanPortal.Tests.Services
                 IsActive = true,
                 Address = updateRequest.Address,
                 JobTitle = updateRequest.JobTitle,
-                CompanyName = updateRequest.CompanyName
+                CompanyId = updateRequest.CompanyId
             };
             _mockUserRepository.Setup(x => x.GetUserById(userId))
                 .ReturnsAsync(updatedUser);
@@ -238,7 +246,7 @@ namespace LoanPortal.Tests.Services
             Assert.NotNull(result);
             Assert.Equal(updateRequest.Address, result.Address);
             Assert.Equal(updateRequest.JobTitle, result.JobTitle);
-            Assert.Equal(updateRequest.CompanyName, result.CompanyName);
+            Assert.Equal(companyId, result.CompanyId);
         }
 
         [Fact]
@@ -283,10 +291,10 @@ namespace LoanPortal.Tests.Services
             // Arrange
             var userId = Guid.NewGuid();
             _mockUserRepository.Setup(x => x.GetUserById(userId))
-                .ReturnsAsync((UserEntity?)null);
+                .ReturnsAsync((UserEntity)null!);
 
             // Act & Assert
-            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.GetUserProfile(userId));
+            await Assert.ThrowsAsync<ValidationException>(() => _userService.GetUserProfile(userId));
         }
 
         [Fact]
@@ -516,7 +524,7 @@ namespace LoanPortal.Tests.Services
         }
 
         [Fact]
-        public async Task GetNewToken_AdminUser_SetsIsAdminClaim()
+        public async Task GetNewToken_AdminUser_SetsRoleClaim()
         {
             // Arrange
             var refreshToken = "admin-refresh-token";
@@ -534,7 +542,8 @@ namespace LoanPortal.Tests.Services
                 Email = "admin@example.com",
                 FirstName = "Admin",
                 LastName = "User",
-                Phone = "9999999999"
+                Phone = "9999999999",
+                Role = UserRole.SuperAdmin
             };
 
             _mockFirebaseAuthService
@@ -556,8 +565,8 @@ namespace LoanPortal.Tests.Services
 
             // Assert
             Assert.NotNull(capturedClaims);
-            Assert.True(capturedClaims!.ContainsKey("isAdmin"));
-            Assert.True((bool)capturedClaims["isAdmin"]);
+            Assert.True(capturedClaims!.ContainsKey("Role"));
+            Assert.Equal((int)UserRole.SuperAdmin, capturedClaims["Role"]);
         }
     }
 }

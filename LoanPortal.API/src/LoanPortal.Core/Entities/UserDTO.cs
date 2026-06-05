@@ -36,6 +36,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? LastLoginDate { get; set; }
         public UserRole Role { get; set; }
         public Guid? CompanyId { get; set; }
+        public string? CompanyName { get; set; }
     }
 
     [BsonIgnoreExtraElements]

@@ -35,6 +35,7 @@ namespace LoanPortal.Core.Entities
         public string? SortBy { get; set; }
         public string? SortByDirection { get; set; } = "asc";
         public Guid? CompanyId { get; set; }
+        public string? FilterBy { get; set; }
     }
 
     public class PagedAgentsDTO

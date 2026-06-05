@@ -21,5 +21,6 @@ namespace LoanPortal.Core.Repositories
         Task UpdateUserLoginActivity(Guid userId, DateTime loginTime);
         Task<List<UserEntity>> GetUsersByIds(List<Guid> userIds);
         Task<List<UserEntity>> GetAll();
+        Task<(List<UserEntity> Users, Dictionary<Guid, int> QuotesThisWeek, int TotalCount)> GetUsersWithFiltersAsync(DefaultRequest request, Shared.Enum.UserRole loginRole, Guid? loginCompanyId);
     }
 }

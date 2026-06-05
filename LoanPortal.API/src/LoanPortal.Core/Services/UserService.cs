@@ -25,6 +25,7 @@ namespace LoanPortal.Core.Services
         private readonly IBlobStorageHelper _blobStorageHelper;
         private readonly IFirebaseAuthService _firebaseAuthService;
         private readonly ILoginUserDetails _loginUserDetails;
+        private readonly ICompanyRepository _companyRepository;
 
         public UserService(
             IUserHelper userHelper,
@@ -33,7 +34,8 @@ namespace LoanPortal.Core.Services
             IUserRepository userRepository,
             IBlobStorageHelper blobStorageHelper,
             IFirebaseAuthService firebaseAuthService,
-            ILoginUserDetails loginUserDetails)
+            ILoginUserDetails loginUserDetails,
+            ICompanyRepository companyRepository)
         {
             _userHelper = userHelper;
             _config = config;
@@ -42,6 +44,7 @@ namespace LoanPortal.Core.Services
             _blobStorageHelper = blobStorageHelper;
             _firebaseAuthService = firebaseAuthService;
             _loginUserDetails = loginUserDetails; 
+            _companyRepository = companyRepository;
         }
 
         public async Task<UserDTO> SignUp(CreateUserRequest user)
@@ -244,11 +247,19 @@ namespace LoanPortal.Core.Services
 
 
                 string url = "";
-                if (request.Profile != null && BlobStorageHelper.isValidFile(request.Profile.FileName))
+                if (request.Profile != null)
                 {
-                    string filename = $"{request.Profile.FileName.Split(".")[0]}_{DateTime.UtcNow:yyMMddHHmmss}.{request.Profile.FileName.Split(".")[1]}";
-                    Uri fileURI = await _blobStorageHelper.UploadFileBlobAsyncUsingSAS(request.Profile.OpenReadStream(), filename, "ProfilePictures");
-                    url = fileURI.ToString();
+                    if (request.Profile.Length > 2 * 1024 * 1024)
+                    {
+                        throw new ValidationException("Profile photo size cannot exceed 2 MB.");
+                    }
+
+                    if (BlobStorageHelper.isValidFile(request.Profile.FileName))
+                    {
+                        string filename = $"{request.Profile.FileName.Split(".")[0]}_{DateTime.UtcNow:yyMMddHHmmss}.{request.Profile.FileName.Split(".")[1]}";
+                        Uri fileURI = await _blobStorageHelper.UploadFileBlobAsyncUsingSAS(request.Profile.OpenReadStream(), filename, "ProfilePictures");
+                        url = fileURI.ToString();
+                    }
                 }
 
                 // Create a new UserEntity with update data
@@ -325,15 +336,27 @@ namespace LoanPortal.Core.Services
             try
             {
                 var user = await _userRepository.GetUserById(userId);
-                if (!string.IsNullOrEmpty(user.Profile)){
-                    user.Profile = user.Profile + "?" + IConstants.AzureToken;
-                }
-
                 if (user == null)
                 {
                     throw new ValidationException($"User not found.");
                 }
-                return UserHelper.MaptoUserDTO(user);
+
+                if (!string.IsNullOrEmpty(user.Profile)){
+                    user.Profile = user.Profile + "?" + IConstants.AzureToken;
+                }
+
+                var userDto = UserHelper.MaptoUserDTO(user);
+                
+                if (user.CompanyId.HasValue)
+                {
+                    var company = await _companyRepository.GetCompanyByIdAsync(user.CompanyId.Value);
+                    if (company != null)
+                    {
+                        userDto.CompanyName = company.Name;
+                    }
+                }
+
+                return userDto;
             }
             catch (Exception ex)
             {

@@ -175,7 +175,7 @@ namespace LoanPortal.API.Controllers.Admin
             }
         }
 
-        [Authorize(Policy = "AnyUser")]
+        [AllowAnonymous]
         [HttpPost("admin/GetCompanies")]
         public async Task<IActionResult> GetCompanies([FromBody] DefaultRequestWrapper request)
         {

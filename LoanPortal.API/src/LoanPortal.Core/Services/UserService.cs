@@ -244,11 +244,19 @@ namespace LoanPortal.Core.Services
 
 
                 string url = "";
-                if (request.Profile != null && BlobStorageHelper.isValidFile(request.Profile.FileName))
+                if (request.Profile != null)
                 {
-                    string filename = $"{request.Profile.FileName.Split(".")[0]}_{DateTime.UtcNow:yyMMddHHmmss}.{request.Profile.FileName.Split(".")[1]}";
-                    Uri fileURI = await _blobStorageHelper.UploadFileBlobAsyncUsingSAS(request.Profile.OpenReadStream(), filename, "ProfilePictures");
-                    url = fileURI.ToString();
+                    if (request.Profile.Length > 2 * 1024 * 1024)
+                    {
+                        throw new ValidationException("Profile photo size cannot exceed 2 MB.");
+                    }
+
+                    if (BlobStorageHelper.isValidFile(request.Profile.FileName))
+                    {
+                        string filename = $"{request.Profile.FileName.Split(".")[0]}_{DateTime.UtcNow:yyMMddHHmmss}.{request.Profile.FileName.Split(".")[1]}";
+                        Uri fileURI = await _blobStorageHelper.UploadFileBlobAsyncUsingSAS(request.Profile.OpenReadStream(), filename, "ProfilePictures");
+                        url = fileURI.ToString();
+                    }
                 }
 
                 // Create a new UserEntity with update data

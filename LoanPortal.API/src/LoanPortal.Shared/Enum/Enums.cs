@@ -70,4 +70,12 @@ namespace LoanPortal.Shared.Enum
         Purchase = 0,
         Refinance = 1
     }
+
+    public enum BorrowerGoal
+    {
+        LowestMonthlyPayment = 1,
+        LowestCashToClose = 2,
+        HighestCashToBorrower = 3,
+        FastestApproval = 4
+    }
 }

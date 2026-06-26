@@ -4,6 +4,7 @@ namespace LoanPortal.Core.Entities
     {
         public int TotalUser { get; set; }
         public int ActiveUser { get; set; }
+        public int NewUsers { get; set; }
         public int QuotesCreated { get; set; }
         public int PreApprovals { get; set; }
         public int FilesInEscrow { get; set; }
@@ -20,6 +21,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? LastLogin { get; set; }
         public int QuotesThisWeek { get; set; }
         public string Status { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 
     public class DefaultRequestWrapper

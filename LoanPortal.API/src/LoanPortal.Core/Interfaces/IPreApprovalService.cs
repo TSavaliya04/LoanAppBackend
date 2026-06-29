@@ -19,5 +19,6 @@ namespace LoanPortal.Core.Interfaces
         public Task DeletePreApproval(List<Guid> preApprovalIds);
         public Task<PreApprovalDocument> UpdateApplicationStatus(Guid id, int status);
         public Task<DashboardDTO> GetDashboardData();
+        public Task<string> GenerateMismoXml(Guid preApprovalId, Guid scenarioId);
     }
 }

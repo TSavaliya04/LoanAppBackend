@@ -6,6 +6,8 @@ using LoanPortal.Core.Repositories;
 using LoanPortal.Shared.Constants;
 using LoanPortal.Shared.Enum;
 using MongoDB.Driver;
+using System.Text;
+using System.Xml.Linq;
 using static MongoDB.Bson.Serialization.Serializers.SerializerHelper;
 
 namespace LoanPortal.Core.Services;
@@ -232,7 +234,7 @@ public class PreApprovalService : IPreApprovalService
                 report.LoanProgram = refi.LoanStructure?.LoanProgram ?? 0;
                 report.HOADues = refi.LoanStructure?.AssociationFee ?? 0;
                 report.TotalMonthlyPayment = report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues;
-                // No Purchase-specific closing cost breakdown for Refi — use the stored value
+                // No Purchase-specific closing cost breakdown for Refi â€” use the stored value
                 report.estimatedClosingCost = new EstimatedClosingCostDTO
                 {
                     TotalEstSettlementCharges = refi.LoanProgram.ClosingCosts ?? 0
@@ -550,6 +552,106 @@ public class PreApprovalService : IPreApprovalService
         {
             throw;
         }
+    }
+
+
+    public async Task<string> GenerateMismoXml(Guid preApprovalId, Guid scenarioId)
+    {
+        var preApproval = await GetPreApproval(preApprovalId);
+
+        var scenario = preApproval.Scenarios?.FirstOrDefault(s => s.Id == scenarioId)
+            ?? throw new NotFoundException($"Scenario with ID {scenarioId} not found on this PreApproval.");
+
+        bool isPurchase = preApproval.LoanType == (int)LoanType.Purchase;
+
+        int     loanProgramInt; decimal baseLoanAmount, interestRate, backEndRatio, frontEndRatio;
+        int     termYears;      decimal propertyValue;
+        int     occupancyStatus, propertyType;
+        string  borrowerName, borrowerEmail, borrowerPhone, coBorrowerName, coBorrowerPhone;
+        List<BorrowerIncomeDTO> borrowerIncomes;
+        List<DebtBreakdownDTO>  allDebts = new();
+
+        if (isPurchase)
+        {
+            var p  = scenario.Purchase   ?? throw new NotFoundException("Purchase data missing.");
+            var lp = p.LoanProgram       ?? throw new NotFoundException("LoanProgram missing.");
+            var pi = p.PurchaseInfo      ?? throw new NotFoundException("PurchaseInfo missing.");
+            var bi = p.BorrowerInfo;
+            loanProgramInt  = lp.LoanProgram;   baseLoanAmount = lp.BaseLoanAmount;
+            interestRate    = lp.InterestRate;  backEndRatio   = lp.BackEndRatio  ?? 0;
+            frontEndRatio   = lp.FrontEndRatio ?? 0;  termYears = lp.Term;
+            propertyValue   = pi.PurchasePrice; occupancyStatus = pi.OccupancyStatus;
+            propertyType    = pi.PropertyType;
+            borrowerName    = bi?.BorrowerName        ?? "";
+            borrowerEmail   = bi?.BorrowerEmail       ?? "";
+            borrowerPhone   = bi?.BorrowerCellNumber  ?? "";
+            coBorrowerName  = bi?.CoBorrowerName      ?? "";
+            coBorrowerPhone = bi?.CoBorrowerCellNumber ?? "";
+            borrowerIncomes = p.BorrowerIncomes ?? new();
+            foreach (var b in borrowerIncomes) allDebts.AddRange(b.Debts ?? new());
+        }
+        else
+        {
+            var r  = scenario.Refinance  ?? throw new NotFoundException("Refinance data missing.");
+            var lp = r.LoanProgram       ?? throw new NotFoundException("Refinance LoanProgram missing.");
+            var ri = r.RefinanceInfo     ?? throw new NotFoundException("RefinanceInfo missing.");
+            var bi = r.BorrowerInfo;
+            loanProgramInt  = r.LoanStructure?.LoanProgram ?? lp.LoanProgram;
+            baseLoanAmount  = lp.BaseLoanAmount;  interestRate  = lp.InterestRate;
+            backEndRatio    = lp.BackEndRatio  ?? 0; frontEndRatio = lp.FrontEndRatio ?? 0;
+            termYears       = lp.Term;
+            propertyValue   = ri.EstimatedPropertyValue; occupancyStatus = ri.OccupancyStatus;
+            propertyType    = 1;
+            borrowerName    = bi?.BorrowerName        ?? "";
+            borrowerEmail   = bi?.BorrowerEmail       ?? "";
+            borrowerPhone   = bi?.BorrowerCellNumber  ?? "";
+            coBorrowerName  = bi?.CoBorrowerName      ?? "";
+            coBorrowerPhone = bi?.CoBorrowerCellNumber ?? "";
+            borrowerIncomes = new();
+            foreach (var b in r.BorrowerIncomes ?? new())
+                allDebts.AddRange(b.Debts?.Select(d => new DebtBreakdownDTO
+                    { DebtType = d.DebtType, Balance = d.Balance, MonthlyPayment = d.MonthlyPayment })
+                    ?? Enumerable.Empty<DebtBreakdownDTO>());
+        }
+
+        int    borrowerCount  = isPurchase ? Math.Max(borrowerIncomes.Count, 1) : 1;
+        string mortgageType   = PreApprovalHelper.MapMortgageType(loanProgramInt);
+        int    periodCount    = termYears * 12;
+        string loanPurpose    = isPurchase ? "Purchase" : "Refinance";
+        string intentToOccupy = occupancyStatus == (int)OccupancyStatus.OwnerOccupied ? "Yes" : "No";
+        string productDesc    = $"{mortgageType} {termYears}-Year Fixed";
+
+
+
+        var parties = new List<XElement>();
+        decimal? primaryIncome = borrowerIncomes.Count > 0 ? borrowerIncomes[0].MonthlyIncome : null;
+        parties.Add(PreApprovalHelper.BuildParty(1, borrowerName, borrowerEmail, borrowerPhone,
+                               primaryIncome, intentToOccupy));
+
+        if (!string.IsNullOrWhiteSpace(coBorrowerName))
+        {
+            decimal? coIncome = borrowerIncomes.Count > 1 ? borrowerIncomes[1].MonthlyIncome : null;
+            parties.Add(PreApprovalHelper.BuildParty(2, coBorrowerName, "", coBorrowerPhone, coIncome, intentToOccupy));
+        }
+
+        var liabilities = PreApprovalHelper.BuildLiabilities(allDebts);
+
+        return PreApprovalHelper.BuildMismoXmlString(
+            preApproval,
+            loanPurpose,
+            borrowerCount,
+            baseLoanAmount,
+            interestRate,
+            periodCount,
+            mortgageType,
+            backEndRatio,
+            frontEndRatio,
+            productDesc,
+            propertyType,
+            propertyValue,
+            occupancyStatus,
+            parties,
+            liabilities);
     }
 
 }

@@ -38,18 +38,6 @@ namespace LoanPortal.Core.Entities
         [BsonElement("borrowerEmail")]
         public string? BorrowerEmail { get; set; }
 
-        [BsonElement("dateOfBirth")]
-        public DateTime? DateOfBirth { get; set; }
-
-        [BsonElement("currentAddress")]
-        public string? CurrentAddress { get; set; }
-
-        [BsonElement("ssn")]
-        public string? SSN { get; set; }
-
-        [BsonElement("maritalStatus")]
-        public MaritalStatus? MaritalStatus { get; set; }
-
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
 

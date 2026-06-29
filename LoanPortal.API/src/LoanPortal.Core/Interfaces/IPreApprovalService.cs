@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,5 +19,6 @@ namespace LoanPortal.Core.Interfaces
         public Task DeletePreApproval(List<Guid> preApprovalIds);
         public Task<PreApprovalDocument> UpdateApplicationStatus(Guid id, int status);
         public Task<DashboardDTO> GetDashboardData();
+        public Task<string> GenerateMismoXml(Guid preApprovalId, Guid scenarioId);
     }
 }

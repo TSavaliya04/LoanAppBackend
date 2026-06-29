@@ -79,4 +79,13 @@ namespace LoanPortal.Shared.Enum
         Widowed = 3,
         Separated = 4
     }
+
+    public enum DebtType
+    {
+        MortgagePayment = 1,
+        CarPayment = 2,
+        CreditCard = 3,
+        Installment = 4,
+        Other = 5
+    }
 }

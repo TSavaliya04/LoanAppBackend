@@ -1,4 +1,4 @@
-﻿using Ardalis.ApiEndpoints;
+using Ardalis.ApiEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -103,6 +103,24 @@ namespace LoanPortal.API.Controllers.PreApproval
             catch (Exception ex)
             {
                 return StatusCode(500, ErrorResponse<DashboardDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpGet("preapproval/CreateLoanFile")]
+        public async Task<IActionResult> CreateLoanFile([FromQuery] Guid preApprovalId, [FromQuery] Guid scenarioId)
+        {
+            try
+            {
+                var xml = await _preApprovalService.GenerateMismoXml(preApprovalId, scenarioId);
+                return Content(xml, "application/xml", System.Text.Encoding.UTF8);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ErrorResponse<string>(404, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<string>(500, ex.Message));
             }
         }
     }

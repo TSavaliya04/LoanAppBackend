@@ -555,7 +555,7 @@ public class PreApprovalService : IPreApprovalService
     }
 
 
-    public async Task<string> GenerateMismoXml(Guid preApprovalId, Guid scenarioId)
+    public async Task<CreateLoanFileResponse> CreateLoanFile(Guid preApprovalId, Guid scenarioId)
     {
         var preApproval = await GetPreApproval(preApprovalId);
 
@@ -568,6 +568,8 @@ public class PreApprovalService : IPreApprovalService
         int     termYears;      decimal propertyValue;
         int     occupancyStatus, propertyType;
         string  borrowerName, borrowerEmail, borrowerPhone, coBorrowerName, coBorrowerPhone;
+        DateTime? borrowerDob = null; MaritalStatus? borrowerMaritalStatus = null;
+        string  borrowerSsn = "", borrowerAddress = "";
         List<BorrowerIncomeDTO> borrowerIncomes;
         List<DebtBreakdownDTO>  allDebts = new();
 
@@ -587,6 +589,10 @@ public class PreApprovalService : IPreApprovalService
             borrowerPhone   = bi?.BorrowerCellNumber  ?? "";
             coBorrowerName  = bi?.CoBorrowerName      ?? "";
             coBorrowerPhone = bi?.CoBorrowerCellNumber ?? "";
+            borrowerDob     = bi?.DateOfBirth;
+            borrowerMaritalStatus = bi?.MaritalStatus;
+            borrowerSsn     = bi?.Ssn ?? "";
+            borrowerAddress = bi?.CurrentAddress ?? "";
             borrowerIncomes = p.BorrowerIncomes ?? new();
             foreach (var b in borrowerIncomes) allDebts.AddRange(b.Debts ?? new());
         }
@@ -626,17 +632,17 @@ public class PreApprovalService : IPreApprovalService
         var parties = new List<XElement>();
         decimal? primaryIncome = borrowerIncomes.Count > 0 ? borrowerIncomes[0].MonthlyIncome : null;
         parties.Add(PreApprovalHelper.BuildParty(1, borrowerName, borrowerEmail, borrowerPhone,
-                               primaryIncome, intentToOccupy));
+                               primaryIncome, intentToOccupy, borrowerDob, borrowerMaritalStatus, borrowerSsn, borrowerAddress));
 
         if (!string.IsNullOrWhiteSpace(coBorrowerName))
         {
             decimal? coIncome = borrowerIncomes.Count > 1 ? borrowerIncomes[1].MonthlyIncome : null;
-            parties.Add(PreApprovalHelper.BuildParty(2, coBorrowerName, "", coBorrowerPhone, coIncome, intentToOccupy));
+            parties.Add(PreApprovalHelper.BuildParty(2, coBorrowerName, "", coBorrowerPhone, coIncome, intentToOccupy, null, null, "", ""));
         }
 
         var liabilities = PreApprovalHelper.BuildLiabilities(allDebts);
 
-        return PreApprovalHelper.BuildMismoXmlString(
+        var xml = PreApprovalHelper.BuildMismoXmlString(
             preApproval,
             loanPurpose,
             borrowerCount,
@@ -652,6 +658,13 @@ public class PreApprovalService : IPreApprovalService
             occupancyStatus,
             parties,
             liabilities);
+
+        return new CreateLoanFileResponse
+        {
+            PreApprovalId = preApprovalId,
+            ScenarioId = scenarioId,
+            XmlData = xml
+        };
     }
 
 }

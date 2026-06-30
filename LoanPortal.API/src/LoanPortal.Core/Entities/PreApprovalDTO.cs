@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using LoanPortal.Shared.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +37,18 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("borrowerEmail")]
         public string? BorrowerEmail { get; set; }
+
+        [BsonElement("dateOfBirth")]
+        public DateTime? DateOfBirth { get; set; }
+
+        [BsonElement("currentAddress")]
+        public string? CurrentAddress { get; set; }
+
+        [BsonElement("ssn")]
+        public string? Ssn { get; set; }
+
+        [BsonElement("maritalStatus")]
+        public MaritalStatus? MaritalStatus { get; set; }
 
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
@@ -753,6 +766,14 @@ namespace LoanPortal.Core.Entities
         public decimal OtherFinancedItems { get; set; }
         public DateTime ExpirationDate { get; set; }
         public EstimatedClosingCostDTO estimatedClosingCost { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class CreateLoanFileResponse
+    {
+        public Guid PreApprovalId { get; set; }
+        public Guid ScenarioId { get; set; }
+        public string XmlData { get; set; }
     }
 
     [BsonIgnoreExtraElements]

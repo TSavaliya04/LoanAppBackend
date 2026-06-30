@@ -107,20 +107,20 @@ namespace LoanPortal.API.Controllers.PreApproval
         }
 
         [HttpGet("preapproval/CreateLoanFile")]
-        public async Task<IActionResult> CreateLoanFile([FromQuery] Guid preApprovalId, [FromQuery] Guid scenarioId)
+        public async Task<IActionResult> CreateLoanFile([FromQuery] Guid preApprovalId, Guid scenarioId)
         {
             try
             {
-                var xml = await _preApprovalService.GenerateMismoXml(preApprovalId, scenarioId);
-                return Content(xml, "application/xml", System.Text.Encoding.UTF8);
+                var result = await _preApprovalService.CreateLoanFile(preApprovalId, scenarioId);
+                return Ok(SuccessResponse(result));
             }
             catch (NotFoundException ex)
             {
-                return NotFound(ErrorResponse<string>(404, ex.Message));
+                return NotFound(ErrorResponse<CreateLoanFileResponse>(404, ex.Message));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<string>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<CreateLoanFileResponse>(500, ex.Message));
             }
         }
     }

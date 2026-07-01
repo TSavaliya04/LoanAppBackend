@@ -288,6 +288,10 @@ namespace LoanPortal.Infrastructure.Repositories
                     {
                         secondFilters.Add(Builders<BsonDocument>.Filter.Gt("quotesThisWeek", 0));
                     }
+                    else if (filterByStr == "newusers")
+                    {
+                        secondFilters.Add(Builders<BsonDocument>.Filter.Gte("createdAt", sevenDaysAgo));
+                    }
                 }
 
                 if (secondFilters.Count > 0)

@@ -86,10 +86,57 @@ namespace LoanPortal.Core.Helper
             return idx < 0 ? (full, "") : (full[..idx].Trim(), full[(idx + 1)..].Trim());
         }
 
+        public static (string Street, string City, string State, string Zip) ParseAddress(string fullAddress)
+        {
+            if (string.IsNullOrWhiteSpace(fullAddress))
+                return ("", "", "", "");
+
+            var parts = fullAddress.Split(',').Select(p => p.Trim()).ToList();
+
+            if (parts.Count >= 3)
+            {
+                string lastPart = parts.Last();
+                var lastPartWords = lastPart.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                
+                if (lastPartWords.Length >= 2)
+                {
+                    string zip = lastPartWords.Last();
+                    string state = string.Join(" ", lastPartWords.Take(lastPartWords.Length - 1));
+                    string city = parts[parts.Count - 2];
+                    string street = string.Join(", ", parts.Take(parts.Count - 2));
+                    return (street, city, state, zip);
+                }
+                else if (parts.Count >= 4)
+                {
+                    string zip = parts[parts.Count - 1];
+                    string state = parts[parts.Count - 2];
+                    string city = parts[parts.Count - 3];
+                    string street = string.Join(", ", parts.Take(parts.Count - 3));
+                    return (street, city, state, zip);
+                }
+            }
+            else if (parts.Count == 2)
+            {
+                string street = parts[0];
+                var secondPartWords = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (secondPartWords.Length >= 3)
+                {
+                    string zip = secondPartWords.Last();
+                    string state = secondPartWords[secondPartWords.Length - 2];
+                    string city = string.Join(" ", secondPartWords.Take(secondPartWords.Length - 2));
+                    return (street, city, state, zip);
+                }
+                return (street, parts[1], "", "");
+            }
+
+            return (fullAddress, "", "", "");
+        }
+
         public static XElement BuildParty(int seq, string fullName, string email, string phone,
-            decimal? income, string intentToOccupy)
+            decimal? income, string intentToOccupy, DateTime? dateOfBirth, MaritalStatus? maritalStatus, string ssn, string currentAddress)
         {
             var (first, last)           = SplitName(fullName);
+            var (street, city, state, zip) = ParseAddress(currentAddress);
 
             var contactPoints = new List<XElement>();
             if (!string.IsNullOrEmpty(email))
@@ -117,8 +164,8 @@ namespace LoanPortal.Core.Helper
                             new XElement("PartyRoleType", "Borrower")),
                         new XElement("BORROWER",
                             new XElement("BORROWER_DETAIL",
-                                new XElement("BorrowerBirthDate",  ""),
-                                new XElement("MaritalStatusType",  ""),
+                                new XElement("BorrowerBirthDate",  dateOfBirth?.ToString("yyyy-MM-dd") ?? ""),
+                                new XElement("MaritalStatusType",  maritalStatus?.ToString() ?? ""),
                                 new XElement("DependentCount",     "")),
                             new XElement("DECLARATION",
                                 new XElement("DECLARATION_DETAIL",
@@ -134,14 +181,14 @@ namespace LoanPortal.Core.Helper
                                                 income.HasValue ? income.Value.ToString("F2") : "")))))))),
                 new XElement("TAXPAYER_IDENTIFIERS",
                     new XElement("TAXPAYER_IDENTIFIER",
-                        new XElement("TaxpayerIdentifierType",  ""),
-                        new XElement("TaxpayerIdentifierValue", ""))),
+                        new XElement("TaxpayerIdentifierType",  string.IsNullOrWhiteSpace(ssn) ? "" : "SocialSecurityNumber"),
+                        new XElement("TaxpayerIdentifierValue", ssn ?? ""))),
                 new XElement("ADDRESSES",
                     new XElement("ADDRESS",
-                        new XElement("AddressLineText", ""),
-                        new XElement("CityName",        ""),
-                        new XElement("StateCode",       ""),
-                        new XElement("PostalCode",      ""))));
+                        new XElement("AddressLineText", street),
+                        new XElement("CityName",        city),
+                        new XElement("StateCode",       state),
+                        new XElement("PostalCode",      zip))));
         }
 
         public static List<XElement> BuildLiabilities(List<DebtBreakdownDTO> allDebts)

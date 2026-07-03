@@ -124,6 +124,7 @@ namespace LoanPortal.Core.Services
                 BorrowerGoal.LowestCashToClose => "lowest_cash_to_close",
                 BorrowerGoal.HighestCashToBorrower => "highest_cash_to_borrower",
                 BorrowerGoal.FastestApproval => "fastest_approval",
+                BorrowerGoal.LowestDownPayment => "lowest_down_payment",
                 _ => "lowest_monthly_payment"
             };
 
@@ -269,6 +270,7 @@ namespace LoanPortal.Core.Services
             var apiKey = Environment.GetEnvironmentVariable("Provider:ApiKey") ?? _configuration["Provider:ApiKey"];
             var baseUrl = Environment.GetEnvironmentVariable("Provider:BaseUrl") ?? _configuration["Provider:BaseUrl"];
             var modelName = Environment.GetEnvironmentVariable("Provider:Model") ?? _configuration["Provider:Model"];
+            var fallbackModelName = Environment.GetEnvironmentVariable("Provider:FallbackModel") ?? _configuration["Provider:FallbackModel"];
 
             // Ensure the URL targets the chat completions endpoint
             if (!string.IsNullOrEmpty(baseUrl) && !baseUrl.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
@@ -309,6 +311,34 @@ namespace LoanPortal.Core.Services
             }
 
             var response = await _httpClient.SendAsync(requestMessage);
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests && !string.IsNullOrEmpty(fallbackModelName))
+            {
+                var fallbackPayload = new
+                {
+                    model = fallbackModelName,
+                    messages = new[]
+                    {
+                        new { role = "system", content = systemPrompt },
+                        new { role = "user", content = userPrompt }
+                    },
+                    response_format = new { type = "json_object" },
+                    temperature = 0.7
+                };
+
+                var fallbackRequestMessage = new HttpRequestMessage(HttpMethod.Post, baseUrl)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(fallbackPayload), Encoding.UTF8, "application/json")
+                };
+                
+                if (!string.IsNullOrEmpty(apiKey))
+                {
+                    fallbackRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                }
+
+                response = await _httpClient.SendAsync(fallbackRequestMessage);
+            }
+
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();

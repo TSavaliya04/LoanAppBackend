@@ -94,6 +94,7 @@ namespace LoanPortal.Shared.Enum
         LowestMonthlyPayment = 1,
         LowestCashToClose = 2,
         HighestCashToBorrower = 3,
-        FastestApproval = 4
+        FastestApproval = 4,
+        LowestDownPayment = 5
     }
 }

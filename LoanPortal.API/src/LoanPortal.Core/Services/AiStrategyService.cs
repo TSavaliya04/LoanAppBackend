@@ -124,6 +124,7 @@ namespace LoanPortal.Core.Services
                 BorrowerGoal.LowestCashToClose => "lowest_cash_to_close",
                 BorrowerGoal.HighestCashToBorrower => "highest_cash_to_borrower",
                 BorrowerGoal.FastestApproval => "fastest_approval",
+                BorrowerGoal.LowestDownPayment => "lowest_down_payment",
                 _ => "lowest_monthly_payment"
             };
 

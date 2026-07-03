@@ -613,6 +613,10 @@ public class PreApprovalService : IPreApprovalService
             borrowerPhone   = bi?.BorrowerCellNumber  ?? "";
             coBorrowerName  = bi?.CoBorrowerName      ?? "";
             coBorrowerPhone = bi?.CoBorrowerCellNumber ?? "";
+            borrowerDob     = bi?.DateOfBirth;
+            borrowerMaritalStatus = bi?.MaritalStatus;
+            borrowerSsn     = bi?.Ssn ?? "";
+            borrowerAddress = bi?.CurrentAddress ?? "";
             borrowerIncomes = new();
             foreach (var b in r.BorrowerIncomes ?? new())
                 allDebts.AddRange(b.Debts?.Select(d => new DebtBreakdownDTO

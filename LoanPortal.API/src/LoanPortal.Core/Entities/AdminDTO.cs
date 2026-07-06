@@ -24,7 +24,7 @@ namespace LoanPortal.Core.Entities
         public DateTime? CreatedAt { get; set; }
     }
 
-    p   ublic class DefaultRequestWrapper
+    public class DefaultRequestWrapper
     {
         public DefaultRequest Params { get; set; }
     }

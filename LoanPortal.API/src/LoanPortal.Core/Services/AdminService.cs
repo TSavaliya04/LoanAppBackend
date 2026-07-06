@@ -28,7 +28,7 @@ namespace LoanPortal.Core.Services
             _userService = userService;
         }
 
-        public async Task<PagedAgentsDTO> GetUsers(DefaultRequest request)
+        public async Task<PagedAgentsDTO> GetUsers(GetUsersRequest request)
         {
             try
             {
@@ -58,7 +58,8 @@ namespace LoanPortal.Core.Services
                         Email = user.Email,
                         LastLogin = user.LastLoginDate,
                         Status = user.IsActive ? "Active" : "InActive",
-                        QuotesThisWeek = count
+                        QuotesThisWeek = count,
+                        CreatedAt = user.CreatedAt
                     });
                 }
 
@@ -331,6 +332,7 @@ namespace LoanPortal.Core.Services
             {
                 TotalUser = allUsers.Count,
                 ActiveUser = activeUsers.Count,
+                NewUsers = allUsers.Count(u => u.CreatedAt >= startDate && u.CreatedAt < endDate),
                 QuotesCreated = quotes.Count(),
                 PreApprovals = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.PreApproved).Count(),
                 FilesInEscrow = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.InEscrow).Count(),

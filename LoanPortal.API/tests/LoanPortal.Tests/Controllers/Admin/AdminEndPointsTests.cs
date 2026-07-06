@@ -35,9 +35,9 @@ namespace LoanPortal.Tests.Controllers.Admin
         public async Task GetUsers_ValidRequest_ReturnsOkResult()
         {
             // Arrange
-            var request = new DefaultRequestWrapper
+            var request = new GetUsersRequestWrapper
             {
-                Params = new DefaultRequest
+                Params = new GetUsersRequest
                 {
                     PageNumber = 1,
                     PageSize = 10
@@ -69,9 +69,9 @@ namespace LoanPortal.Tests.Controllers.Admin
         [Fact]
         public async Task GetUsers_Exception_ReturnsInternalServerError()
         {
-            var request = new DefaultRequestWrapper
+            var request = new GetUsersRequestWrapper
             {
-                Params = new DefaultRequest()
+                Params = new GetUsersRequest()
             };
             var errorMessage = "Unexpected error";
 
@@ -92,9 +92,9 @@ namespace LoanPortal.Tests.Controllers.Admin
         [Fact]
         public async Task GetUsers_ServiceCalled_VerifyMethodInvocation()
         {
-            var request = new DefaultRequestWrapper
+            var request = new GetUsersRequestWrapper
             {
-                Params = new DefaultRequest()
+                Params = new GetUsersRequest()
             };
 
             _mockAdminService
@@ -193,10 +193,10 @@ namespace LoanPortal.Tests.Controllers.Admin
             var expected = new AdminDashboardDTO();
 
             _mockAdminService
-                .Setup(x => x.GetAdminDashboard(start, end))
+                .Setup(x => x.GetAdminDashboard(start, end, It.IsAny<Guid?>()))
                 .ReturnsAsync(expected);
 
-            var result = await _controller.GetAdminDashboard(start, end);
+            var result = await _controller.GetAdminDashboard(start, end, null);
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ApiResponse<AdminDashboardDTO>>(okResult.Value);
@@ -212,10 +212,10 @@ namespace LoanPortal.Tests.Controllers.Admin
             var errorMessage = "Dashboard failed";
 
             _mockAdminService
-                .Setup(x => x.GetAdminDashboard(start, end))
+                .Setup(x => x.GetAdminDashboard(start, end, It.IsAny<Guid?>()))
                 .ThrowsAsync(new Exception(errorMessage));
 
-            var result = await _controller.GetAdminDashboard(start, end);
+            var result = await _controller.GetAdminDashboard(start, end, null);
 
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
@@ -232,12 +232,12 @@ namespace LoanPortal.Tests.Controllers.Admin
             var end = DateTime.UtcNow.Date;
 
             _mockAdminService
-                .Setup(x => x.GetAdminDashboard(start, end))
+                .Setup(x => x.GetAdminDashboard(start, end, It.IsAny<Guid?>()))
                 .ReturnsAsync(new AdminDashboardDTO());
 
-            await _controller.GetAdminDashboard(start, end);
+            await _controller.GetAdminDashboard(start, end, null);
 
-            _mockAdminService.Verify(x => x.GetAdminDashboard(start, end), Times.Once);
+            _mockAdminService.Verify(x => x.GetAdminDashboard(start, end, null), Times.Once);
         }
 
         #endregion
@@ -329,18 +329,19 @@ namespace LoanPortal.Tests.Controllers.Admin
         [Fact]
         public async Task UpdateUser_ValidRequest_ReturnsOkResult()
         {
+            var companyId = Guid.NewGuid();
             var request = new UpdateProfileRequest
             {
                 Address = "123 Main St",
                 JobTitle = "Agent",
-                CompanyName = "Loan Corp"
+                CompanyId = companyId
             };
 
             var expectedUser = new UserDTO
             {
                 Address = request.Address,
                 JobTitle = request.JobTitle,
-                CompanyName = request.CompanyName
+                CompanyId = request.CompanyId
             };
 
             _mockUserService
@@ -446,6 +447,419 @@ namespace LoanPortal.Tests.Controllers.Admin
         }
 
         #endregion
+        #region CreateAdmin
+
+        [Fact]
+        public async Task CreateAdmin_ValidRequest_ReturnsOkResult()
+        {
+            var request = new CreateAdminRequest();
+            var expectedUser = new UserDTO();
+
+            _mockAdminService
+                .Setup(x => x.CreateAdmin(request))
+                .ReturnsAsync(expectedUser);
+
+            var result = await _controller.CreateAdmin(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedUser, response.Data);
+        }
+
+        [Fact]
+        public async Task CreateAdmin_Exception_ReturnsInternalServerError()
+        {
+            var request = new CreateAdminRequest();
+            var errorMessage = "Create admin failed";
+
+            _mockAdminService
+                .Setup(x => x.CreateAdmin(request))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.CreateAdmin(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task CreateAdmin_ServiceCalled_VerifyMethodInvocation()
+        {
+            var request = new CreateAdminRequest();
+
+            _mockAdminService
+                .Setup(x => x.CreateAdmin(request))
+                .ReturnsAsync(new UserDTO());
+
+            await _controller.CreateAdmin(request);
+
+            _mockAdminService.Verify(x => x.CreateAdmin(request), Times.Once);
+        }
+
+        #endregion
+
+        #region GetCompanyAdmins
+
+        [Fact]
+        public async Task GetCompanyAdmins_ValidRequest_ReturnsOkResult()
+        {
+            var request = new DefaultRequestWrapper { Params = new DefaultRequest() };
+            var expectedResult = new PagedUserDTO { Users = new List<CompanyAdminDTO>() };
+
+            _mockAdminService
+                .Setup(x => x.GetCompanyAdmins(request.Params))
+                .ReturnsAsync(expectedResult);
+
+            var result = await _controller.GetCompanyAdmins(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<PagedUserDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedResult, response.Data);
+        }
+
+        [Fact]
+        public async Task GetCompanyAdmins_Exception_ReturnsInternalServerError()
+        {
+            var request = new DefaultRequestWrapper { Params = new DefaultRequest() };
+            var errorMessage = "Fetch failed";
+
+            _mockAdminService
+                .Setup(x => x.GetCompanyAdmins(request.Params))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.GetCompanyAdmins(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<PagedUserDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
+        #region GetCompanyAdminById
+
+        [Fact]
+        public async Task GetCompanyAdminById_ValidId_ReturnsOkResult()
+        {
+            var id = Guid.NewGuid();
+            var expectedUser = new UserDTO();
+
+            _mockUserService
+                .Setup(x => x.GetUserProfile(id))
+                .ReturnsAsync(expectedUser);
+
+            var result = await _controller.GetCompanyAdminById(id);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedUser, response.Data);
+        }
+
+        [Fact]
+        public async Task GetCompanyAdminById_Exception_ReturnsInternalServerError()
+        {
+            var id = Guid.NewGuid();
+            var errorMessage = "User not found";
+
+            _mockUserService
+                .Setup(x => x.GetUserProfile(id))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.GetCompanyAdminById(id);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
+        #region UpdateCompanyAdmin
+
+        [Fact]
+        public async Task UpdateCompanyAdmin_ValidRequest_ReturnsOkResult()
+        {
+            var request = new UpdateProfileRequest();
+            var expectedUser = new UserDTO();
+
+            _mockUserService
+                .Setup(x => x.UpdateProfile(request))
+                .ReturnsAsync(expectedUser);
+
+            var result = await _controller.UpdateCompanyAdmin(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedUser, response.Data);
+        }
+
+        [Fact]
+        public async Task UpdateCompanyAdmin_UnauthorizedException_ReturnsForbidden()
+        {
+            var request = new UpdateProfileRequest();
+            var errorMessage = "Unauthorized";
+
+            _mockUserService
+                .Setup(x => x.UpdateProfile(request))
+                .ThrowsAsync(new UnauthorizedAccessException(errorMessage));
+
+            var result = await _controller.UpdateCompanyAdmin(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(403, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task UpdateCompanyAdmin_Exception_ReturnsInternalServerError()
+        {
+            var request = new UpdateProfileRequest();
+            var errorMessage = "Update failed";
+
+            _mockUserService
+                .Setup(x => x.UpdateProfile(request))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.UpdateCompanyAdmin(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
+        #region GetCompanies
+
+        [Fact]
+        public async Task GetCompanies_ValidRequest_ReturnsOkResult()
+        {
+            var request = new DefaultRequestWrapper { Params = new DefaultRequest() };
+            var expectedResult = new PagedCompaniesDTO { Companies = new List<CompanyDTO>() };
+
+            _mockAdminService
+                .Setup(x => x.GetCompanies(request.Params))
+                .ReturnsAsync(expectedResult);
+
+            var result = await _controller.GetCompanies(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<PagedCompaniesDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedResult, response.Data);
+        }
+
+        [Fact]
+        public async Task GetCompanies_Exception_ReturnsInternalServerError()
+        {
+            var request = new DefaultRequestWrapper { Params = new DefaultRequest() };
+            var errorMessage = "Fetch failed";
+
+            _mockAdminService
+                .Setup(x => x.GetCompanies(request.Params))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.GetCompanies(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<PagedCompaniesDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
+        #region GetCompanyById
+
+        [Fact]
+        public async Task GetCompanyById_ValidId_ReturnsOkResult()
+        {
+            var id = Guid.NewGuid();
+            var expectedCompany = new CompanyDTO();
+
+            _mockAdminService
+                .Setup(x => x.GetCompanyById(id))
+                .ReturnsAsync(expectedCompany);
+
+            var result = await _controller.GetCompanyById(id);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedCompany, response.Data);
+        }
+
+        [Fact]
+        public async Task GetCompanyById_NotFound_ReturnsNotFoundResult()
+        {
+            var id = Guid.NewGuid();
+
+            _mockAdminService
+                .Setup(x => x.GetCompanyById(id))
+                .ReturnsAsync((CompanyDTO)null!);
+
+            var result = await _controller.GetCompanyById(id);
+
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(notFoundResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Company not found.", response.Error);
+        }
+
+        [Fact]
+        public async Task GetCompanyById_Exception_ReturnsInternalServerError()
+        {
+            var id = Guid.NewGuid();
+            var errorMessage = "Fetch failed";
+
+            _mockAdminService
+                .Setup(x => x.GetCompanyById(id))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.GetCompanyById(id);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
+        #region CreateCompany
+
+        [Fact]
+        public async Task CreateCompany_ValidRequest_ReturnsOkResult()
+        {
+            var request = new CreateCompanyRequest();
+            var expectedCompany = new CompanyDTO();
+
+            _mockAdminService
+                .Setup(x => x.CreateCompany(request))
+                .ReturnsAsync(expectedCompany);
+
+            var result = await _controller.CreateCompany(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedCompany, response.Data);
+        }
+
+        [Fact]
+        public async Task CreateCompany_Exception_ReturnsInternalServerError()
+        {
+            var request = new CreateCompanyRequest();
+            var errorMessage = "Create failed";
+
+            _mockAdminService
+                .Setup(x => x.CreateCompany(request))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.CreateCompany(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
+        #region UpdateCompany
+
+        [Fact]
+        public async Task UpdateCompany_ValidRequest_ReturnsOkResult()
+        {
+            var request = new UpdateCompanyRequest();
+            var expectedCompany = new CompanyDTO();
+
+            _mockAdminService
+                .Setup(x => x.UpdateCompany(request))
+                .ReturnsAsync(expectedCompany);
+
+            var result = await _controller.UpdateCompany(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedCompany, response.Data);
+        }
+
+        [Fact]
+        public async Task UpdateCompany_NotFound_ReturnsNotFoundResult()
+        {
+            var request = new UpdateCompanyRequest();
+
+            _mockAdminService
+                .Setup(x => x.UpdateCompany(request))
+                .ReturnsAsync((CompanyDTO)null!);
+
+            var result = await _controller.UpdateCompany(request);
+
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(notFoundResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Company not found.", response.Error);
+        }
+
+        [Fact]
+        public async Task UpdateCompany_UnauthorizedException_ReturnsForbidden()
+        {
+            var request = new UpdateCompanyRequest();
+            var errorMessage = "Unauthorized";
+
+            _mockAdminService
+                .Setup(x => x.UpdateCompany(request))
+                .ThrowsAsync(new UnauthorizedAccessException(errorMessage));
+
+            var result = await _controller.UpdateCompany(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(403, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task UpdateCompany_Exception_ReturnsInternalServerError()
+        {
+            var request = new UpdateCompanyRequest();
+            var errorMessage = "Update failed";
+
+            _mockAdminService
+                .Setup(x => x.UpdateCompany(request))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.UpdateCompany(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
     }
 }
-

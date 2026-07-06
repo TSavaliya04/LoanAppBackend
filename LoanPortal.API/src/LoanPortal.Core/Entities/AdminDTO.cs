@@ -4,6 +4,7 @@ namespace LoanPortal.Core.Entities
     {
         public int TotalUser { get; set; }
         public int ActiveUser { get; set; }
+        public int NewUsers { get; set; }
         public int QuotesCreated { get; set; }
         public int PreApprovals { get; set; }
         public int FilesInEscrow { get; set; }
@@ -20,9 +21,10 @@ namespace LoanPortal.Core.Entities
         public DateTime? LastLogin { get; set; }
         public int QuotesThisWeek { get; set; }
         public string Status { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 
-    public class DefaultRequestWrapper
+    p   ublic class DefaultRequestWrapper
     {
         public DefaultRequest Params { get; set; }
     }
@@ -37,6 +39,23 @@ namespace LoanPortal.Core.Entities
         public Guid? CompanyId { get; set; }
         public string? FilterBy { get; set; }
     }
+
+    public class GetUsersRequest : DefaultRequest
+    {
+        public Shared.Enum.UserStatus? Status { get; set; } 
+        public DateTime? LastLoginFrom { get; set; }
+        public DateTime? LastLoginTo { get; set; }
+        public int? QuotesThisWeekMin { get; set; }
+        public int? QuotesThisWeekMax { get; set; }
+        public DateTime? CreatedAtFrom { get; set; }
+        public DateTime? CreatedAtTo { get; set; }
+    }
+
+    public class GetUsersRequestWrapper
+    {
+        public GetUsersRequest Params { get; set; }
+    }
+
 
     public class PagedAgentsDTO
     {

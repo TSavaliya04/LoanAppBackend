@@ -23,7 +23,7 @@ namespace LoanPortal.API.Controllers.Admin
         }
 
         [HttpPost("admin/GetUsers")]
-        public async Task<IActionResult> GetUsers([FromBody] DefaultRequestWrapper request)
+        public async Task<IActionResult> GetUsers([FromBody] GetUsersRequestWrapper request)
         {
             try
             {

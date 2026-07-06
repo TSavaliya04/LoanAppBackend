@@ -178,7 +178,7 @@ namespace LoanPortal.Infrastructure.Repositories
             }
         }
 
-        public async Task<(List<UserEntity> Users, Dictionary<Guid, int> QuotesThisWeek, int TotalCount)> GetUsersWithFiltersAsync(DefaultRequest request, Shared.Enum.UserRole loginRole, Guid? loginCompanyId)
+        public async Task<(List<UserEntity> Users, Dictionary<Guid, int> QuotesThisWeek, int TotalCount)> GetUsersWithFiltersAsync(GetUsersRequest request, Shared.Enum.UserRole loginRole, Guid? loginCompanyId)
         {
             try
             {
@@ -288,6 +288,46 @@ namespace LoanPortal.Infrastructure.Repositories
                     {
                         secondFilters.Add(Builders<BsonDocument>.Filter.Gt("quotesThisWeek", 0));
                     }
+                    else if (filterByStr == "newusers")
+                    {
+                        secondFilters.Add(Builders<BsonDocument>.Filter.Gte("createdAt", sevenDaysAgo));
+                    }
+                }
+
+                if (request.Status.HasValue)
+                {
+                    bool isActive = request.Status.Value == Shared.Enum.UserStatus.Active;
+                    secondFilters.Add(Builders<BsonDocument>.Filter.Eq("isActive", isActive));
+                }
+
+                if (request.LastLoginFrom.HasValue)
+                {
+                    secondFilters.Add(Builders<BsonDocument>.Filter.Gte("lastLoginDate", request.LastLoginFrom.Value));
+                }
+
+                if (request.LastLoginTo.HasValue)
+                {
+                    secondFilters.Add(Builders<BsonDocument>.Filter.Lte("lastLoginDate", request.LastLoginTo.Value));
+                }
+
+                if (request.QuotesThisWeekMin.HasValue)
+                {
+                    secondFilters.Add(Builders<BsonDocument>.Filter.Gte("quotesThisWeek", request.QuotesThisWeekMin.Value));
+                }
+
+                if (request.QuotesThisWeekMax.HasValue)
+                {
+                    secondFilters.Add(Builders<BsonDocument>.Filter.Lte("quotesThisWeek", request.QuotesThisWeekMax.Value));
+                }
+
+                if (request.CreatedAtFrom.HasValue)
+                {
+                    secondFilters.Add(Builders<BsonDocument>.Filter.Gte("createdAt", request.CreatedAtFrom.Value));
+                }
+
+                if (request.CreatedAtTo.HasValue)
+                {
+                    secondFilters.Add(Builders<BsonDocument>.Filter.Lte("createdAt", request.CreatedAtTo.Value));
                 }
 
                 if (secondFilters.Count > 0)

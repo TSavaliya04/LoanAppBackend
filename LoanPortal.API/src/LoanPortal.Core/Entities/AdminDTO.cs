@@ -40,6 +40,23 @@ namespace LoanPortal.Core.Entities
         public string? FilterBy { get; set; }
     }
 
+    public class GetUsersRequest : DefaultRequest
+    {
+        public Shared.Enum.UserStatus? Status { get; set; } 
+        public DateTime? LastLoginFrom { get; set; }
+        public DateTime? LastLoginTo { get; set; }
+        public int? QuotesThisWeekMin { get; set; }
+        public int? QuotesThisWeekMax { get; set; }
+        public DateTime? CreatedAtFrom { get; set; }
+        public DateTime? CreatedAtTo { get; set; }
+    }
+
+    public class GetUsersRequestWrapper
+    {
+        public GetUsersRequest Params { get; set; }
+    }
+
+
     public class PagedAgentsDTO
     {
         public List<AgentDTO> Users { get; set; }

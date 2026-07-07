@@ -28,7 +28,7 @@ namespace LoanPortal.Core.Services
             _userService = userService;
         }
 
-        public async Task<PagedAgentsDTO> GetUsers(DefaultRequest request)
+        public async Task<PagedAgentsDTO> GetUsers(GetUsersRequest request)
         {
             try
             {

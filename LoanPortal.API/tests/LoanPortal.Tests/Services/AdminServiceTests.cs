@@ -68,7 +68,7 @@ namespace LoanPortal.Tests.Services
                 IsActive = true
             };
 
-            var request = new DefaultRequest
+            var request = new GetUsersRequest
             {
                 PageNumber = 0,
                 PageSize = 10
@@ -118,7 +118,7 @@ namespace LoanPortal.Tests.Services
                 new UserEntity { Id = Guid.NewGuid(), FirstName = "C", LastName = "Agent" }
             };
 
-            var request = new DefaultRequest
+            var request = new GetUsersRequest
             {
                 PageNumber = -1,
                 PageSize = 0
@@ -147,10 +147,10 @@ namespace LoanPortal.Tests.Services
         {
             // Arrange
             _mockUserRepository
-                .Setup(x => x.GetUsersWithFiltersAsync(It.IsAny<DefaultRequest>(), It.IsAny<UserRole>(), It.IsAny<Guid?>()))
+                .Setup(x => x.GetUsersWithFiltersAsync(It.IsAny<GetUsersRequest>(), It.IsAny<UserRole>(), It.IsAny<Guid?>()))
                 .ThrowsAsync(new Exception("DB error"));
 
-            var request = new DefaultRequest();
+            var request = new GetUsersRequest();
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<Exception>(() => _service.GetUsers(request));
@@ -469,7 +469,7 @@ namespace LoanPortal.Tests.Services
                 .ReturnsAsync(expectedUsers);
 
             _mockUserRepository
-                .Setup(x => x.GetUsersWithFiltersAsync(request, UserRole.CompanyAdmin, null))
+                .Setup(x => x.GetUsersWithFiltersAsync(It.IsAny<GetUsersRequest>(), UserRole.CompanyAdmin, null))
                 .ReturnsAsync((expectedUsers, new Dictionary<Guid, int>(), 1));
 
             _mockCompanyRepository

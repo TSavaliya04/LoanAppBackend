@@ -35,9 +35,9 @@ namespace LoanPortal.Tests.Controllers.Admin
         public async Task GetUsers_ValidRequest_ReturnsOkResult()
         {
             // Arrange
-            var request = new DefaultRequestWrapper
+            var request = new GetUsersRequestWrapper
             {
-                Params = new DefaultRequest
+                Params = new GetUsersRequest
                 {
                     PageNumber = 1,
                     PageSize = 10
@@ -69,9 +69,9 @@ namespace LoanPortal.Tests.Controllers.Admin
         [Fact]
         public async Task GetUsers_Exception_ReturnsInternalServerError()
         {
-            var request = new DefaultRequestWrapper
+            var request = new GetUsersRequestWrapper
             {
-                Params = new DefaultRequest()
+                Params = new GetUsersRequest()
             };
             var errorMessage = "Unexpected error";
 
@@ -92,9 +92,9 @@ namespace LoanPortal.Tests.Controllers.Admin
         [Fact]
         public async Task GetUsers_ServiceCalled_VerifyMethodInvocation()
         {
-            var request = new DefaultRequestWrapper
+            var request = new GetUsersRequestWrapper
             {
-                Params = new DefaultRequest()
+                Params = new GetUsersRequest()
             };
 
             _mockAdminService

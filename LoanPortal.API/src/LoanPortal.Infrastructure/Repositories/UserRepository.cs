@@ -342,7 +342,8 @@ namespace LoanPortal.Infrastructure.Repositories
                     { "lastlogin", "lastLoginDate" },
                     { "quotesthisweek", "quotesThisWeek" },
                     { "status", "isActive" },
-                    { "agentname", "agentName" }
+                    { "agentname", "agentName" },
+                    { "createdat", "createdAt" }
                 };
 
                 string sortBy = "lastLoginDate";

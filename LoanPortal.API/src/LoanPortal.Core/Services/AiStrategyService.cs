@@ -117,7 +117,7 @@ namespace LoanPortal.Core.Services
                 Score = CalculateFitScore(s, combinedMonthlyIncome, loanScenarios)
             }).ToList();
 
-            // 2. Call AI to get Insights, Suggestions, and the Recommended Scenario
+            // 2. Call AI to get the strategy summary with scenario narratives
             string goalStr = request.BorrowerGoal switch
             {
                 BorrowerGoal.LowestMonthlyPayment => "lowest_monthly_payment",
@@ -125,6 +125,8 @@ namespace LoanPortal.Core.Services
                 BorrowerGoal.HighestCashToBorrower => "highest_cash_to_borrower",
                 BorrowerGoal.FastestApproval => "fastest_approval",
                 BorrowerGoal.LowestDownPayment => "lowest_down_payment",
+                BorrowerGoal.MaximumPurchasePrice => "maximum_purchase_price",
+                BorrowerGoal.BalancedOption => "balanced_option",
                 _ => "lowest_monthly_payment"
             };
 
@@ -157,28 +159,15 @@ namespace LoanPortal.Core.Services
                 LikelihoodDelta = likelihoodDelta
             };
 
-            var insights = new List<KeyInsight>();
-            if (aiTextResponse != null && aiTextResponse.KeyInsights.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var element in aiTextResponse.KeyInsights.EnumerateArray())
-                {
-                    if (element.ValueKind == JsonValueKind.String)
-                    {
-                        insights.Add(new KeyInsight { Text = element.GetString() });
-                    }
-                    else if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty("text", out var textProp))
-                    {
-                        insights.Add(new KeyInsight { Text = textProp.GetString() });
-                    }
-                }
-            }
-
             // 4. Construct Final Summary
             return new AiStrategySummary
             {
                 RecommendedScenario = recommendedScenario,
-                KeyInsights = insights,
-                Suggestions = aiTextResponse?.AiSuggestions ?? new List<AiSuggestion>()
+                ScenarioNarratives = aiTextResponse?.ScenarioNarratives ?? new List<ScenarioNarrative>(),
+                BuyingPowerAnalysis = aiTextResponse?.BuyingPowerAnalysis ?? new AiSection { Title = "Buying Power", Description = "Analysis unavailable." },
+                CashToCloseImpact = aiTextResponse?.CashToCloseImpact ?? new AiSection { Title = "Cash to Close", Description = "Analysis unavailable." },
+                ShoppingStrategy = aiTextResponse?.ShoppingStrategy ?? new AiSection { Title = "Shopping Strategy", Description = "Analysis unavailable." },
+                FinancingStrategy = aiTextResponse?.FinancingStrategy ?? new AiSection { Title = "Financing Strategy", Description = "Analysis unavailable." }
             };
         }
 

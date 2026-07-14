@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace LoanPortal.Core.Entities
 {
@@ -34,28 +33,35 @@ namespace LoanPortal.Core.Entities
     {
         public int RecommendedScenarioNo { get; set; }
         public string RecommendationReason { get; set; }
-        public JsonElement KeyInsights { get; set; }
-        public List<AiSuggestion> AiSuggestions { get; set; }
+        public List<ScenarioNarrative> ScenarioNarratives { get; set; }
+        public AiSection BuyingPowerAnalysis { get; set; }
+        public AiSection CashToCloseImpact { get; set; }
+        public AiSection ShoppingStrategy { get; set; }
+        public AiSection FinancingStrategy { get; set; }
     }
 
-    public class KeyInsight
+    public class ScenarioNarrative
     {
-        public string Text { get; set; }
+        public int ScenarioNo { get; set; }
+        public string Label { get; set; }
+        public List<string> Highlights { get; set; }
     }
 
-    public class AiSuggestion
+    public class AiSection
     {
         public string Title { get; set; }
         public string Description { get; set; }
-        public string Impact { get; set; } // "positive" | "neutral" | "warning"
     }
 
     // Final summary object returned by the API
     public class AiStrategySummary
     {
         public RecommendedScenario RecommendedScenario { get; set; }
-        public List<KeyInsight> KeyInsights { get; set; }
-        public List<AiSuggestion> Suggestions { get; set; }
+        public List<ScenarioNarrative> ScenarioNarratives { get; set; }
+        public AiSection BuyingPowerAnalysis { get; set; }
+        public AiSection CashToCloseImpact { get; set; }
+        public AiSection ShoppingStrategy { get; set; }
+        public AiSection FinancingStrategy { get; set; }
     }
 
     public class RecommendedScenario

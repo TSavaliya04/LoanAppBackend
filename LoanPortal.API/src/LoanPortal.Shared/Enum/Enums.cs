@@ -95,6 +95,8 @@ namespace LoanPortal.Shared.Enum
         LowestCashToClose = 2,
         HighestCashToBorrower = 3,
         FastestApproval = 4,
-        LowestDownPayment = 5
+        LowestDownPayment = 5,
+        MaximumPurchasePrice = 6,
+        BalancedOption = 7
     }
 }

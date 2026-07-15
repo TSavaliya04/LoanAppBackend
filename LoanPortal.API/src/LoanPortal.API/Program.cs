@@ -136,6 +136,8 @@ builder.Services.AddSingleton<IBlobStorageHelper, BlobStorageHelper>();
 builder.Services.AddScoped<IFirebaseAuthService, FirebaseAuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddSingleton<ICompanyRepository, CompanyRepository>();
+builder.Services.AddSingleton<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IAiStrategyService, AiStrategyService>();
 
 builder.Services.AddSwaggerGen(c =>

@@ -347,7 +347,7 @@ namespace LoanPortal.Core.Services
                 endDate = startDate.AddDays(1);
             }
 
-            var quotes = await _preApprovalRepository.GetByDateRange(userId, startDate, endDate);
+            var quotes = await _preApprovalRepository.GetByDateRange(null, userId, startDate, endDate);
             
             // Group quotes by date
             var dailyQuoteCounts = quotes

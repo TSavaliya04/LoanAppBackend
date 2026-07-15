@@ -106,6 +106,20 @@ namespace LoanPortal.API.Controllers.PreApproval
             }
         }
 
+        [HttpPost("preapproval/GetContinueWorkingQuotes")]
+        public async Task<IActionResult> GetContinueWorkingQuotes([FromBody] GetContinueWorkingRequestWrapper request)
+        {
+            try
+            {
+                var result = await _preApprovalService.GetContinueWorkingQuotes(request.Params);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<List<ContinueWorkingQuoteDTO>>(500, ex.Message));
+            }
+        }
+
         [HttpGet("preapproval/CreateLoanFile")]
         public async Task<IActionResult> CreateLoanFile([FromQuery] Guid preApprovalId, Guid scenarioId)
         {

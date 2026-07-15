@@ -977,6 +977,9 @@ namespace LoanPortal.Core.Entities
         [BsonElement("updatedAt")]
         public DateTime UpdatedAt { get; set; }
 
+        [BsonElement("updatedBy")]
+        public Guid? UpdatedBy { get; set; }
+
         [BsonElement("lastSubmittedFormNo")]
         public int LastSubmittedFormNo { get; set; }
 
@@ -1007,6 +1010,8 @@ namespace LoanPortal.Core.Entities
         public DateTime? CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
+
+        public Guid? UpdatedBy { get; set; }
 
         public int? LastSubmittedFormNo { get; set; }
 

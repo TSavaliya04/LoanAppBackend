@@ -350,7 +350,6 @@ namespace LoanPortal.Tests.Services
             // Act
             var result = await _service.GetAdminDashboard(start, end);
 
-            // Assert
             Assert.Equal(3, result.TotalUser);
             Assert.Equal(2, result.ActiveUser);
             Assert.Equal(5, result.QuotesCreated);
@@ -377,7 +376,7 @@ namespace LoanPortal.Tests.Services
             };
 
             _mockPreApprovalRepository
-                .Setup(x => x.GetByDateRange(userId, start, end))
+                .Setup(x => x.GetByDateRange(null, userId, start, end))
                 .ReturnsAsync(quotes);
 
             // Act
@@ -399,6 +398,8 @@ namespace LoanPortal.Tests.Services
         }
 
         #endregion
+
+
         #region CreateAdmin
 
         [Fact]

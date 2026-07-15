@@ -199,6 +199,11 @@ namespace LoanPortal.Infrastructure.Repositories
                     filter &= Builders<UserEntity>.Filter.Eq(u => u.CompanyId, request.CompanyId.Value);
                 }
 
+                if (request.TeamId.HasValue)
+                {
+                    filter &= Builders<UserEntity>.Filter.Eq(u => u.TeamId, request.TeamId.Value);
+                }
+
                 var aggregate = _collection.Aggregate().Match(filter);
 
                 var lookupCompanies = new BsonDocument("$lookup", new BsonDocument
@@ -221,9 +226,18 @@ namespace LoanPortal.Infrastructure.Repositories
                     { "as", "quotes" }
                 });
 
+                var lookupTeams = new BsonDocument("$lookup", new BsonDocument
+                {
+                    { "from", "Teams" },
+                    { "localField", "teamId" },
+                    { "foreignField", "_id" },
+                    { "as", "teamInfo" }
+                });
+
                 var addFields = new BsonDocument("$addFields", new BsonDocument
                 {
                     { "companyName", new BsonDocument("$arrayElemAt", new BsonArray { "$companyInfo.name", 0 }) },
+                    { "teamName", new BsonDocument("$arrayElemAt", new BsonArray { "$teamInfo.name", 0 }) },
                     { "agentName", new BsonDocument("$concat", new BsonArray { "$firstName", " ", "$lastName" }) },
                     { "quotesThisWeek", new BsonDocument("$size", new BsonDocument("$filter", new BsonDocument
                         {
@@ -248,6 +262,7 @@ namespace LoanPortal.Infrastructure.Repositories
 
                 var bsonAggregate = aggregate.AppendStage<BsonDocument>(lookupCompanies)
                                      .AppendStage<BsonDocument>(lookupQuotes)
+                                     .AppendStage<BsonDocument>(lookupTeams)
                                      .AppendStage<BsonDocument>(addFields);
 
                 var secondFilters = new List<FilterDefinition<BsonDocument>>();
@@ -401,6 +416,8 @@ namespace LoanPortal.Infrastructure.Repositories
                         userDoc.Remove("companyInfo");
                         userDoc.Remove("quotes");
                         userDoc.Remove("companyName");
+                        userDoc.Remove("teamInfo");
+                        userDoc.Remove("teamName");
                         userDoc.Remove("agentName");
                         userDoc.Remove("quotesThisWeek");
                         userDoc.Remove("quotesLast7Days");
@@ -416,6 +433,76 @@ namespace LoanPortal.Infrastructure.Repositories
             catch (Exception ex)
             {
                 Console.WriteLine("Exception in UserRepository.GetUsersWithFiltersAsyncc -> " + ex.Message);
+                throw;
+            }
+        }
+        public async Task UpdateUserTeamAsync(Guid userId, Guid? teamId)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(u => u.Id, userId);
+                var update = Builders<UserEntity>.Update
+                    .Set(u => u.TeamId, teamId)
+                    .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+                await _collection.UpdateOneAsync(filter, update);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.UpdateUserTeamAsync -> " + ex.Message);
+                throw;
+            }
+        }
+
+        public async Task<(List<UserEntity> Users, int TotalCount)> GetUsersByTeamIdAsync(Guid teamId, DefaultRequest request)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(u => u.TeamId, teamId);
+
+                if (!string.IsNullOrWhiteSpace(request.SearchText))
+                {
+                    var searchRegex = new BsonRegularExpression(request.SearchText.Trim(), "i");
+                    filter &= Builders<UserEntity>.Filter.Or(
+                        Builders<UserEntity>.Filter.Regex("firstName", searchRegex),
+                        Builders<UserEntity>.Filter.Regex("lastName", searchRegex),
+                        Builders<UserEntity>.Filter.Regex("email", searchRegex)
+                    );
+                }
+
+                var totalCount = (int)await _collection.CountDocumentsAsync(filter);
+
+                var pageNumber = request.PageNumber < 1 ? 0 : request.PageNumber;
+                var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+                var users = await _collection
+                    .Find(filter)
+                    .Skip(pageNumber * pageSize)
+                    .Limit(pageSize)
+                    .ToListAsync();
+
+                return (users, totalCount);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.GetUsersByTeamIdAsync -> " + ex.Message);
+                throw;
+            }
+        }
+
+        public async Task<int> GetActiveUserCountByTeamIdAsync(Guid teamId)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.And(
+                    Builders<UserEntity>.Filter.Eq(u => u.TeamId, teamId),
+                    Builders<UserEntity>.Filter.Eq(u => u.IsActive, true)
+                );
+                return (int)await _collection.CountDocumentsAsync(filter);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.GetActiveUserCountByTeamIdAsync -> " + ex.Message);
                 throw;
             }
         }

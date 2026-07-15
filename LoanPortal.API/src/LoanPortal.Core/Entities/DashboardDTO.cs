@@ -15,5 +15,6 @@ namespace LoanPortal.Core.Entities
         public int PreApprovedThisWeek { get; set; }
         public int PreApprovedLastWeek { get; set; }
         public int PreApprovedChange { get; set; } // Difference: this week - last week
+        
     }
 }

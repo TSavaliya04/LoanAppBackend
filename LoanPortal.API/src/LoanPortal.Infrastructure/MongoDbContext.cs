@@ -30,5 +30,8 @@ namespace LoanPortal.Infrastructure
 
         public IMongoCollection<CompanyEntity> Companies =>
             _database.GetCollection<CompanyEntity>("Companies");
+
+        public IMongoCollection<TeamEntity> Teams =>
+            _database.GetCollection<TeamEntity>("Teams");
     }
 }

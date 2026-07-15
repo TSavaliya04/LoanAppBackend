@@ -12,6 +12,7 @@ namespace LoanPortal.Core.Entities
         public string Password { get; set; }
         public string? Phone { get; set; }
         public Guid? CompanyId { get; set; }
+        public Guid? TeamId { get; set; }
     }
 
     public class CreateAdminRequest : CreateUserRequest
@@ -37,6 +38,8 @@ namespace LoanPortal.Core.Entities
         public UserRole Role { get; set; }
         public Guid? CompanyId { get; set; }
         public string? CompanyName { get; set; }
+        public Guid? TeamId { get; set; }
+        public string? TeamName { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -68,6 +71,9 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("companyId")]
         public Guid? CompanyId { get; set; }
+
+        [BsonElement("teamId")]
+        public Guid? TeamId { get; set; }
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; }
@@ -110,5 +116,6 @@ namespace LoanPortal.Core.Entities
         public Guid? CompanyId { get; set; }
         public bool? IsActive { get; set; }
         public UserRole? Role { get; set; }
+        public Guid? TeamId { get; set; }
     }
 }

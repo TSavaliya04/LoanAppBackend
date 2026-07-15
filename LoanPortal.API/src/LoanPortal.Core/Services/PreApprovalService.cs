@@ -445,7 +445,6 @@ public class PreApprovalService : IPreApprovalService
             var preApprovalDocument = new PreApprovalDocument
             {
                 Id = preApproval.Id ?? Guid.NewGuid(),
-                UserId = _loginUserDetails.UserID,
                 CreatedAt = preApproval.CreatedAt ?? DateTime.UtcNow,
                 UpdatedAt = preApproval.UpdatedAt ?? DateTime.UtcNow,
                 LastSubmittedFormNo = preApproval.LastSubmittedFormNo ?? 0,
@@ -453,15 +452,27 @@ public class PreApprovalService : IPreApprovalService
                 LoanType = preApproval.LoanType,
                 Status = preApproval.Status,
                 StatusUpdatedAt = preApproval.StatusUpdatedAt,
-                Scenarios = preApproval.Scenarios
+                Scenarios = preApproval.Scenarios,
+                UpdatedBy = _loginUserDetails.UserID
             };
 
             if (preApproval.Id.HasValue && preApproval.Id != Guid.Empty)
             {
+                var existing = await _preApprovalRepository.GetByIdAsync(preApproval.Id.Value);
+                if (existing != null)
+                {
+                    preApprovalDocument.UserId = existing.UserId;
+                    preApprovalDocument.CreatedAt = existing.CreatedAt;
+                }
+                else
+                {
+                    preApprovalDocument.UserId = _loginUserDetails.UserID;
+                }
                 await _preApprovalRepository.UpdateAsync(preApprovalDocument.Id, preApprovalDocument);
             }
             else
             {
+                preApprovalDocument.UserId = _loginUserDetails.UserID;
                 await _preApprovalRepository.InsertAsync(preApprovalDocument);
             }
 
@@ -510,6 +521,10 @@ public class PreApprovalService : IPreApprovalService
         try
         {
             var userId = _loginUserDetails.UserID;
+            var user = await _userRepository.GetUserById(userId);
+            Guid? teamId = user?.TeamId;
+            Guid? queryTeamId = teamId.HasValue ? teamId : null;
+            Guid? queryUserId = teamId.HasValue ? null : userId;
             
             // Calculate weekly metrics
             var today = DateTime.UtcNow.Date;
@@ -519,19 +534,19 @@ public class PreApprovalService : IPreApprovalService
             var endOfLastWeek = startOfWeek;
 
             // Get quotes created this week (based on CreatedAt)
-            var thisWeekPreApprovals = await _preApprovalRepository.GetByDateRange(userId, startOfWeek, endOfWeek);
+            var thisWeekPreApprovals = await _preApprovalRepository.GetByDateRange(null, userId, startOfWeek, endOfWeek);
             var quotesCreatedThisWeek = thisWeekPreApprovals.Count;
 
             // Get quotes created last week (based on CreatedAt)
-            var lastWeekPreApprovals = await _preApprovalRepository.GetByDateRange(userId, startOfLastWeek, endOfLastWeek);
+            var lastWeekPreApprovals = await _preApprovalRepository.GetByDateRange(null, userId, startOfLastWeek, endOfLastWeek);
             var quotesCreatedLastWeek = lastWeekPreApprovals.Count;
 
             // Get pre-approvals that were pre-approved this week (based on PreApprovedAt)
-            var thisWeekPreApproved = await _preApprovalRepository.GetByPreApprovedDateRange(userId, startOfWeek, endOfWeek);
+            var thisWeekPreApproved = await _preApprovalRepository.GetByPreApprovedDateRange(null, userId, startOfWeek, endOfWeek);
             var preApprovedThisWeek = thisWeekPreApproved.Count;
 
             // Get pre-approvals that were pre-approved last week (based on PreApprovedAt)
-            var lastWeekPreApproved = await _preApprovalRepository.GetByPreApprovedDateRange(userId, startOfLastWeek, endOfLastWeek);
+            var lastWeekPreApproved = await _preApprovalRepository.GetByPreApprovedDateRange(null, userId, startOfLastWeek, endOfLastWeek);
             var preApprovedLastWeek = lastWeekPreApproved.Count;
 
             // Calculate changes
@@ -552,6 +567,93 @@ public class PreApprovalService : IPreApprovalService
         {
             throw;
         }
+    }
+
+    public async Task<PagedContinueWorkingQuotesDTO> GetContinueWorkingQuotes(GetContinueWorkingRequest request)
+    {
+        var userId = _loginUserDetails.UserID;
+        var user = await _userRepository.GetUserById(userId);
+        Guid? teamId = user?.TeamId;
+        Guid? queryTeamId = teamId.HasValue ? teamId : null;
+        Guid? queryUserId = teamId.HasValue ? null : userId;
+
+        var (quotes, totalCount) = await _preApprovalRepository.GetRecentQuotesAsync(queryTeamId, queryUserId, request);
+
+        // Collect all unique user IDs needed across all quotes, then batch-fetch in one DB call
+        var userIdsToFetch = new HashSet<Guid>(quotes.Select(q => q.UserId));
+        if (teamId.HasValue)
+        {
+            foreach (var q in quotes)
+                if (q.UpdatedBy.HasValue) userIdsToFetch.Add(q.UpdatedBy.Value);
+        }
+        var usersMap = (await _userRepository.GetUsersByIds(userIdsToFetch.ToList()))
+            .ToDictionary(u => u.Id, u => $"{u.FirstName} {u.LastName}".Trim());
+
+        var result = new List<ContinueWorkingQuoteDTO>();
+        foreach (var quote in quotes)
+        {
+            var latestScenario = quote.Scenarios?
+                .OrderByDescending(s => s.CreatedAt ?? DateTime.MinValue)
+                .FirstOrDefault();
+
+            string borrowerName = "";
+
+            if (quote.LoanType == 1) // Refinance
+            {
+                borrowerName = latestScenario?.Refinance?.BorrowerInfo?.BorrowerName ?? "";
+            }
+            else // Purchase
+            {
+                borrowerName = latestScenario?.Purchase?.BorrowerInfo?.BorrowerName ?? "";
+            }
+
+            var loanTypeStr = quote.LoanType == 1 ? "Refinance" : "Purchase";
+            string loanProgramStr = "";
+
+            if (quote.Scenarios != null && quote.Scenarios.Any())
+            {
+                var loanPrograms = quote.Scenarios.Select(s => 
+                {
+                    int? val = quote.LoanType == 1 
+                        ? s.Refinance?.LoanStructure?.LoanProgram 
+                        : s.Purchase?.LoanProgram?.LoanProgram;
+                    
+                    return val.HasValue && Enum.IsDefined(typeof(LoanProgram), val.Value)
+                        ? ((LoanProgram)val.Value).ToString()
+                        : string.Empty;
+                })
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToList();
+
+                loanProgramStr = string.Join(", ", loanPrograms);
+            }
+
+            usersMap.TryGetValue(quote.UserId, out var ownerName);
+
+            string updatedByName = null;
+            if (teamId.HasValue && quote.UpdatedBy.HasValue)
+                usersMap.TryGetValue(quote.UpdatedBy.Value, out updatedByName);
+
+            result.Add(new ContinueWorkingQuoteDTO
+            {
+                PreApprovalId = quote.Id,
+                BorrowerName = borrowerName,
+                LoanType = loanTypeStr,
+                LoanProgram = loanProgramStr,
+                OwnerName = ownerName ?? "",
+                UpdatedAt = quote.UpdatedAt,
+                UpdatedBy = updatedByName,
+                TotalScenarios = quote.Scenarios?.Count ?? 0
+            });
+        }
+
+        return new PagedContinueWorkingQuotesDTO
+        {
+            Items = result,
+            TotalCount = totalCount,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize
+        };
     }
 
 
@@ -613,6 +715,10 @@ public class PreApprovalService : IPreApprovalService
             borrowerPhone   = bi?.BorrowerCellNumber  ?? "";
             coBorrowerName  = bi?.CoBorrowerName      ?? "";
             coBorrowerPhone = bi?.CoBorrowerCellNumber ?? "";
+            borrowerDob     = bi?.DateOfBirth;
+            borrowerMaritalStatus = bi?.MaritalStatus;
+            borrowerSsn     = bi?.Ssn ?? "";
+            borrowerAddress = bi?.CurrentAddress ?? "";
             borrowerIncomes = new();
             foreach (var b in r.BorrowerIncomes ?? new())
                 allDebts.AddRange(b.Debts?.Select(d => new DebtBreakdownDTO

@@ -59,7 +59,8 @@ namespace LoanPortal.Core.Services
                         LastLogin = user.LastLoginDate,
                         Status = user.IsActive ? "Active" : "InActive",
                         QuotesThisWeek = count,
-                        CreatedAt = user.CreatedAt
+                        CreatedAt = user.CreatedAt,
+                        TeamId = user.TeamId
                     });
                 }
 

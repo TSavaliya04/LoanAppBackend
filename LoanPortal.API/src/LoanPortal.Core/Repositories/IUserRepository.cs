@@ -22,5 +22,14 @@ namespace LoanPortal.Core.Repositories
         Task<List<UserEntity>> GetUsersByIds(List<Guid> userIds);
         Task<List<UserEntity>> GetAll();
         Task<(List<UserEntity> Users, Dictionary<Guid, int> QuotesThisWeek, int TotalCount)> GetUsersWithFiltersAsync(GetUsersRequest request, Shared.Enum.UserRole loginRole, Guid? loginCompanyId);
+
+        /// <summary>Targeted update that sets only the teamId field for a user (null = remove from team).</summary>
+        Task UpdateUserTeamAsync(Guid userId, Guid? teamId);
+
+        /// <summary>Returns all users assigned to a specific team, with pagination.</summary>
+        Task<(List<UserEntity> Users, int TotalCount)> GetUsersByTeamIdAsync(Guid teamId, DefaultRequest request);
+
+        /// <summary>Returns count of active users in a given team (used for delete-guard).</summary>
+        Task<int> GetActiveUserCountByTeamIdAsync(Guid teamId);
     }
 }

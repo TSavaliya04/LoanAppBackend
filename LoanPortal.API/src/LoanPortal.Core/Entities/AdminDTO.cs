@@ -22,6 +22,8 @@ namespace LoanPortal.Core.Entities
         public int QuotesThisWeek { get; set; }
         public string Status { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public Guid? TeamId { get; set; }
+        public string? TeamName { get; set; }
     }
 
     public class DefaultRequestWrapper
@@ -49,6 +51,7 @@ namespace LoanPortal.Core.Entities
         public int? QuotesThisWeekMax { get; set; }
         public DateTime? CreatedAtFrom { get; set; }
         public DateTime? CreatedAtTo { get; set; }
+        public Guid? TeamId { get; set; }
     }
 
     public class GetUsersRequestWrapper
@@ -77,6 +80,8 @@ namespace LoanPortal.Core.Entities
         public Guid? CompanyId { get; set; }
         public string? CompanyName { get; set; }
         public Shared.Enum.UserRole Role { get; set; }
+        public Guid? TeamId { get; set; }
+        public string? TeamName { get; set; }
     }
 
     public class PagedUserDTO

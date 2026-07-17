@@ -612,10 +612,13 @@ namespace LoanPortal.Tests.Services
         {
             var userId = Guid.NewGuid();
             _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
-            _mockPreApprovalRepository.Setup(x => x.GetByDateRange(userId, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            _mockPreApprovalRepository.Setup(x => x.GetByDateRange(It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<PreApprovalDocument>());
-            _mockPreApprovalRepository.Setup(x => x.GetByPreApprovedDateRange(userId, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            _mockPreApprovalRepository.Setup(x => x.GetByPreApprovedDateRange(It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(new List<PreApprovalDocument>());
+
+            _mockUserRepository.Setup(x => x.GetUserById(userId))
+                .ReturnsAsync(new UserEntity { Id = userId });
 
             var result = await _service.GetDashboardData();
 

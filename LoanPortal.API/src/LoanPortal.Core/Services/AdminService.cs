@@ -59,7 +59,8 @@ namespace LoanPortal.Core.Services
                         LastLogin = user.LastLoginDate,
                         Status = user.IsActive ? "Active" : "InActive",
                         QuotesThisWeek = count,
-                        CreatedAt = user.CreatedAt
+                        CreatedAt = user.CreatedAt,
+                        TeamId = user.TeamId
                     });
                 }
 
@@ -347,7 +348,7 @@ namespace LoanPortal.Core.Services
                 endDate = startDate.AddDays(1);
             }
 
-            var quotes = await _preApprovalRepository.GetByDateRange(userId, startDate, endDate);
+            var quotes = await _preApprovalRepository.GetByDateRange(null, userId, startDate, endDate);
             
             // Group quotes by date
             var dailyQuoteCounts = quotes

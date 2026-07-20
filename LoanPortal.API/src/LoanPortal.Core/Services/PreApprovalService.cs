@@ -664,6 +664,14 @@ public class PreApprovalService : IPreApprovalService
         var scenario = preApproval.Scenarios?.FirstOrDefault(s => s.Id == scenarioId)
             ?? throw new NotFoundException($"Scenario with ID {scenarioId} not found on this PreApproval.");
 
+        // Stamp the first-ever MISMO download on this scenario.
+        // Re-downloads are intentionally skipped to keep counts unique per scenario.
+        if (scenario.MismoDownloadedAt == null)
+        {
+            scenario.MismoDownloadedAt = DateTime.UtcNow;
+            await _preApprovalRepository.UpdateAsync(preApproval.Id, preApproval);
+        }
+
         bool isPurchase = preApproval.LoanType == (int)LoanType.Purchase;
 
         int     loanProgramInt; decimal baseLoanAmount, interestRate, backEndRatio, frontEndRatio;

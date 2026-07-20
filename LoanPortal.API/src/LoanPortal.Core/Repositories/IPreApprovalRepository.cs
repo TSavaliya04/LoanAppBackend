@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LoanPortal.Core.Entities;
+using MongoDB.Bson;
 
 namespace LoanPortal.Core.Repositories
 {
@@ -22,5 +23,6 @@ namespace LoanPortal.Core.Repositories
         Task<List<PreApprovalDocument>> GetByDateRangeAdmin(DateTime startDate, DateTime endDate);
         Task<List<PreApprovalDocument>> GetByStatusChangeDateRange(DateTime startDate, DateTime endDate);
         Task<(List<PreApprovalDocument> Items, int TotalCount)> GetRecentQuotesAsync(Guid? teamId, Guid? userId, GetContinueWorkingRequest request);
+        Task<List<BsonDocument>> GetClosedEscrowAggregated(DateTime startDate, DateTime endDate, HashSet<Guid>? companyUserIds = null);
     }
 }

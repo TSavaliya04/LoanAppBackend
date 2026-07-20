@@ -14,5 +14,6 @@ namespace LoanPortal.Core.Interfaces
         Task<CompanyDTO> GetCompanyById(Guid id);
         Task<CompanyDTO> UpdateCompany(UpdateCompanyRequest request);
         Task<PagedUserDTO> GetCompanyAdmins(DefaultRequest request);
+        Task<CompanyLeaderboardDTO> GetCompanyLeaderboard(DateTime startDate, DateTime endDate, Guid? companyId = null);
     }
 }

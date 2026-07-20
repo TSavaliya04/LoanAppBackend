@@ -339,5 +339,98 @@ namespace LoanPortal.Infrastructure.Repositories
             }
         }
 
+        public async Task<List<BsonDocument>> GetClosedEscrowAggregated(
+            DateTime startDate, DateTime endDate, HashSet<Guid>? companyUserIds = null)
+        {
+            try
+            {
+                var pipeline = new List<BsonDocument>();
+
+                // Stage 1: Match ClosedEscrow documents in the date range
+                var matchDoc = new BsonDocument
+                {
+                    { "status", (int)ApplicationStatus.ClosedEscrow },
+                    { "statusUpdatedAt", new BsonDocument
+                        {
+                            { "$gte", startDate },
+                            { "$lt",  endDate }
+                        }
+                    }
+                };
+
+                // Optionally scope to a specific set of user IDs (company scope)
+                if (companyUserIds != null && companyUserIds.Count > 0)
+                {
+                    var userIdArray = new BsonArray(
+                        companyUserIds.Select(id => new BsonBinaryData(id, GuidRepresentation.Standard))
+                    );
+                    matchDoc.Add("userId", new BsonDocument("$in", userIdArray));
+                }
+
+                pipeline.Add(new BsonDocument("$match", matchDoc));
+
+                // Stage 2: Extract the latest scenario from the sorted scenarios array
+                pipeline.Add(new BsonDocument("$addFields", new BsonDocument
+                {
+                    {
+                        // "firstScenario" = the earliest created scenario (scenarioOrder 1)
+                        "firstScenario", new BsonDocument("$arrayElemAt", new BsonArray
+                        {
+                            new BsonDocument("$sortArray", new BsonDocument
+                            {
+                                { "input",  "$scenarios" },
+                                { "sortBy", new BsonDocument("createdAt", 1) }  // ascending = first scenario
+                            }),
+                            0
+                        })
+                    }
+                }));
+
+                // Stage 3: Extract loanAmount from Purchase or Refinance based on loanType
+                //          Also count MISMO-downloaded scenarios (mismoDownloadedAt != null)
+                pipeline.Add(new BsonDocument("$addFields", new BsonDocument
+                {
+                    {
+                        "loanAmountExtracted", new BsonDocument("$cond", new BsonArray
+                        {
+                            new BsonDocument("$eq", new BsonArray { "$loanType", 1 }),
+                            "$firstScenario.refinance.refinanceInfo.loanAmount",   // Refinance path
+                            "$firstScenario.purchase.purchaseInfo.loanAmount"      // Purchase path
+                        })
+                    },
+                    {
+                        "mismoCountPerDoc", new BsonDocument("$size", new BsonDocument("$filter", new BsonDocument
+                        {
+                            { "input", new BsonDocument("$ifNull", new BsonArray { "$scenarios", new BsonArray() }) },
+                            { "as",    "s" },
+                            { "cond",  new BsonDocument("$ne", new BsonArray { "$$s.mismoDownloadedAt", BsonNull.Value }) }
+                        }))
+                    }
+                }));
+
+                // Stage 4: Group by userId — aggregate totals, count, MISMO count, and collect daily date+amount pairs
+                pipeline.Add(new BsonDocument("$group", new BsonDocument
+                {
+                    { "_id",             "$userId" },
+                    { "totalLoanAmount", new BsonDocument("$sum", "$loanAmountExtracted") },
+                    { "loanCount",       new BsonDocument("$sum", 1) },
+                    { "mismoCount",      new BsonDocument("$sum", "$mismoCountPerDoc") },
+                    {
+                        "dailyAmounts",  new BsonDocument("$push", new BsonDocument
+                        {
+                            { "date",   "$statusUpdatedAt" },
+                            { "amount", "$loanAmountExtracted" }
+                        })
+                    }
+                }));
+
+                return await _collection.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in PreApprovalRepository.GetClosedEscrowAggregated: {ex.Message}");
+                throw;
+            }
+        }
     }
 }

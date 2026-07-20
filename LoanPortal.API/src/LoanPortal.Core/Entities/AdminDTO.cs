@@ -130,4 +130,50 @@ namespace LoanPortal.Core.Entities
         public int TotalQuotes { get; set; }
         public List<DailyQuoteCountDTO> DailyQuoteCounts { get; set; }
     }
+
+    // ─── Leaderboard DTOs ────────────────────────────────────────────────────
+
+    public class LoanOfficerRankDTO
+    {
+        public Guid UserId { get; set; }
+        public string FullName { get; set; }
+        public decimal LoanAmountFunded { get; set; }      // ClosedEscrow total for the period
+        public decimal PercentOfOfficeTotal { get; set; }  // % share of office total
+        public int LoansFunded { get; set; }               // count of ClosedEscrow loans
+        public int Rank { get; set; }
+    }
+
+    public class DailyFundedAmountDTO
+    {
+        public DateTime Date { get; set; }
+        public decimal DailyAmount { get; set; }           // that single day's funded total
+        public decimal CumulativeAmount { get; set; }      // running total up to this day (for area chart)
+    }
+
+    public class CompanyLeaderboardDTO
+    {
+        // Summary stats
+        public decimal TotalLoanAmountFunded { get; set; }
+        public decimal MonthlyGoal { get; set; }
+        public decimal GoalProgressPercent { get; set; }
+        public decimal ProjectedMonthEndAmount { get; set; }
+        public decimal AmountToGo { get; set; }
+
+        // Daily trend data for chart (one entry per calendar day in the range)
+        public List<DailyFundedAmountDTO> DailyTrend { get; set; }
+
+        // MISMO files count (unique per scenario, ClosedEscrow only)
+        public int MismoFilesGenerated { get; set; }
+
+        // Average loan amount across closed loans
+        public decimal AverageLoanAmount { get; set; }
+
+        // Leaderboard table — sorted by LoanAmountFunded descending
+        public List<LoanOfficerRankDTO> TopLoanOfficers { get; set; }
+
+        // Period metadata
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public DateTime DataAsOf { get; set; }
+    }
 }

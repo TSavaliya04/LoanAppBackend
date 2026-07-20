@@ -242,5 +242,25 @@ namespace LoanPortal.API.Controllers.Admin
                 return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
             }
         }
+
+        [HttpGet("admin/leaderboard")]
+        public async Task<IActionResult> GetCompanyLeaderboard(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] Guid? companyId = null)
+        {
+            try
+            {
+                if (endDate < startDate)
+                    return BadRequest(ErrorResponse<CompanyLeaderboardDTO>(400, "End date must be after start date."));
+
+                var result = await _adminService.GetCompanyLeaderboard(startDate, endDate, companyId);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyLeaderboardDTO>(500, ex.Message));
+            }
+        }
     }
 }

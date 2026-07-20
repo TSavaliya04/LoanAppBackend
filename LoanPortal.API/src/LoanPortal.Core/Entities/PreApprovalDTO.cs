@@ -960,6 +960,9 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("refinance")]
         public RefinanceScenarioDTO? Refinance { get; set; }
+
+        [BsonElement("mismoDownloadedAt")]
+        public DateTime? MismoDownloadedAt { get; set; }  // null = never downloaded; set on first download only
     }
 
     [BsonIgnoreExtraElements]

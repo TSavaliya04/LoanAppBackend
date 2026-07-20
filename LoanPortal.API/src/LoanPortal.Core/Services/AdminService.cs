@@ -5,6 +5,7 @@ using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
 using LoanPortal.Shared.Constants;
 using LoanPortal.Shared.Enum;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -546,6 +547,7 @@ namespace LoanPortal.Core.Services
             companyEntity.ContactEmail = request.ContactEmail ?? companyEntity.ContactEmail;
             companyEntity.ContactPhone = request.ContactPhone ?? companyEntity.ContactPhone;
             companyEntity.IsActive = request.IsActive ?? companyEntity.IsActive;
+            companyEntity.MonthlyGoal = request.MonthlyGoal ?? companyEntity.MonthlyGoal;
 
             companyEntity.UpdatedAt = DateTime.UtcNow;
 
@@ -559,8 +561,157 @@ namespace LoanPortal.Core.Services
                 ContactEmail = companyEntity.ContactEmail,
                 ContactPhone = companyEntity.ContactPhone,
                 IsActive = companyEntity.IsActive,
-                CreatedAt = companyEntity.CreatedAt
+                CreatedAt = companyEntity.CreatedAt,
+                MonthlyGoal = companyEntity.MonthlyGoal
             };
+        }
+
+        public async Task<CompanyLeaderboardDTO> GetCompanyLeaderboard(
+            DateTime startDate, DateTime endDate, Guid? companyId = null)
+        {
+            try
+            {
+                // 1. Resolve company scope
+                Guid? resolvedCompanyId = _loginUserDetails.Role == UserRole.CompanyAdmin
+                    ? _loginUserDetails.CompanyId
+                    : companyId;
+
+                // 2. Fetch MonthlyGoal from company record
+                decimal monthlyGoal = 0;
+                if (resolvedCompanyId.HasValue)
+                {
+                    var company = await _companyRepository.GetCompanyByIdAsync(resolvedCompanyId.Value);
+                    monthlyGoal = company?.MonthlyGoal ?? 0;
+                }
+
+                // 3. Get all loan officer IDs for this company
+                var allUsers = await _userRepository.GetAll();
+                var companyUsers = allUsers
+                    .Where(u =>
+                        u.Role == UserRole.User &&
+                        (!resolvedCompanyId.HasValue || u.CompanyId == resolvedCompanyId))
+                    .ToList();
+
+                var companyUserIds = companyUsers
+                    .Select(u => u.Id)
+                    .ToHashSet();
+
+                var userNameMap = companyUsers.ToDictionary(
+                    u => u.Id,
+                    u => $"{u.FirstName} {u.LastName}".Trim());
+
+                // 4. Query MongoDB — one aggregation pipeline call
+                var aggregated = await _preApprovalRepository.GetClosedEscrowAggregated(
+                    startDate, endDate, companyUserIds.Count > 0 ? companyUserIds : null);
+
+                // 5. Parse results and build per-user data
+                decimal totalFunded = 0;
+                int totalLoans = 0;
+                int totalMismo = 0;
+                var allDailyRaw = new List<(DateTime Date, decimal Amount)>();
+                var officerData = new List<LoanOfficerRankDTO>();
+
+                foreach (var doc in aggregated)
+                {
+                    var userId = doc["_id"].AsGuid;
+                    var userTotal = doc["totalLoanAmount"].ToDecimal();
+                    var loanCount = doc["loanCount"].AsInt32;
+                    var mismoCount = doc["mismoCount"].AsInt32;
+
+                    totalFunded += userTotal;
+                    totalLoans  += loanCount;
+                    totalMismo  += mismoCount;
+
+                    // Collect daily amounts for trend chart
+                    if (doc.Contains("dailyAmounts") && doc["dailyAmounts"].IsBsonArray)
+                    {
+                        foreach (BsonDocument entry in doc["dailyAmounts"].AsBsonArray)
+                        {
+                            if (entry.Contains("date") && entry.Contains("amount"))
+                            {
+                                allDailyRaw.Add((
+                                    entry["date"].ToUniversalTime(),
+                                    entry["amount"].ToDecimal()
+                                ));
+                            }
+                        }
+                    }
+
+                    userNameMap.TryGetValue(userId, out var fullName);
+                    officerData.Add(new LoanOfficerRankDTO
+                    {
+                        UserId           = userId,
+                        FullName         = fullName ?? "Unknown",
+                        LoanAmountFunded = userTotal,
+                        LoansFunded      = loanCount
+                    });
+                }
+
+                // 6. Rank officers and compute % of office total
+                var ranked = officerData
+                    .OrderByDescending(o => o.LoanAmountFunded)
+                    .Select((o, i) =>
+                    {
+                        o.Rank = i + 1;
+                        o.PercentOfOfficeTotal = totalFunded > 0
+                            ? Math.Round((o.LoanAmountFunded / totalFunded) * 100, 1)
+                            : 0;
+                        return o;
+                    })
+                    .ToList();
+
+                // 7. Build daily trend — one entry per calendar day in range, with cumulative total
+                var byDay = allDailyRaw
+                    .GroupBy(x => x.Date.Date)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount));
+
+                decimal runningTotal = 0;
+                var dailyTrend = new List<DailyFundedAmountDTO>();
+
+                for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+                {
+                    var daily = byDay.TryGetValue(date, out var amt) ? amt : 0m;
+                    runningTotal += daily;
+                    dailyTrend.Add(new DailyFundedAmountDTO
+                    {
+                        Date             = date,
+                        DailyAmount      = daily,
+                        CumulativeAmount = runningTotal
+                    });
+                }
+
+                // 8. Compute projection: pace × total days in period
+                var today = DateTime.UtcNow.Date;
+                var elapsedDays = Math.Max(1, (today - startDate.Date).Days + 1);
+                var totalDays   = Math.Max(1, (endDate.Date - startDate.Date).Days + 1);
+                var projected   = totalFunded / elapsedDays * totalDays;
+
+                // 9. Goal calculations
+                var progressPct = monthlyGoal > 0
+                    ? Math.Round((totalFunded / monthlyGoal) * 100, 1)
+                    : 0;
+                var amountToGo  = Math.Max(0, monthlyGoal - totalFunded);
+
+                return new CompanyLeaderboardDTO
+                {
+                    TotalLoanAmountFunded  = totalFunded,
+                    MonthlyGoal            = monthlyGoal,
+                    GoalProgressPercent    = progressPct,
+                    ProjectedMonthEndAmount = Math.Round(projected, 2),
+                    AmountToGo             = amountToGo,
+                    DailyTrend             = dailyTrend,
+                    MismoFilesGenerated    = totalMismo,
+                    AverageLoanAmount      = totalLoans > 0 ? Math.Round(totalFunded / totalLoans, 2) : 0,
+                    TopLoanOfficers        = ranked,
+                    StartDate              = startDate.Date,
+                    EndDate                = endDate.Date,
+                    DataAsOf               = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred while retrieving the company leaderboard.", ex);
+            }
         }
     }
 }

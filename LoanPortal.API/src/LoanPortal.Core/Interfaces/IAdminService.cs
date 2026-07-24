@@ -15,5 +15,6 @@ namespace LoanPortal.Core.Interfaces
         Task<CompanyDTO> UpdateCompany(UpdateCompanyRequest request);
         Task<PagedUserDTO> GetCompanyAdmins(DefaultRequest request);
         Task<CompanyLeaderboardDTO> GetCompanyLeaderboard(DateTime startDate, DateTime endDate, Guid? companyId = null);
+        Task<CompanyDTO> SetMonthlyGoal(decimal monthlyGoal);
     }
 }

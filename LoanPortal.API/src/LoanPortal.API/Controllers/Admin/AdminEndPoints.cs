@@ -262,5 +262,29 @@ namespace LoanPortal.API.Controllers.Admin
                 return StatusCode(500, ErrorResponse<CompanyLeaderboardDTO>(500, ex.Message));
             }
         }
+
+        [HttpPut("admin/SetCompanyMonthlyGoal")]
+        public async Task<IActionResult> SetCompanyMonthlyGoal([FromQuery] decimal monthlyGoal)
+        {
+            try
+            {
+                if (monthlyGoal < 0)
+                    return BadRequest(ErrorResponse<CompanyDTO>(400, "Monthly goal must be a non-negative value."));
+
+                var result = await _adminService.SetMonthlyGoal(monthlyGoal);
+                if (result == null)
+                    return NotFound(ErrorResponse<CompanyDTO>(404, "Company not found."));
+
+                return Ok(SuccessResponse(result));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ErrorResponse<CompanyDTO>(403, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
+            }
+        }
     }
 }

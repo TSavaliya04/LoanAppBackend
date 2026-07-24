@@ -566,6 +566,45 @@ namespace LoanPortal.Core.Services
             };
         }
 
+        public async Task<CompanyDTO> SetMonthlyGoal(decimal monthlyGoal)
+        {
+            if (!_loginUserDetails.CompanyId.HasValue)
+            {
+                throw new UnauthorizedAccessException("No company is associated with your account.");
+            }
+
+            if (monthlyGoal < 0)
+            {
+                throw new ArgumentException("Monthly goal must be a non-negative value.");
+            }
+
+            var companyId = _loginUserDetails.CompanyId.Value;
+
+            var companyEntity = await _companyRepository.GetCompanyByIdAsync(companyId);
+            if (companyEntity == null)
+            {
+                return null;
+            }
+
+            companyEntity.MonthlyGoal = monthlyGoal;
+            companyEntity.UpdatedAt = DateTime.UtcNow;
+
+            await _companyRepository.UpdateCompanyAsync(companyId, companyEntity);
+
+            return new CompanyDTO
+            {
+                Id = companyEntity.Id,
+                Name = companyEntity.Name,
+                Address = companyEntity.Address,
+                ContactEmail = companyEntity.ContactEmail,
+                ContactPhone = companyEntity.ContactPhone,
+                IsActive = companyEntity.IsActive,
+                CreatedAt = companyEntity.CreatedAt,
+                MonthlyGoal = companyEntity.MonthlyGoal
+            };
+        }
+
+
         public async Task<CompanyLeaderboardDTO> GetCompanyLeaderboard(
             DateTime startDate, DateTime endDate, Guid? companyId = null)
         {

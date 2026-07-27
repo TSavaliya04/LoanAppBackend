@@ -330,6 +330,14 @@ namespace LoanPortal.Core.Services
                 allUsers = allUsers.Where(u => filteredUserIds.Contains(u.Id)).ToList();
             }
 
+            // Resolve monthly goal for CompanyAdmin
+            decimal? monthlyGoal = null;
+            if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin && _loginUserDetails.CompanyId.HasValue)
+            {
+                var company = await _companyRepository.GetCompanyByIdAsync(_loginUserDetails.CompanyId.Value);
+                monthlyGoal = company?.MonthlyGoal;
+            }
+
             return new AdminDashboardDTO
             {
                 TotalUser = allUsers.Count,
@@ -338,6 +346,7 @@ namespace LoanPortal.Core.Services
                 QuotesCreated = quotes.Count(),
                 PreApprovals = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.PreApproved).Count(),
                 FilesInEscrow = quotesStatus.Where(q => q.Status == (int)ApplicationStatus.InEscrow).Count(),
+                MonthlyGoal = monthlyGoal,
             };
         }
 

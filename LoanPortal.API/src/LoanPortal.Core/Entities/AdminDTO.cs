@@ -8,6 +8,7 @@ namespace LoanPortal.Core.Entities
         public int QuotesCreated { get; set; }
         public int PreApprovals { get; set; }
         public int FilesInEscrow { get; set; }
+        public decimal? MonthlyGoal { get; set; }
     }
 
     public class AgentDTO

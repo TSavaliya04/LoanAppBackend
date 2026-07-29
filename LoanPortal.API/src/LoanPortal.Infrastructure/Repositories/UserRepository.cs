@@ -373,7 +373,7 @@ namespace LoanPortal.Infrastructure.Repositories
                     request.SortByDirection = "desc";
                 }
 
-                int sortDir = string.Equals(request.SortByDirection, "desc", StringComparison.OrdinalIgnoreCase) ? -1 : 1;
+                int sortDir = string.Equals(request.SortByDirection, "asc", StringComparison.OrdinalIgnoreCase) ? 1 : -1;
                 var sortDef = sortDir == 1 ? Builders<BsonDocument>.Sort.Ascending(sortBy) : Builders<BsonDocument>.Sort.Descending(sortBy);
 
                 if (!string.IsNullOrWhiteSpace(request.FilterBy) && request.FilterBy.ToLower() == "recentlyactive" && string.IsNullOrWhiteSpace(request.SortBy))

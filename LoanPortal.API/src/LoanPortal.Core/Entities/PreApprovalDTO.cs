@@ -218,6 +218,12 @@ namespace LoanPortal.Core.Entities
         [BsonElement("mi")]
         public decimal? MI { get; set; }
 
+        [BsonElement("lienPosition")]
+        public int? LienPosition { get; set; }
+
+        [BsonElement("currentUnpaidBalance")]
+        public decimal? CurrentUnpaidBalance { get; set; }
+
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
 
@@ -960,9 +966,6 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("refinance")]
         public RefinanceScenarioDTO? Refinance { get; set; }
-
-        [BsonElement("mismoDownloadedAt")]
-        public DateTime? MismoDownloadedAt { get; set; }  // null = never downloaded; set on first download only
     }
 
     [BsonIgnoreExtraElements]

@@ -12,6 +12,7 @@ namespace LoanPortal.Core.Entities
         public string? ContactPhone { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public decimal? MonthlyGoal { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -40,6 +41,9 @@ namespace LoanPortal.Core.Entities
         
         [BsonElement("updatedAt")]
         public DateTime? UpdatedAt { get; set; }
+
+        [BsonElement("monthlyGoal")]
+        public decimal? MonthlyGoal { get; set; }
     }
 
     public class CreateCompanyRequest
@@ -66,5 +70,6 @@ namespace LoanPortal.Core.Entities
         public string? ContactEmail { get; set; }
         public string? ContactPhone { get; set; }
         public bool? IsActive { get; set; }
+        public decimal? MonthlyGoal { get; set; }
     }
 }

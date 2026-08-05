@@ -242,5 +242,49 @@ namespace LoanPortal.API.Controllers.Admin
                 return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
             }
         }
+
+        [HttpGet("admin/leaderboard")]
+        public async Task<IActionResult> GetCompanyLeaderboard(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] Guid? companyId = null)
+        {
+            try
+            {
+                if (endDate < startDate)
+                    return BadRequest(ErrorResponse<CompanyLeaderboardDTO>(400, "End date must be after start date."));
+
+                var result = await _adminService.GetCompanyLeaderboard(startDate, endDate, companyId);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyLeaderboardDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpPut("admin/SetCompanyMonthlyGoal")]
+        public async Task<IActionResult> SetCompanyMonthlyGoal([FromQuery] decimal monthlyGoal)
+        {
+            try
+            {
+                if (monthlyGoal < 0)
+                    return BadRequest(ErrorResponse<CompanyDTO>(400, "Monthly goal must be a non-negative value."));
+
+                var result = await _adminService.SetMonthlyGoal(monthlyGoal);
+                if (result == null)
+                    return NotFound(ErrorResponse<CompanyDTO>(404, "Company not found."));
+
+                return Ok(SuccessResponse(result));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ErrorResponse<CompanyDTO>(403, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<CompanyDTO>(500, ex.Message));
+            }
+        }
     }
 }

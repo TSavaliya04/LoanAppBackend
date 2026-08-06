@@ -375,16 +375,23 @@ namespace LoanPortal.Infrastructure.Repositories
                     { "email", "email" },
                     { "company", "companyName" },
                     { "lastlogin", "lastLoginDate" },
+                    { "lastactivity", "lastActivityDate" },
+                    { "lastquotecreatedat", "lastQuoteCreatedAt" },
                     { "quotesthisweek", "quotesThisWeek" },
                     { "status", "isActive" },
                     { "agentname", "agentName" },
                     { "createdat", "createdAt" }
                 };
 
-                string sortBy = "lastLoginDate";
+                string sortBy = "lastActivityDate";
                 if (!string.IsNullOrWhiteSpace(request.SortBy) && sortFieldMap.ContainsKey(request.SortBy))
                 {
                     sortBy = sortFieldMap[request.SortBy];
+                }
+                else
+                {
+                    // Default sort: lastActivityDate desc (most recently active users first)
+                    request.SortByDirection = "desc";
                 }
 
                 if (!string.IsNullOrWhiteSpace(request.FilterBy) && request.FilterBy.ToLower() == "topproducers" && string.IsNullOrWhiteSpace(request.SortBy))

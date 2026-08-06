@@ -289,6 +289,12 @@ namespace LoanPortal.Core.Services
                 // Update the user document
                 await _userRepository.UpdateUserProfileAsync(targetUserId, updateEntity);
 
+                // Track last activity for normal users updating their own profile
+                if (_loginUserDetails.Role == Shared.Enum.UserRole.User && targetUserId == currentUserId)
+                {
+                    await _userRepository.UpdateUserLastActivityAsync(targetUserId, DateTime.UtcNow);
+                }
+
                 // Update Firebase user if phone or display name changed
                 bool shouldUpdateFirebase = false;
                 var firebaseUpdateArgs = new UserRecordArgs
@@ -407,6 +413,7 @@ namespace LoanPortal.Core.Services
 
                 // Track login activity
                 await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);
+                await _userRepository.UpdateUserLastActivityAsync(user.Id, DateTime.UtcNow);
 
                 await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
                 return UserHelper.MaptoUserDTO(user);
@@ -488,7 +495,14 @@ namespace LoanPortal.Core.Services
                     throw new ValidationException($"User with email {email} is not exists.");
                 }
                 string link = await _firebaseAuthService.GeneratePasswordResetLinkAsync(email);
-                _userHelper.ResetPassword(email,link);
+                _userHelper.ResetPassword(email, link);
+
+                // Track last activity for normal users
+                if (user.Role == Shared.Enum.UserRole.User)
+                {
+                    await _userRepository.UpdateUserLastActivityAsync(user.Id, DateTime.UtcNow);
+                }
+
                 return true;
             }
             catch (Exception ex)

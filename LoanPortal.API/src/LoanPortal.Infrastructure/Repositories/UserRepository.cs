@@ -151,6 +151,24 @@ namespace LoanPortal.Infrastructure.Repositories
             }
         }
 
+        public async Task UpdateUserLastActivityAsync(Guid userId, DateTime activityTime)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(u => u.Id, userId);
+                var update = Builders<UserEntity>.Update
+                    .Set(u => u.LastActivityDate, activityTime);
+
+                await _collection.UpdateOneAsync(filter, update);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.UpdateUserLastActivityAsync -> " + ex.Message);
+                throw;
+            }
+        }
+
+
         public async Task<List<UserEntity>> GetUsersByIds(List<Guid> userIds)
         {
             try
@@ -178,7 +196,8 @@ namespace LoanPortal.Infrastructure.Repositories
             }
         }
 
-        public async Task<(List<UserEntity> Users, Dictionary<Guid, int> QuotesThisWeek, int TotalCount)> GetUsersWithFiltersAsync(GetUsersRequest request, Shared.Enum.UserRole loginRole, Guid? loginCompanyId)
+        public async Task<(List<UserEntity> Users, Dictionary<Guid, int> QuotesThisWeek, Dictionary<Guid, DateTime?> LastQuoteCreatedAt, int TotalCount)> GetUsersWithFiltersAsync(GetUsersRequest request, Shared.Enum.UserRole loginRole, Guid? loginCompanyId)
+
         {
             try
             {
@@ -257,7 +276,8 @@ namespace LoanPortal.Infrastructure.Repositories
                             { "as", "q" },
                             { "cond", new BsonDocument("$gte", new BsonArray { "$$q.createdAt", sevenDaysAgo }) }
                         }))
-                    }
+                    },
+                    { "lastQuoteCreatedAt", new BsonDocument("$max", "$quotes.createdAt") }
                 });
 
                 var bsonAggregate = aggregate.AppendStage<BsonDocument>(lookupCompanies)
@@ -397,6 +417,7 @@ namespace LoanPortal.Infrastructure.Repositories
                 int totalCount = 0;
                 var usersList = new List<UserEntity>();
                 var quotesDict = new Dictionary<Guid, int>();
+                var lastQuoteDict = new Dictionary<Guid, DateTime?>();
 
                 if (result != null)
                 {
@@ -412,7 +433,13 @@ namespace LoanPortal.Infrastructure.Repositories
                         var userDoc = doc.AsBsonDocument;
                         var userId = userDoc["_id"].AsGuid;
                         var quotesThisWeek = userDoc["quotesThisWeek"].AsInt32;
-                        
+
+                        DateTime? lastQuoteCreatedAt = null;
+                        if (userDoc.Contains("lastQuoteCreatedAt") && !userDoc["lastQuoteCreatedAt"].IsBsonNull)
+                        {
+                            lastQuoteCreatedAt = userDoc["lastQuoteCreatedAt"].ToUniversalTime();
+                        }
+
                         userDoc.Remove("companyInfo");
                         userDoc.Remove("quotes");
                         userDoc.Remove("companyName");
@@ -421,14 +448,16 @@ namespace LoanPortal.Infrastructure.Repositories
                         userDoc.Remove("agentName");
                         userDoc.Remove("quotesThisWeek");
                         userDoc.Remove("quotesLast7Days");
+                        userDoc.Remove("lastQuoteCreatedAt");
 
                         var userEntity = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<UserEntity>(userDoc);
                         usersList.Add(userEntity);
                         quotesDict[userId] = quotesThisWeek;
+                        lastQuoteDict[userId] = lastQuoteCreatedAt;
                     }
                 }
 
-                return (usersList, quotesDict, totalCount);
+                return (usersList, quotesDict, lastQuoteDict, totalCount);
             }
             catch (Exception ex)
             {

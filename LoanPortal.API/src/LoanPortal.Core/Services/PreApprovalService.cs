@@ -433,6 +433,8 @@ public class PreApprovalService : IPreApprovalService
             clonedPreApproval.Id = Guid.NewGuid();
             clonedPreApproval.CreatedAt = DateTime.UtcNow;
             await _preApprovalRepository.InsertAsync(clonedPreApproval);
+
+            await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);
         }
         catch (Exception ex) { 
         }
@@ -476,7 +478,11 @@ public class PreApprovalService : IPreApprovalService
                 await _preApprovalRepository.InsertAsync(preApprovalDocument);
             }
 
+            // Track last activity
+            await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);
+
             return await _preApprovalRepository.GetByIdAsync(preApprovalDocument.Id);
+
         }
         catch (Exception e) 
         {
@@ -508,6 +514,10 @@ public class PreApprovalService : IPreApprovalService
             preApprovalDoc.StatusUpdatedAt = DateTime.Now;
 
             await _preApprovalRepository.UpdateAsync(id, preApprovalDoc);
+
+            // Track last activity
+            await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);
+
             return preApprovalDoc;
         }
         catch(Exception e)

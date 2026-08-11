@@ -218,6 +218,12 @@ namespace LoanPortal.Core.Entities
         [BsonElement("mi")]
         public decimal? MI { get; set; }
 
+        [BsonElement("lienPosition")]
+        public int? LienPosition { get; set; }
+
+        [BsonElement("currentUnpaidBalance")]
+        public decimal? CurrentUnpaidBalance { get; set; }
+                
         [BsonElement("creditLimit")]
         public decimal? CreditLimit { get; set; }
 

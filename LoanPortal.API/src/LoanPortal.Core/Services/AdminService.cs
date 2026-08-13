@@ -656,10 +656,11 @@ namespace LoanPortal.Core.Services
                 var aggregated = await _preApprovalRepository.GetClosedEscrowAggregated(
                     startDate, endDate, companyUserIds.Count > 0 ? companyUserIds : null);
 
-                // 4b. Fetch all status-changed quotes for the company to compute per-status counts
-                var statusQuotes = await _preApprovalRepository.GetByStatusChangeDateRange(startDate, endDate);
-                if (companyUserIds.Count > 0)
-                    statusQuotes = statusQuotes.Where(q => companyUserIds.Contains(q.UserId)).ToList();
+                // 4b. Fetch all quotes created in the date range
+                var allQuotesInRange = await _preApprovalRepository.GetByDateRangeAdmin(startDate, endDate);
+                var statusQuotes = companyUserIds.Count > 0
+                    ? allQuotesInRange.Where(q => companyUserIds.Contains(q.UserId)).ToList()
+                    : allQuotesInRange;
 
                 // 5. Parse results and build per-user data
                 decimal totalFunded = 0;

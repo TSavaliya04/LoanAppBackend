@@ -162,6 +162,12 @@ namespace LoanPortal.Core.Entities
         public decimal ProjectedMonthEndAmount { get; set; }
         public decimal AmountToGo { get; set; }
 
+        // Status counts for the company within the date range
+        public int TBDCount { get; set; }
+        public int PreApprovedCount { get; set; }
+        public int InEscrowCount { get; set; }
+        public int ClosedEscrowCount { get; set; }
+
         // Daily trend data for chart (one entry per calendar day in the range)
         public List<DailyFundedAmountDTO> DailyTrend { get; set; }
 

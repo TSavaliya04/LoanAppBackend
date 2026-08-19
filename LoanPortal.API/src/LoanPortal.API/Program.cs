@@ -139,6 +139,8 @@ builder.Services.AddSingleton<ICompanyRepository, CompanyRepository>();
 builder.Services.AddSingleton<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IAiStrategyService, AiStrategyService>();
+builder.Services.AddSingleton<ICountyLoanLimitRepository, CountyLoanLimitRepository>();
+builder.Services.AddScoped<ICountyLoanLimitService, CountyLoanLimitService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

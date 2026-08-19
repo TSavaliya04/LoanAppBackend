@@ -33,5 +33,8 @@ namespace LoanPortal.Infrastructure
 
         public IMongoCollection<TeamEntity> Teams =>
             _database.GetCollection<TeamEntity>("Teams");
+
+        public IMongoCollection<CountyLoanLimitEntity> CountyLoanLimits =>
+            _database.GetCollection<CountyLoanLimitEntity>("CountyLoanLimits");
     }
 }

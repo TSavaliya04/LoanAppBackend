@@ -49,7 +49,10 @@ namespace LoanPortal.Shared.Enum
         SFR = 1,
         TwoUnit = 2,
         ThreeUnit = 3,
-        FourUnit = 4
+        FourUnit = 4,
+        Duplex = 5,
+        Triplex = 6,
+        FourPlex = 7
     }
 
     public enum FormType

@@ -652,6 +652,12 @@ namespace LoanPortal.Core.Services
                 var aggregated = await _preApprovalRepository.GetClosedEscrowAggregated(
                     startDate, endDate, companyUserIds.Count > 0 ? companyUserIds : null);
 
+                // 4b. Fetch all quotes created in the date range
+                var allQuotesInRange = await _preApprovalRepository.GetByDateRangeAdmin(startDate, endDate);
+                var statusQuotes = companyUserIds.Count > 0
+                    ? allQuotesInRange.Where(q => companyUserIds.Contains(q.UserId)).ToList()
+                    : allQuotesInRange;
+
                 // 5. Parse results and build per-user data
                 decimal totalFunded = 0;
                 int totalLoans = 0;
@@ -747,6 +753,10 @@ namespace LoanPortal.Core.Services
                     GoalProgressPercent    = progressPct,
                     ProjectedMonthEndAmount = Math.Round(projected, 2),
                     AmountToGo             = amountToGo,
+                    TBDCount               = statusQuotes.Count(q => q.Status == (int)ApplicationStatus.TBD),
+                    PreApprovedCount       = statusQuotes.Count(q => q.Status == (int)ApplicationStatus.PreApproved),
+                    InEscrowCount          = statusQuotes.Count(q => q.Status == (int)ApplicationStatus.InEscrow),
+                    ClosedEscrowCount      = statusQuotes.Count(q => q.Status == (int)ApplicationStatus.ClosedEscrow),
                     DailyTrend             = dailyTrend,
                     MismoFilesGenerated    = totalMismo,
                     AverageLoanAmount      = totalLoans > 0 ? Math.Round(totalFunded / totalLoans, 2) : 0,

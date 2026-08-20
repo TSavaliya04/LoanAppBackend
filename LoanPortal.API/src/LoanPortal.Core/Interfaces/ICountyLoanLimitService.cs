@@ -5,7 +5,7 @@ namespace LoanPortal.Core.Interfaces
 {
     public interface ICountyLoanLimitService
     {
-        Task<List<string>> SearchCountyNamesAsync(string searchTerm);
+        Task<List<LoanPortal.Core.Entities.CountySearchDTO>> SearchCountiesAsync(string searchTerm);
         Task<decimal?> GetLoanLimitAsync(System.Guid countyId, Shared.Enum.PropertyType propertyType);
     }
 }

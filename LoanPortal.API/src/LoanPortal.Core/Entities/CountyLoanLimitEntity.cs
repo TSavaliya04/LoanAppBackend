@@ -32,4 +32,10 @@ namespace LoanPortal.Core.Entities
         [BsonElement("updatedAt")]
         public DateTime? UpdatedAt { get; set; }
     }
+
+    public class CountySearchDTO
+    {
+        public Guid Id { get; set; }
+        public string County { get; set; }
+    }
 }

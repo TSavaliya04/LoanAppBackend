@@ -15,16 +15,20 @@ namespace LoanPortal.Core.Services
             _countyRepository = countyRepository;
         }
 
-        public async Task<List<string>> SearchCountyNamesAsync(string searchTerm)
+        public async Task<List<LoanPortal.Core.Entities.CountySearchDTO>> SearchCountiesAsync(string searchTerm)
         {
             var counties = await _countyRepository.SearchCountiesAsync(searchTerm);
             
-            // Only return the distinct county names
+            // Return distinct county names with their IDs
             return counties
-                .Select(c => c.County)
-                .Where(c => !string.IsNullOrEmpty(c))
-                .Distinct()
-                .OrderBy(c => c)
+                .Where(c => !string.IsNullOrEmpty(c.County))
+                .GroupBy(c => c.County) // Group by county name to ensure distinct names
+                .Select(g => new LoanPortal.Core.Entities.CountySearchDTO
+                {
+                    Id = g.First().Id,
+                    County = g.Key
+                })
+                .OrderBy(c => c.County)
                 .ToList();
         }
 

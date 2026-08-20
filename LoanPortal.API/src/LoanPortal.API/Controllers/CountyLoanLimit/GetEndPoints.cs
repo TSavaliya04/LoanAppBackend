@@ -25,12 +25,12 @@ namespace LoanPortal.API.Controllers.CountyLoanLimit
         {
             try
             {
-                var result = await _countyService.SearchCountyNamesAsync(searchTerm);
+                var result = await _countyService.SearchCountiesAsync(searchTerm);
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<List<string>>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<List<LoanPortal.Core.Entities.CountySearchDTO>>(500, ex.Message));
             }
         }
 

@@ -41,11 +41,15 @@ public class PreApprovalService : IPreApprovalService
         if (document?.Id == null || document.Id == Guid.Empty)
             throw new NotFoundException($"Pre Approval with ID {id} was not found.");
 
-        // Enrich RefinanceInfo with CountyName — batch all unique IDs in parallel
+        // Enrich RefinanceInfo/PurchaseInfo with CountyName — batch all unique IDs in parallel
         if (document.Scenarios != null)
         {
             var uniqueCountyIds = document.Scenarios
-                .Select(s => s.Refinance?.RefinanceInfo?.CountyID)
+                .SelectMany(s => new[]
+                {
+                    s.Refinance?.RefinanceInfo?.CountyID,
+                    s.Purchase?.PurchaseInfo?.CountyID
+                })
                 .Where(id => id.HasValue && id.Value != Guid.Empty)
                 .Select(id => id!.Value)
                 .Distinct()
@@ -61,8 +65,12 @@ public class PreApprovalService : IPreApprovalService
                 foreach (var scenario in document.Scenarios)
                 {
                     var refinanceInfo = scenario.Refinance?.RefinanceInfo;
-                    if (refinanceInfo?.CountyID != null && countyMap.TryGetValue(refinanceInfo.CountyID.Value, out var name))
-                        refinanceInfo.CountyName = name;
+                    if (refinanceInfo?.CountyID != null && countyMap.TryGetValue(refinanceInfo.CountyID.Value, out var rName))
+                        refinanceInfo.CountyName = rName;
+
+                    var purchaseInfo = scenario.Purchase?.PurchaseInfo;
+                    if (purchaseInfo?.CountyID != null && countyMap.TryGetValue(purchaseInfo.CountyID.Value, out var pName))
+                        purchaseInfo.CountyName = pName;
                 }
             }
         }

@@ -18,18 +18,21 @@ public class PreApprovalService : IPreApprovalService
     private readonly IPreApprovalRepository _preApprovalRepository;
     private readonly IUserRepository _userRepository;
     private readonly ICompanyRepository _companyRepository;
+    private readonly ICountyLoanLimitRepository _countyRepository;
 
     public PreApprovalService(
         ILoginUserDetails loginUserDetails,
         IPreApprovalRepository preApprovalRepository,
         IUserRepository userRepository,
-        ICompanyRepository companyRepository
+        ICompanyRepository companyRepository,
+        ICountyLoanLimitRepository countyRepository
     )
     {
         _loginUserDetails = loginUserDetails;
         _preApprovalRepository = preApprovalRepository;
         _userRepository = userRepository;
         _companyRepository = companyRepository;
+        _countyRepository = countyRepository;
     }
 
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)
@@ -37,6 +40,33 @@ public class PreApprovalService : IPreApprovalService
         var document = await _preApprovalRepository.GetByIdAsync(id);
         if (document?.Id == null || document.Id == Guid.Empty)
             throw new NotFoundException($"Pre Approval with ID {id} was not found.");
+
+        // Enrich RefinanceInfo with CountyName — batch all unique IDs in parallel
+        if (document.Scenarios != null)
+        {
+            var uniqueCountyIds = document.Scenarios
+                .Select(s => s.Refinance?.RefinanceInfo?.CountyID)
+                .Where(id => id.HasValue && id.Value != Guid.Empty)
+                .Select(id => id!.Value)
+                .Distinct()
+                .ToList();
+
+            if (uniqueCountyIds.Count > 0)
+            {
+                var countyMap = (await Task.WhenAll(
+                        uniqueCountyIds.Select(id => _countyRepository.GetByIdAsync(id))))
+                    .Where(c => c != null)
+                    .ToDictionary(c => c!.Id, c => c!.County);
+
+                foreach (var scenario in document.Scenarios)
+                {
+                    var refinanceInfo = scenario.Refinance?.RefinanceInfo;
+                    if (refinanceInfo?.CountyID != null && countyMap.TryGetValue(refinanceInfo.CountyID.Value, out var name))
+                        refinanceInfo.CountyName = name;
+                }
+            }
+        }
+
         return document;
     }
 

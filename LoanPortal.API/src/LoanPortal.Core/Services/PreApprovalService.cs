@@ -74,12 +74,12 @@ public class PreApprovalService : IPreApprovalService
                         {
                             scenarios.Add(new ScenarioData
                             {
-                                AnnualInterestRate = scenario.Refinance.LoanStructure?.InterestRate ?? 0,
+                                AnnualInterestRate = scenario.Refinance.RefinanceInfo?.InterestRate ?? 0,
                                 MonthlyTotal = scenario.Refinance.LoanProgram?.MonthlyTotal ?? 0,
                                 LoanAmount = scenario.Refinance.RefinanceInfo.LoanAmount,
                                 LoanProgram = ((LoanProgram)(scenario.Refinance.LoanStructure?.LoanProgram ?? 0)).ToString() ?? "",
                                 isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram,
-                                Cashout = scenario.Refinance.LoanStructure?.DesiredCashOut
+                                Cashout = scenario.Refinance.RefinanceInfo?.DesiredCashOut
                             });
                         }
                     }
@@ -208,7 +208,7 @@ public class PreApprovalService : IPreApprovalService
                 decimal loanAmount = refi.RefinanceInfo?.LoanAmount ?? 0;
                 decimal upFrontPercent = refi.LoanProgram.UPMIPRate ?? 0;
                 decimal upFrontAmount = loanAmount * (upFrontPercent / 100);
-                decimal interestRate = refi.LoanStructure?.InterestRate ?? 0;
+                decimal interestRate = refi.RefinanceInfo?.InterestRate ?? 0;
                 int loanTerm = refi.LoanProgram.Term;
                 decimal UPMIPAmount = loanAmount * (upFrontPercent / 100);
                 double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(loanAmount + UPMIPAmount, interestRate, loanTerm);
@@ -227,12 +227,12 @@ public class PreApprovalService : IPreApprovalService
                 report.InterestRate = interestRate;
                 report.LoanTerm = loanTerm;
                 report.PILoanAmount = (decimal)monthlyPI;
-                report.PropertyTax = refi.LoanStructure?.MonthlyTaxAmount ?? 0;
-                report.HazardInsurancePremium = refi.LoanStructure?.HazardInsurance ?? 0;
+                report.PropertyTax = refi.RefinanceInfo?.MonthlyTaxAmount ?? 0;
+                report.HazardInsurancePremium = refi.RefinanceInfo?.HazardInsurance ?? 0;
                 report.CoverageRate = upFrontPercent;
-                report.MortgageInsurance = refi.LoanStructure?.MI ?? 0;
+                report.MortgageInsurance = refi.RefinanceInfo?.MI ?? 0;
                 report.LoanProgram = refi.LoanStructure?.LoanProgram ?? 0;
-                report.HOADues = refi.LoanStructure?.AssociationFee ?? 0;
+                report.HOADues = refi.RefinanceInfo?.AssociationFee ?? 0;
                 report.TotalMonthlyPayment = report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues;
                 // No Purchase-specific closing cost breakdown for Refi â€” use the stored value
                 report.estimatedClosingCost = new EstimatedClosingCostDTO
@@ -361,7 +361,7 @@ public class PreApprovalService : IPreApprovalService
                 throw new ValidationException("Refinance LoanProgram cannot be null");
 
             quote.HomeValue = refi.RefinanceInfo?.EstimatedPropertyValue ?? 0;
-            quote.InterestRate = refi.LoanStructure?.InterestRate ?? 0;
+            quote.InterestRate = refi.RefinanceInfo?.InterestRate ?? 0;
             quote.DownPaymentPercent = 0;
             quote.DownPayment = 0;
             quote.LoanProgram = refi.LoanStructure?.LoanProgram ?? 0;
@@ -371,10 +371,10 @@ public class PreApprovalService : IPreApprovalService
             double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(loanAmount + upmipAmount, quote.InterestRate, refi.LoanProgram.Term);
             quote.PrincipalAndInterest = (decimal)monthlyPI;
 
-            quote.PropertyTax = refi.LoanStructure?.MonthlyTaxAmount ?? 0;
-            quote.HazardInsurance = refi.LoanStructure?.HazardInsurance ?? 0;
-            quote.MortgageInsurance = refi.LoanStructure?.MI ?? 0;
-            quote.HoaFee = refi.LoanStructure?.AssociationFee ?? 0;
+            quote.PropertyTax = refi.RefinanceInfo?.MonthlyTaxAmount ?? 0;
+            quote.HazardInsurance = refi.RefinanceInfo?.HazardInsurance ?? 0;
+            quote.MortgageInsurance = refi.RefinanceInfo?.MI ?? 0;
+            quote.HoaFee = refi.RefinanceInfo?.AssociationFee ?? 0;
             quote.MonthlyTotal = (decimal)(quote.PrincipalAndInterest + quote.PropertyTax + quote.HazardInsurance + quote.MortgageInsurance + quote.HoaFee);
 
             quote.ClosingCosts = refi.LoanProgram.ClosingCosts ?? 0;

@@ -182,6 +182,8 @@ namespace LoanPortal.Core.Entities
         [BsonElement("currentLoanBalance")]
         public decimal CurrentLoanBalance { get; set; }
 
+        [BsonElement("propertyType")]
+        public int? PropertyType { get; set; }
         // --- Fields moved from RefinanceLoanStructureDTO ---
 
         [BsonElement("refinanceType")]

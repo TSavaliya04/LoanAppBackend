@@ -140,6 +140,12 @@ namespace LoanPortal.Core.Entities
         [BsonElement("occupancyStatus")]
         public int OccupancyStatus { get; set; }
 
+        [BsonElement("countyId")]
+        public Guid? CountyID { get; set; }
+
+        [BsonIgnore]
+        public string? CountyName { get; set; }
+
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
 
@@ -157,6 +163,12 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("occupancyStatus")]
         public int OccupancyStatus { get; set; }
+
+        [BsonElement("countyId")]
+        public Guid? CountyID { get; set; }
+
+        [BsonIgnore]
+        public string? CountyName { get; set; }
 
         [BsonElement("estimatedPropertyValue")]
         public decimal EstimatedPropertyValue { get; set; }

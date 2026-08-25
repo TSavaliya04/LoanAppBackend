@@ -20,6 +20,8 @@ namespace LoanPortal.Core.Entities
         public Guid? CompanyId { get; set; }
         public string Company { get; set; }
         public DateTime? LastLogin { get; set; }
+        public DateTime? LastActivityDate { get; set; }
+        public DateTime? LastQuoteCreatedAt { get; set; }
         public int QuotesThisWeek { get; set; }
         public string Status { get; set; }
         public DateTime? CreatedAt { get; set; }

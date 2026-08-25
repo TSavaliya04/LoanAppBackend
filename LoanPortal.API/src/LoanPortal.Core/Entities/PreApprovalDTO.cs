@@ -182,6 +182,9 @@ namespace LoanPortal.Core.Entities
         [BsonElement("currentLoanBalance")]
         public decimal CurrentLoanBalance { get; set; }
 
+        [BsonElement("propertyType")]
+        public int? PropertyType { get; set; }
+
         [BsonElement("refinanceType")]
         public int RefinanceType { get; set; }  // 0 = Rate and Term, 1 = Cash Out
 

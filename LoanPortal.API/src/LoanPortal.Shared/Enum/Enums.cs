@@ -23,7 +23,10 @@ namespace LoanPortal.Shared.Enum
     {
         NonQM = 1,
         Conventional = 2,
-        FHA = 3
+        FHA = 3,
+        VA = 4,
+        HELOC = 5,
+        HELOAN = 6
     }
 
     public enum ApplicationStatus
@@ -47,9 +50,10 @@ namespace LoanPortal.Shared.Enum
         TwoUnit = 2,
         ThreeUnit = 3,
         FourUnit = 4,
-        Duplex = 5,
-        Triplex = 6,
-        FourPlex = 7
+        CondoTownhome = 5,
+        Duplex = 6,
+        Triplex = 7,
+        FourPlex = 8
     }
 
     public enum FormType

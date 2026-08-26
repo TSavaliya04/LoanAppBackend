@@ -182,18 +182,19 @@ namespace LoanPortal.Tests.Controllers.Authentication
         [Fact]
         public async Task UpdateProfile_ValidRequest_ReturnsOkResult()
         {
+            var companyId = Guid.NewGuid();
             var updateRequest = new UpdateProfileRequest
             {
                 Address = "123 Main St",
                 JobTitle = "Software Engineer",
-                CompanyName = "Tech Corp"
+                CompanyId = companyId
             };
 
             var expectedUser = new UserDTO
             {
                 Address = updateRequest.Address,
                 JobTitle = updateRequest.JobTitle,
-                CompanyName = updateRequest.CompanyName
+                CompanyId = updateRequest.CompanyId
             };
 
             _mockUserService.Setup(x => x.UpdateProfile(updateRequest))
@@ -449,6 +450,72 @@ namespace LoanPortal.Tests.Controllers.Authentication
             Assert.Equal(expectedUser.Id, response.Data.Id);
             Assert.Equal(expectedUser.Email, response.Data.Email);
             Assert.True(response.Success);
+        }
+        #endregion
+
+        #region ValidateAdminToken Tests
+        [Fact]
+        public async Task ValidateAdminToken_ValidToken_ReturnsOkWithUserData()
+        {
+            var token = "valid-jwt-token";
+            var expectedUser = new UserDTO
+            {
+                Email = "admin@example.com",
+            };
+            _mockUserService.Setup(x => x.ValidateAdminToken(token))
+                           .ReturnsAsync(expectedUser);
+
+            var result = await _controller.ValidateAdminToken(token);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.NotNull(response.Data);
+            Assert.Equal(expectedUser.Id, response.Data.Id);
+            Assert.Equal(expectedUser.Email, response.Data.Email);
+            Assert.True(response.Success);
+        }
+
+        [Fact]
+        public async Task ValidateAdminToken_ValidationException_ReturnsBadRequest()
+        {
+            var token = "invalid-format-token";
+            var validationMessage = "Token format is invalid";
+            _mockUserService.Setup(x => x.ValidateAdminToken(token))
+                   .ThrowsAsync(new ValidationException(validationMessage));
+
+            var result = await _controller.ValidateAdminToken(token);
+
+            var badRequestResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(badRequestResult.Value);
+            Assert.Equal(validationMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task ValidateAdminToken_GenericException_ReturnsInternalServerError()
+        {
+            var token = "valid-token";
+            var errorMessage = "Database connection timeout";
+            _mockUserService.Setup(x => x.ValidateAdminToken(token))
+                   .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.ValidateAdminToken(token);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task ValidateAdminToken_ServiceCalled_VerifyMethodInvocation()
+        {
+            var token = "test-token";
+            var user = new UserDTO { Email = "admin@example.com" };
+            _mockUserService.Setup(x => x.ValidateAdminToken(token))
+                           .ReturnsAsync(user);
+
+            await _controller.ValidateAdminToken(token);
+
+            _mockUserService.Verify(x => x.ValidateAdminToken(token), Times.Once);
         }
         #endregion
 

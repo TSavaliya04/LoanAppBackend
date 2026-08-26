@@ -20,8 +20,6 @@ namespace LoanPortal.Core.Entities
         public Guid? CompanyId { get; set; }
         public string Company { get; set; }
         public DateTime? LastLogin { get; set; }
-        public DateTime? LastActivityDate { get; set; }
-        public DateTime? LastQuoteCreatedAt { get; set; }
         public int QuotesThisWeek { get; set; }
         public string Status { get; set; }
         public DateTime? CreatedAt { get; set; }
@@ -161,12 +159,6 @@ namespace LoanPortal.Core.Entities
         public decimal GoalProgressPercent { get; set; }
         public decimal ProjectedMonthEndAmount { get; set; }
         public decimal AmountToGo { get; set; }
-
-        // Status counts for the company within the date range
-        public int TBDCount { get; set; }
-        public int PreApprovedCount { get; set; }
-        public int InEscrowCount { get; set; }
-        public int ClosedEscrowCount { get; set; }
 
         // Daily trend data for chart (one entry per calendar day in the range)
         public List<DailyFundedAmountDTO> DailyTrend { get; set; }

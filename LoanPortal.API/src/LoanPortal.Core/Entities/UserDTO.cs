@@ -1,4 +1,4 @@
-﻿using LoanPortal.Shared.Enum;
+using LoanPortal.Shared.Enum;
 using Microsoft.AspNetCore.Http;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -35,7 +35,6 @@ namespace LoanPortal.Core.Entities
         public string? Profile { get; set; }
         public string? NMLS { get; set; }
         public DateTime? LastLoginDate { get; set; }
-        public DateTime? LastActivityDate { get; set; }
         public UserRole Role { get; set; }
         public Guid? CompanyId { get; set; }
         public string? CompanyName { get; set; }
@@ -96,9 +95,6 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("lastLoginDate")]
         public DateTime? LastLoginDate { get; set; }
-
-        [BsonElement("lastActivityDate")]
-        public DateTime? LastActivityDate { get; set; }
 
         //[BsonElement("loginHistory")]
         //public List<DateTime> LoginHistory { get; set; } = new List<DateTime>();

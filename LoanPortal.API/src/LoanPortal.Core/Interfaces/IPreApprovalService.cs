@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

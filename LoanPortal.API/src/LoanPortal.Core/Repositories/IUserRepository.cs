@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -19,12 +19,9 @@ namespace LoanPortal.Core.Repositories
         Task<UserEntity> GetUserByFirebaseId(string firebaseId);
         Task<List<UserEntity>> GetUsersActiveInRange(DateTime startDate, DateTime endDate);
         Task UpdateUserLoginActivity(Guid userId, DateTime loginTime);
-        Task UpdateUserLastActivityAsync(Guid userId, DateTime activityTime);
-
         Task<List<UserEntity>> GetUsersByIds(List<Guid> userIds);
         Task<List<UserEntity>> GetAll();
-        Task<(List<UserEntity> Users, Dictionary<Guid, int> QuotesThisWeek, Dictionary<Guid, DateTime?> LastQuoteCreatedAt, int TotalCount)> GetUsersWithFiltersAsync(GetUsersRequest request, Shared.Enum.UserRole loginRole, Guid? loginCompanyId);
-
+        Task<(List<UserEntity> Users, Dictionary<Guid, int> QuotesThisWeek, int TotalCount)> GetUsersWithFiltersAsync(GetUsersRequest request, Shared.Enum.UserRole loginRole, Guid? loginCompanyId);
 
         /// <summary>Targeted update that sets only the teamId field for a user (null = remove from team).</summary>
         Task UpdateUserTeamAsync(Guid userId, Guid? teamId);

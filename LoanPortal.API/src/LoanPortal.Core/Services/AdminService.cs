@@ -33,7 +33,7 @@ namespace LoanPortal.Core.Services
         {
             try
             {
-                var (users, quotesThisWeek, lastQuoteCreatedAt, totalCount) = await _userRepository.GetUsersWithFiltersAsync(request, _loginUserDetails.Role, _loginUserDetails.CompanyId);
+                var (users, quotesThisWeek, totalCount) = await _userRepository.GetUsersWithFiltersAsync(request, _loginUserDetails.Role, _loginUserDetails.CompanyId);
 
                 var allCompanies = await _companyRepository.GetAllCompaniesAsync();
                 var companyDict = allCompanies.ToDictionary(c => c.Id, c => c.Name);
@@ -43,7 +43,6 @@ namespace LoanPortal.Core.Services
                 foreach (UserEntity user in users)
                 {
                     quotesThisWeek.TryGetValue(user.Id, out var count);
-                    lastQuoteCreatedAt.TryGetValue(user.Id, out var lastQuote);
                     
                     string companyName = null;
                     if (user.CompanyId.HasValue && companyDict.TryGetValue(user.CompanyId.Value, out var cName))
@@ -59,14 +58,11 @@ namespace LoanPortal.Core.Services
                         Company = companyName,
                         Email = user.Email,
                         LastLogin = user.LastLoginDate,
-                        LastActivityDate = user.LastActivityDate,
-                        LastQuoteCreatedAt = lastQuote,
                         Status = user.IsActive ? "Active" : "InActive",
                         QuotesThisWeek = count,
                         CreatedAt = user.CreatedAt,
                         TeamId = user.TeamId
                     });
-
                 }
 
                 var pageNumber = request.PageNumber < 0 ? 0 : request.PageNumber;
@@ -656,12 +652,6 @@ namespace LoanPortal.Core.Services
                 var aggregated = await _preApprovalRepository.GetClosedEscrowAggregated(
                     startDate, endDate, companyUserIds.Count > 0 ? companyUserIds : null);
 
-                // 4b. Fetch all quotes created in the date range
-                var allQuotesInRange = await _preApprovalRepository.GetByDateRangeAdmin(startDate, endDate);
-                var statusQuotes = companyUserIds.Count > 0
-                    ? allQuotesInRange.Where(q => companyUserIds.Contains(q.UserId)).ToList()
-                    : allQuotesInRange;
-
                 // 5. Parse results and build per-user data
                 decimal totalFunded = 0;
                 int totalLoans = 0;
@@ -757,10 +747,6 @@ namespace LoanPortal.Core.Services
                     GoalProgressPercent    = progressPct,
                     ProjectedMonthEndAmount = Math.Round(projected, 2),
                     AmountToGo             = amountToGo,
-                    TBDCount               = statusQuotes.Count(q => q.Status == (int)ApplicationStatus.TBD),
-                    PreApprovedCount       = statusQuotes.Count(q => q.Status == (int)ApplicationStatus.PreApproved),
-                    InEscrowCount          = statusQuotes.Count(q => q.Status == (int)ApplicationStatus.InEscrow),
-                    ClosedEscrowCount      = statusQuotes.Count(q => q.Status == (int)ApplicationStatus.ClosedEscrow),
                     DailyTrend             = dailyTrend,
                     MismoFilesGenerated    = totalMismo,
                     AverageLoanAmount      = totalLoans > 0 ? Math.Round(totalFunded / totalLoans, 2) : 0,

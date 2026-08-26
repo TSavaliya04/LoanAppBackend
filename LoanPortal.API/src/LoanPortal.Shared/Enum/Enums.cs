@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,10 +23,7 @@ namespace LoanPortal.Shared.Enum
     {
         NonQM = 1,
         Conventional = 2,
-        FHA = 3,
-        VA = 4,
-        HELOC = 5,
-        HELOAN = 6
+        FHA = 3
     }
 
     public enum ApplicationStatus
@@ -49,10 +46,7 @@ namespace LoanPortal.Shared.Enum
         SFR = 1,
         TwoUnit = 2,
         ThreeUnit = 3,
-        FourUnit = 4,
-        Duplex = 5,
-        Triplex = 6,
-        FourPlex = 7
+        FourUnit = 4
     }
 
     public enum FormType

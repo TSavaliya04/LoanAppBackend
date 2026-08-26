@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using LoanPortal.Core.Exceptions;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
@@ -18,21 +18,18 @@ public class PreApprovalService : IPreApprovalService
     private readonly IPreApprovalRepository _preApprovalRepository;
     private readonly IUserRepository _userRepository;
     private readonly ICompanyRepository _companyRepository;
-    private readonly ICountyLoanLimitRepository _countyRepository;
 
     public PreApprovalService(
         ILoginUserDetails loginUserDetails,
         IPreApprovalRepository preApprovalRepository,
         IUserRepository userRepository,
-        ICompanyRepository companyRepository,
-        ICountyLoanLimitRepository countyRepository
+        ICompanyRepository companyRepository
     )
     {
         _loginUserDetails = loginUserDetails;
         _preApprovalRepository = preApprovalRepository;
         _userRepository = userRepository;
         _companyRepository = companyRepository;
-        _countyRepository = countyRepository;
     }
 
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)
@@ -40,41 +37,6 @@ public class PreApprovalService : IPreApprovalService
         var document = await _preApprovalRepository.GetByIdAsync(id);
         if (document?.Id == null || document.Id == Guid.Empty)
             throw new NotFoundException($"Pre Approval with ID {id} was not found.");
-
-        // Enrich RefinanceInfo/PurchaseInfo with CountyName — batch all unique IDs in parallel
-        if (document.Scenarios != null)
-        {
-            var uniqueCountyIds = document.Scenarios
-                .SelectMany(s => new[]
-                {
-                    s.Refinance?.RefinanceInfo?.CountyID,
-                    s.Purchase?.PurchaseInfo?.CountyID
-                })
-                .Where(id => id.HasValue && id.Value != Guid.Empty)
-                .Select(id => id!.Value)
-                .Distinct()
-                .ToList();
-
-            if (uniqueCountyIds.Count > 0)
-            {
-                var countyMap = (await Task.WhenAll(
-                        uniqueCountyIds.Select(id => _countyRepository.GetByIdAsync(id))))
-                    .Where(c => c != null)
-                    .ToDictionary(c => c!.Id, c => c!.County);
-
-                foreach (var scenario in document.Scenarios)
-                {
-                    var refinanceInfo = scenario.Refinance?.RefinanceInfo;
-                    if (refinanceInfo?.CountyID != null && countyMap.TryGetValue(refinanceInfo.CountyID.Value, out var rName))
-                        refinanceInfo.CountyName = rName;
-
-                    var purchaseInfo = scenario.Purchase?.PurchaseInfo;
-                    if (purchaseInfo?.CountyID != null && countyMap.TryGetValue(purchaseInfo.CountyID.Value, out var pName))
-                        purchaseInfo.CountyName = pName;
-                }
-            }
-        }
-
         return document;
     }
 
@@ -112,12 +74,12 @@ public class PreApprovalService : IPreApprovalService
                         {
                             scenarios.Add(new ScenarioData
                             {
-                                AnnualInterestRate = scenario.Refinance.RefinanceInfo?.InterestRate ?? 0,
+                                AnnualInterestRate = scenario.Refinance.LoanStructure?.InterestRate ?? 0,
                                 MonthlyTotal = scenario.Refinance.LoanProgram?.MonthlyTotal ?? 0,
                                 LoanAmount = scenario.Refinance.RefinanceInfo.LoanAmount,
                                 LoanProgram = ((LoanProgram)(scenario.Refinance.LoanStructure?.LoanProgram ?? 0)).ToString() ?? "",
                                 isLoanProgramFilled = scenario.LastSubmittedFormNo == (int)FormType.LoanProgram,
-                                Cashout = scenario.Refinance.RefinanceInfo?.DesiredCashOut
+                                Cashout = scenario.Refinance.LoanStructure?.DesiredCashOut
                             });
                         }
                     }
@@ -246,7 +208,7 @@ public class PreApprovalService : IPreApprovalService
                 decimal loanAmount = refi.RefinanceInfo?.LoanAmount ?? 0;
                 decimal upFrontPercent = refi.LoanProgram.UPMIPRate ?? 0;
                 decimal upFrontAmount = loanAmount * (upFrontPercent / 100);
-                decimal interestRate = refi.RefinanceInfo?.InterestRate ?? 0;
+                decimal interestRate = refi.LoanStructure?.InterestRate ?? 0;
                 int loanTerm = refi.LoanProgram.Term;
                 decimal UPMIPAmount = loanAmount * (upFrontPercent / 100);
                 double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(loanAmount + UPMIPAmount, interestRate, loanTerm);
@@ -265,12 +227,12 @@ public class PreApprovalService : IPreApprovalService
                 report.InterestRate = interestRate;
                 report.LoanTerm = loanTerm;
                 report.PILoanAmount = (decimal)monthlyPI;
-                report.PropertyTax = refi.RefinanceInfo?.MonthlyTaxAmount ?? 0;
-                report.HazardInsurancePremium = refi.RefinanceInfo?.HazardInsurance ?? 0;
+                report.PropertyTax = refi.LoanStructure?.MonthlyTaxAmount ?? 0;
+                report.HazardInsurancePremium = refi.LoanStructure?.HazardInsurance ?? 0;
                 report.CoverageRate = upFrontPercent;
-                report.MortgageInsurance = refi.RefinanceInfo?.MI ?? 0;
+                report.MortgageInsurance = refi.LoanStructure?.MI ?? 0;
                 report.LoanProgram = refi.LoanStructure?.LoanProgram ?? 0;
-                report.HOADues = refi.RefinanceInfo?.AssociationFee ?? 0;
+                report.HOADues = refi.LoanStructure?.AssociationFee ?? 0;
                 report.TotalMonthlyPayment = report.PILoanAmount + report.PropertyTax + report.HazardInsurancePremium + report.MortgageInsurance + report.HOADues;
                 // No Purchase-specific closing cost breakdown for Refi â€” use the stored value
                 report.estimatedClosingCost = new EstimatedClosingCostDTO
@@ -399,7 +361,7 @@ public class PreApprovalService : IPreApprovalService
                 throw new ValidationException("Refinance LoanProgram cannot be null");
 
             quote.HomeValue = refi.RefinanceInfo?.EstimatedPropertyValue ?? 0;
-            quote.InterestRate = refi.RefinanceInfo?.InterestRate ?? 0;
+            quote.InterestRate = refi.LoanStructure?.InterestRate ?? 0;
             quote.DownPaymentPercent = 0;
             quote.DownPayment = 0;
             quote.LoanProgram = refi.LoanStructure?.LoanProgram ?? 0;
@@ -409,10 +371,10 @@ public class PreApprovalService : IPreApprovalService
             double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(loanAmount + upmipAmount, quote.InterestRate, refi.LoanProgram.Term);
             quote.PrincipalAndInterest = (decimal)monthlyPI;
 
-            quote.PropertyTax = refi.RefinanceInfo?.MonthlyTaxAmount ?? 0;
-            quote.HazardInsurance = refi.RefinanceInfo?.HazardInsurance ?? 0;
-            quote.MortgageInsurance = refi.RefinanceInfo?.MI ?? 0;
-            quote.HoaFee = refi.RefinanceInfo?.AssociationFee ?? 0;
+            quote.PropertyTax = refi.LoanStructure?.MonthlyTaxAmount ?? 0;
+            quote.HazardInsurance = refi.LoanStructure?.HazardInsurance ?? 0;
+            quote.MortgageInsurance = refi.LoanStructure?.MI ?? 0;
+            quote.HoaFee = refi.LoanStructure?.AssociationFee ?? 0;
             quote.MonthlyTotal = (decimal)(quote.PrincipalAndInterest + quote.PropertyTax + quote.HazardInsurance + quote.MortgageInsurance + quote.HoaFee);
 
             quote.ClosingCosts = refi.LoanProgram.ClosingCosts ?? 0;
@@ -471,8 +433,6 @@ public class PreApprovalService : IPreApprovalService
             clonedPreApproval.Id = Guid.NewGuid();
             clonedPreApproval.CreatedAt = DateTime.UtcNow;
             await _preApprovalRepository.InsertAsync(clonedPreApproval);
-
-            await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);
         }
         catch (Exception ex) { 
         }
@@ -516,11 +476,7 @@ public class PreApprovalService : IPreApprovalService
                 await _preApprovalRepository.InsertAsync(preApprovalDocument);
             }
 
-            // Track last activity
-            await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);
-
             return await _preApprovalRepository.GetByIdAsync(preApprovalDocument.Id);
-
         }
         catch (Exception e) 
         {
@@ -552,10 +508,6 @@ public class PreApprovalService : IPreApprovalService
             preApprovalDoc.StatusUpdatedAt = DateTime.Now;
 
             await _preApprovalRepository.UpdateAsync(id, preApprovalDoc);
-
-            // Track last activity
-            await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);
-
             return preApprovalDoc;
         }
         catch(Exception e)

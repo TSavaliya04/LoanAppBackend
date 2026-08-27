@@ -34,6 +34,20 @@ namespace LoanPortal.API.Controllers.CountyLoanLimit
             }
         }
 
+        [HttpGet("countyloanlimit/GetAllCounties")]
+        public async Task<IActionResult> GetAllCounties()
+        {
+            try
+            {
+                var result = await _countyService.SearchCountiesAsync(string.Empty);
+                return Ok(SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<List<LoanPortal.Core.Entities.CountySearchDTO>>(500, ex.Message));
+            }
+        }
+        
         [HttpGet("countyloanlimit/GetLoanLimit")]
         public async Task<IActionResult> GetLoanLimit([FromQuery] Guid countyId, [FromQuery] LoanPortal.Shared.Enum.PropertyType propertyType)
         {

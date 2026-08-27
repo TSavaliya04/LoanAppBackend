@@ -547,5 +547,16 @@ namespace LoanPortal.Core.Services
                 throw;
             }
         }
+        public async Task RequestDemo(RequestDemoRequest request)
+        {
+            try
+            {
+                await _userHelper.SendDemoRequestMail(request);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Ardalis.ApiEndpoints;
+using Ardalis.ApiEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -125,6 +125,21 @@ namespace LoanPortal.API.Controllers.Authentication
             catch (Exception ex)
             {
                 return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("user/RequestDemo")]
+        public async Task<IActionResult> RequestDemo(RequestDemoRequest request)
+        {
+            try
+            {
+                await _userService.RequestDemo(request);
+                return Ok(SuccessResponse(data: true, message: "Demo request sent successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<string>(500, ex.Message));
             }
         }
 

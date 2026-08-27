@@ -621,5 +621,29 @@ namespace LoanPortal.Tests.Services
             var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _userService.UpdateProfile(request));
             Assert.Equal("You can only update users within your company.", ex.Message);
         }
+
+        [Fact]
+        public async Task RequestDemo_ValidRequest_CallsUserHelperSendDemoRequestMail()
+        {
+            // Arrange
+            var request = new RequestDemoRequest
+            {
+                FirstName = "Test",
+                LastName = "User",
+                Email = "test@example.com",
+                Phone = "1234567890",
+                Company = "TestCompany"
+            };
+
+            _mockUserHelper.Setup(x => x.SendDemoRequestMail(It.IsAny<RequestDemoRequest>()))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            // Act
+            await _userService.RequestDemo(request);
+
+            // Assert
+            _mockUserHelper.Verify(x => x.SendDemoRequestMail(request), Times.Once);
+        }
     }
 }

@@ -4,6 +4,15 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace LoanPortal.Core.Entities
 {
+    public class RequestDemoRequest
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public string Company { get; set; }
+    }
+
     public class CreateUserRequest
     {
         public string FirstName { get; set; }

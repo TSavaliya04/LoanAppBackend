@@ -77,9 +77,11 @@ namespace LoanPortal.Tests.Services
             var expectedUsers = new List<UserEntity> { agentUser };
             var expectedQuotesThisWeek = new Dictionary<Guid, int> { { agentId, 2 } };
 
+            var expectedLastQuoteCreatedAt = new Dictionary<Guid, DateTime?>();
+
             _mockUserRepository
                 .Setup(x => x.GetUsersWithFiltersAsync(request, It.IsAny<UserRole>(), It.IsAny<Guid?>()))
-                .ReturnsAsync((expectedUsers, expectedQuotesThisWeek, 1));
+                .ReturnsAsync((expectedUsers, expectedQuotesThisWeek, expectedLastQuoteCreatedAt, 1));
 
             _mockCompanyRepository
                 .Setup(x => x.GetAllCompaniesAsync())
@@ -126,7 +128,7 @@ namespace LoanPortal.Tests.Services
 
             _mockUserRepository
                 .Setup(x => x.GetUsersWithFiltersAsync(request, It.IsAny<UserRole>(), It.IsAny<Guid?>()))
-                .ReturnsAsync((users, new Dictionary<Guid, int>(), 3));
+                .ReturnsAsync((users, new Dictionary<Guid, int>(), new Dictionary<Guid, DateTime?>(), 3));
 
             _mockCompanyRepository
                 .Setup(x => x.GetAllCompaniesAsync())
@@ -471,7 +473,7 @@ namespace LoanPortal.Tests.Services
 
             _mockUserRepository
                 .Setup(x => x.GetUsersWithFiltersAsync(It.IsAny<GetUsersRequest>(), UserRole.CompanyAdmin, null))
-                .ReturnsAsync((expectedUsers, new Dictionary<Guid, int>(), 1));
+                .ReturnsAsync((expectedUsers, new Dictionary<Guid, int>(), new Dictionary<Guid, DateTime?>(), 1));
 
             _mockCompanyRepository
                 .Setup(x => x.GetAllCompaniesAsync())
@@ -632,5 +634,104 @@ namespace LoanPortal.Tests.Services
 
         #endregion
 
+        #region SetMonthlyGoal
+
+        [Fact]
+        public async Task SetMonthlyGoal_NoCompanyId_ThrowsUnauthorizedAccessException()
+        {
+            _mockLoginUserDetails.Setup(x => x.CompanyId).Returns((Guid?)null);
+
+            var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.SetMonthlyGoal(10000));
+            Assert.Equal("No company is associated with your account.", ex.Message);
+        }
+
+        [Fact]
+        public async Task SetMonthlyGoal_NegativeGoal_ThrowsArgumentException()
+        {
+            _mockLoginUserDetails.Setup(x => x.CompanyId).Returns(Guid.NewGuid());
+
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.SetMonthlyGoal(-100));
+            Assert.Equal("Monthly goal must be a non-negative value.", ex.Message);
+        }
+
+        [Fact]
+        public async Task SetMonthlyGoal_CompanyNotFound_ReturnsNull()
+        {
+            var companyId = Guid.NewGuid();
+            _mockLoginUserDetails.Setup(x => x.CompanyId).Returns(companyId);
+            _mockCompanyRepository.Setup(x => x.GetCompanyByIdAsync(companyId)).ReturnsAsync((CompanyEntity)null!);
+
+            var result = await _service.SetMonthlyGoal(10000);
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task SetMonthlyGoal_ValidRequest_UpdatesAndReturnsCompanyDTO()
+        {
+            var companyId = Guid.NewGuid();
+            var monthlyGoal = 50000m;
+            var company = new CompanyEntity { Id = companyId, Name = "Test Co" };
+
+            _mockLoginUserDetails.Setup(x => x.CompanyId).Returns(companyId);
+            _mockCompanyRepository.Setup(x => x.GetCompanyByIdAsync(companyId)).ReturnsAsync(company);
+            _mockCompanyRepository.Setup(x => x.UpdateCompanyAsync(companyId, It.IsAny<CompanyEntity>())).Returns(Task.CompletedTask);
+
+            var result = await _service.SetMonthlyGoal(monthlyGoal);
+
+            Assert.NotNull(result);
+            Assert.Equal(monthlyGoal, result.MonthlyGoal);
+            _mockCompanyRepository.Verify(x => x.UpdateCompanyAsync(companyId, It.Is<CompanyEntity>(c => c.MonthlyGoal == monthlyGoal)), Times.Once);
+        }
+
+        #endregion
+
+        #region GetCompanyLeaderboard
+
+        [Fact]
+        public async Task GetCompanyLeaderboard_ValidRequest_ReturnsLeaderboardDTO()
+        {
+            var startDate = new DateTime(2025, 1, 1);
+            var endDate = new DateTime(2025, 1, 31);
+            var companyId = Guid.NewGuid();
+
+            _mockLoginUserDetails.Setup(x => x.Role).Returns(UserRole.SuperAdmin);
+
+            _mockCompanyRepository.Setup(x => x.GetCompanyByIdAsync(companyId))
+                .ReturnsAsync(new CompanyEntity { Id = companyId, MonthlyGoal = 100000 });
+
+            _mockUserRepository.Setup(x => x.GetAll())
+                .ReturnsAsync(new List<UserEntity>());
+
+            _mockPreApprovalRepository.Setup(x => x.GetClosedEscrowAggregated(startDate, endDate, null))
+                .ReturnsAsync(new List<MongoDB.Bson.BsonDocument>());
+
+            _mockPreApprovalRepository.Setup(x => x.GetByDateRangeAdmin(startDate, endDate))
+                .ReturnsAsync(new List<PreApprovalDocument>());
+
+            var result = await _service.GetCompanyLeaderboard(startDate, endDate, companyId);
+
+            Assert.NotNull(result);
+            Assert.Equal(100000, result.MonthlyGoal);
+            Assert.Equal(0, result.TotalLoanAmountFunded);
+            Assert.Empty(result.TopLoanOfficers);
+        }
+
+        [Fact]
+        public async Task GetCompanyLeaderboard_ExceptionThrown_ThrowsException()
+        {
+            var startDate = new DateTime(2025, 1, 1);
+            var endDate = new DateTime(2025, 1, 31);
+
+            _mockLoginUserDetails.Setup(x => x.Role).Returns(UserRole.SuperAdmin);
+            _mockUserRepository.Setup(x => x.GetAll()).ThrowsAsync(new Exception("Database error"));
+
+            var ex = await Assert.ThrowsAsync<Exception>(() => _service.GetCompanyLeaderboard(startDate, endDate));
+            Assert.Equal("An error occurred while retrieving the company leaderboard.", ex.Message);
+            Assert.NotNull(ex.InnerException);
+            Assert.Equal("Database error", ex.InnerException.Message);
+        }
+
+        #endregion
     }
 }

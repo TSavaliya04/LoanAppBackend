@@ -568,5 +568,58 @@ namespace LoanPortal.Tests.Services
             Assert.True(capturedClaims!.ContainsKey("Role"));
             Assert.Equal((int)UserRole.SuperAdmin, capturedClaims["Role"]);
         }
+
+        [Fact]
+        public async Task Login_HttpClientFails_ThrowsException()
+        {
+            var loginRequest = new LoginRequest { Email = "test@example.com", Password = "Password123!" };
+            var user = new UserEntity { Id = Guid.NewGuid(), Email = loginRequest.Email, IsActive = true };
+
+            _mockUserRepository.Setup(x => x.GetUserByEmail(loginRequest.Email)).ReturnsAsync(user);
+            _mockConfig.Setup(x => x["FirebaseKey"]).Returns("firebase-key");
+
+            var httpResponse = new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                Content = new StringContent("INVALID_PASSWORD")
+            };
+            _mockHttpClientService.Setup(x => x.PostAsync(It.IsAny<string>(), It.IsAny<HttpContent>())).ReturnsAsync(httpResponse);
+
+            var ex = await Assert.ThrowsAsync<Exception>(() => _userService.Login(loginRequest));
+            Assert.Contains("Login failed: INVALID_PASSWORD", ex.Message);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_UserTriesToUpdateAnotherUser_ThrowsUnauthorizedAccessException()
+        {
+            var currentUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            var request = new UpdateProfileRequest { UserId = targetUserId };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(currentUserId);
+            _mockLoginUserDetails.Setup(x => x.Role).Returns(UserRole.User);
+
+            _mockUserRepository.Setup(x => x.GetUserById(targetUserId)).ReturnsAsync(new UserEntity { Id = targetUserId });
+
+            var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _userService.UpdateProfile(request));
+            Assert.Equal("You can only update your own profile.", ex.Message);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_CompanyAdminTriesToUpdateOutsideCompany_ThrowsUnauthorizedAccessException()
+        {
+            var currentUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            var request = new UpdateProfileRequest { UserId = targetUserId };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(currentUserId);
+            _mockLoginUserDetails.Setup(x => x.Role).Returns(UserRole.CompanyAdmin);
+            _mockLoginUserDetails.Setup(x => x.CompanyId).Returns(Guid.NewGuid());
+
+            _mockUserRepository.Setup(x => x.GetUserById(targetUserId)).ReturnsAsync(new UserEntity { Id = targetUserId, CompanyId = Guid.NewGuid() });
+
+            var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _userService.UpdateProfile(request));
+            Assert.Equal("You can only update users within your company.", ex.Message);
+        }
     }
 }

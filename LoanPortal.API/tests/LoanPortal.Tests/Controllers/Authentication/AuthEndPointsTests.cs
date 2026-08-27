@@ -130,6 +130,21 @@ namespace LoanPortal.Tests.Controllers.Authentication
             var response = Assert.IsType<ApiResponse<UserDTO>>(badRequestResult.Value);
             Assert.Equal("User with given phone number is already exists.", response.Error);
         }
+
+        [Fact]
+        public async Task SignUp_GenericException_ReturnsInternalServerError()
+        {
+            var user = new CreateUserRequest();
+            var errorMessage = "Unexpected error";
+
+            _mockUserService.Setup(x => x.SignUp(user))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.SignUp(user);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
+        }
         #endregion
 
         #region Login Tests
@@ -261,6 +276,21 @@ namespace LoanPortal.Tests.Controllers.Authentication
             var response = Assert.IsType<ApiResponse<UserDTO>>(badRequestResult.Value);
             Assert.Equal("Request Failed.", response.Message);
         }
+
+        [Fact]
+        public async Task UpdateProfile_GenericException_ReturnsInternalServerError()
+        {
+            var updateRequest = new UpdateProfileRequest();
+            var errorMessage = "Unexpected error";
+
+            _mockUserService.Setup(x => x.UpdateProfile(updateRequest))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.UpdateProfile(updateRequest);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
+        }
         #endregion
 
         #region GetUserProfile Tests
@@ -319,6 +349,22 @@ namespace LoanPortal.Tests.Controllers.Authentication
             var response = Assert.IsType<ApiResponse<UserDTO>>(badRequestResult.Value);
             Assert.Equal("Request Failed.", response.Message);
         }
+
+        [Fact]
+        public async Task GetUserProfile_GenericException_ReturnsInternalServerError()
+        {
+            var userId = Guid.NewGuid();
+            var errorMessage = "Unexpected error";
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockUserService.Setup(x => x.GetUserProfile(userId))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.GetUserProfile();
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
+        }
         #endregion
 
         #region ResetPassword Tests
@@ -363,6 +409,21 @@ namespace LoanPortal.Tests.Controllers.Authentication
             await _controller.ResetPassword(email);
 
             _mockUserService.Verify(x => x.ResetPassword(email), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResetPassword_GenericException_ReturnsInternalServerError()
+        {
+            var email = "test@example.com";
+            var errorMessage = "Unexpected error";
+
+            _mockUserService.Setup(x => x.ResetPassword(email))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.ResetPassword(email);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
         }
         #endregion
 

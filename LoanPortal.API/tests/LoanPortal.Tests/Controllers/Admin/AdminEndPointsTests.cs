@@ -861,5 +861,159 @@ namespace LoanPortal.Tests.Controllers.Admin
 
         #endregion
 
+        #region GetCompanyLeaderboard
+
+        [Fact]
+        public async Task GetCompanyLeaderboard_ValidDates_ReturnsOkResult()
+        {
+            var start = DateTime.UtcNow.Date.AddDays(-7);
+            var end = DateTime.UtcNow.Date;
+            var expected = new CompanyLeaderboardDTO();
+
+            _mockAdminService
+                .Setup(x => x.GetCompanyLeaderboard(start, end, It.IsAny<Guid?>()))
+                .ReturnsAsync(expected);
+
+            var result = await _controller.GetCompanyLeaderboard(start, end, null);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyLeaderboardDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expected, response.Data);
+        }
+
+        [Fact]
+        public async Task GetCompanyLeaderboard_EndDateBeforeStartDate_ReturnsBadRequest()
+        {
+            var start = DateTime.UtcNow.Date;
+            var end = start.AddDays(-1);
+
+            var result = await _controller.GetCompanyLeaderboard(start, end, null);
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyLeaderboardDTO>>(badRequest.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Request Failed.", response.Message);
+            Assert.Equal("End date must be after start date.", response.Error);
+
+            _mockAdminService.Verify(
+                x => x.GetCompanyLeaderboard(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GetCompanyLeaderboard_Exception_ReturnsInternalServerError()
+        {
+            var start = DateTime.UtcNow.Date.AddDays(-7);
+            var end = DateTime.UtcNow.Date;
+            var errorMessage = "Fetch failed";
+
+            _mockAdminService
+                .Setup(x => x.GetCompanyLeaderboard(start, end, It.IsAny<Guid?>()))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.GetCompanyLeaderboard(start, end, null);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<CompanyLeaderboardDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Request Failed.", response.Message);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
+        #region SetCompanyMonthlyGoal
+
+        [Fact]
+        public async Task SetCompanyMonthlyGoal_ValidRequest_ReturnsOkResult()
+        {
+            var goal = 1000m;
+            var expectedCompany = new CompanyDTO();
+
+            _mockAdminService
+                .Setup(x => x.SetMonthlyGoal(goal))
+                .ReturnsAsync(expectedCompany);
+
+            var result = await _controller.SetCompanyMonthlyGoal(goal);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedCompany, response.Data);
+        }
+
+        [Fact]
+        public async Task SetCompanyMonthlyGoal_NegativeGoal_ReturnsBadRequest()
+        {
+            var goal = -100m;
+
+            var result = await _controller.SetCompanyMonthlyGoal(goal);
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(badRequest.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Request Failed.", response.Message);
+            Assert.Equal("Monthly goal must be a non-negative value.", response.Error);
+        }
+
+        [Fact]
+        public async Task SetCompanyMonthlyGoal_NotFound_ReturnsNotFoundResult()
+        {
+            var goal = 1000m;
+
+            _mockAdminService
+                .Setup(x => x.SetMonthlyGoal(goal))
+                .ReturnsAsync((CompanyDTO)null!);
+
+            var result = await _controller.SetCompanyMonthlyGoal(goal);
+
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(notFoundResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Company not found.", response.Error);
+        }
+
+        [Fact]
+        public async Task SetCompanyMonthlyGoal_UnauthorizedException_ReturnsForbidden()
+        {
+            var goal = 1000m;
+            var errorMessage = "Unauthorized";
+
+            _mockAdminService
+                .Setup(x => x.SetMonthlyGoal(goal))
+                .ThrowsAsync(new UnauthorizedAccessException(errorMessage));
+
+            var result = await _controller.SetCompanyMonthlyGoal(goal);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(403, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task SetCompanyMonthlyGoal_Exception_ReturnsInternalServerError()
+        {
+            var goal = 1000m;
+            var errorMessage = "Update failed";
+
+            _mockAdminService
+                .Setup(x => x.SetMonthlyGoal(goal))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.SetCompanyMonthlyGoal(goal);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<CompanyDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        #endregion
+
     }
 }

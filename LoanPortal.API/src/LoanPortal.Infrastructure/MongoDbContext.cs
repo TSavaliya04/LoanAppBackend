@@ -36,5 +36,8 @@ namespace LoanPortal.Infrastructure
 
         public IMongoCollection<CountyLoanLimitEntity> CountyLoanLimits =>
             _database.GetCollection<CountyLoanLimitEntity>("CountyLoanLimits");
+
+        public IMongoCollection<IncomeCalculationDocument> IncomeCalculations =>
+            _database.GetCollection<IncomeCalculationDocument>("IncomeCalculations");
     }
 }

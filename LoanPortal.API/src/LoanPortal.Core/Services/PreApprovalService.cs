@@ -19,13 +19,15 @@ public class PreApprovalService : IPreApprovalService
     private readonly IUserRepository _userRepository;
     private readonly ICompanyRepository _companyRepository;
     private readonly ICountyLoanLimitRepository _countyRepository;
+    private readonly IIncomeCalculationService _incomeCalculationService;
 
     public PreApprovalService(
         ILoginUserDetails loginUserDetails,
         IPreApprovalRepository preApprovalRepository,
         IUserRepository userRepository,
         ICompanyRepository companyRepository,
-        ICountyLoanLimitRepository countyRepository
+        ICountyLoanLimitRepository countyRepository,
+        IIncomeCalculationService incomeCalculationService
     )
     {
         _loginUserDetails = loginUserDetails;
@@ -33,6 +35,7 @@ public class PreApprovalService : IPreApprovalService
         _userRepository = userRepository;
         _companyRepository = companyRepository;
         _countyRepository = countyRepository;
+        _incomeCalculationService = incomeCalculationService;
     }
 
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)
@@ -535,6 +538,10 @@ public class PreApprovalService : IPreApprovalService
                 throw new ValidationException("PreApproval IDs cannot be null or empty");
 
             await _preApprovalRepository.DeleteManyAsync(preApprovalIds);
+
+            // Cascade: delete all income calculator data linked to these PreApprovals
+            foreach (var id in preApprovalIds)
+                await _incomeCalculationService.DeleteByPreApprovalId(id);
         }
         catch (Exception e)
         {

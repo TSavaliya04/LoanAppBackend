@@ -47,7 +47,7 @@ namespace LoanPortal.API.Controllers.CountyLoanLimit
                 return StatusCode(500, ErrorResponse<List<LoanPortal.Core.Entities.CountySearchDTO>>(500, ex.Message));
             }
         }
-        
+
         [HttpGet("countyloanlimit/GetLoanLimit")]
         public async Task<IActionResult> GetLoanLimit([FromQuery] Guid countyId, [FromQuery] LoanPortal.Shared.Enum.PropertyType propertyType)
         {

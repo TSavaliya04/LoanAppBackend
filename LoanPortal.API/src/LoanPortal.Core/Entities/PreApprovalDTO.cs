@@ -184,7 +184,6 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("propertyType")]
         public int? PropertyType { get; set; }
-        // --- Fields moved from RefinanceLoanStructureDTO ---
 
         [BsonElement("refinanceType")]
         public int RefinanceType { get; set; }  // 0 = Rate and Term, 1 = Cash Out
@@ -944,11 +943,11 @@ namespace LoanPortal.Core.Entities
         [BsonElement("borrowerInfo")]
         public RefinanceBorrowerInfoDTO? BorrowerInfo { get; set; }
 
-        [BsonElement("loanStructure")]
-        public RefinanceLoanStructureDTO? LoanStructure { get; set; }
-
         [BsonElement("refinanceInfo")]
         public RefinanceInfoDTO? RefinanceInfo { get; set; }
+
+        [BsonElement("loanStructure")]
+        public RefinanceLoanStructureDTO? LoanStructure { get; set; }
 
         [BsonElement("lenderFees")]
         public RefinanceLenderFeesDTO? LenderFees { get; set; }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using LoanPortal.Infrastructure.Models;
 using LoanPortal.Core.Entities;
@@ -36,5 +36,8 @@ namespace LoanPortal.Infrastructure
 
         public IMongoCollection<CountyLoanLimitEntity> CountyLoanLimits =>
             _database.GetCollection<CountyLoanLimitEntity>("CountyLoanLimits");
+
+        public IMongoCollection<IncomeCalculationDocument> IncomeCalculations =>
+            _database.GetCollection<IncomeCalculationDocument>("IncomeCalculations");
     }
 }

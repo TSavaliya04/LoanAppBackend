@@ -1,4 +1,4 @@
-﻿using FirebaseAdmin.Auth;
+using FirebaseAdmin.Auth;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
@@ -495,14 +495,14 @@ namespace LoanPortal.Core.Services
                     throw new ValidationException($"User with email {email} is not exists.");
                 }
                 string link = await _firebaseAuthService.GeneratePasswordResetLinkAsync(email);
-                _userHelper.ResetPassword(email, link);
+                _userHelper.ResetPassword(email,link);
 
-                // Track last activity for normal users
+                 // Track last activity for normal users
                 if (user.Role == Shared.Enum.UserRole.User)
                 {
                     await _userRepository.UpdateUserLastActivityAsync(user.Id, DateTime.UtcNow);
                 }
-
+                
                 return true;
             }
             catch (Exception ex)
@@ -541,6 +541,17 @@ namespace LoanPortal.Core.Services
             catch (ValidationException ex)
             {
                 throw;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+        public async Task RequestDemo(RequestDemoRequest request)
+        {
+            try
+            {
+                await _userHelper.SendDemoRequestMail(request);
             }
             catch (Exception ex)
             {

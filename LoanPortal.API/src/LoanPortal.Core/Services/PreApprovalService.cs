@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using LoanPortal.Core.Exceptions;
 using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
@@ -19,13 +19,15 @@ public class PreApprovalService : IPreApprovalService
     private readonly IUserRepository _userRepository;
     private readonly ICompanyRepository _companyRepository;
     private readonly ICountyLoanLimitRepository _countyRepository;
+    private readonly IIncomeCalculationService _incomeCalculationService;
 
     public PreApprovalService(
         ILoginUserDetails loginUserDetails,
         IPreApprovalRepository preApprovalRepository,
         IUserRepository userRepository,
         ICompanyRepository companyRepository,
-        ICountyLoanLimitRepository countyRepository
+        ICountyLoanLimitRepository countyRepository,
+        IIncomeCalculationService incomeCalculationService
     )
     {
         _loginUserDetails = loginUserDetails;
@@ -33,6 +35,7 @@ public class PreApprovalService : IPreApprovalService
         _userRepository = userRepository;
         _companyRepository = companyRepository;
         _countyRepository = countyRepository;
+        _incomeCalculationService = incomeCalculationService;
     }
 
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)
@@ -41,7 +44,7 @@ public class PreApprovalService : IPreApprovalService
         if (document?.Id == null || document.Id == Guid.Empty)
             throw new NotFoundException($"Pre Approval with ID {id} was not found.");
 
-        // Enrich RefinanceInfo/PurchaseInfo with CountyName — batch all unique IDs in parallel
+        // Enrich RefinanceInfo with CountyName — batch all unique IDs in parallel
         if (document.Scenarios != null)
         {
             var uniqueCountyIds = document.Scenarios
@@ -471,7 +474,7 @@ public class PreApprovalService : IPreApprovalService
             clonedPreApproval.Id = Guid.NewGuid();
             clonedPreApproval.CreatedAt = DateTime.UtcNow;
             await _preApprovalRepository.InsertAsync(clonedPreApproval);
-
+            // Track last activity
             await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);
         }
         catch (Exception ex) { 
@@ -520,7 +523,6 @@ public class PreApprovalService : IPreApprovalService
             await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);
 
             return await _preApprovalRepository.GetByIdAsync(preApprovalDocument.Id);
-
         }
         catch (Exception e) 
         {
@@ -536,6 +538,10 @@ public class PreApprovalService : IPreApprovalService
                 throw new ValidationException("PreApproval IDs cannot be null or empty");
 
             await _preApprovalRepository.DeleteManyAsync(preApprovalIds);
+
+            // Cascade: delete all income calculator data linked to these PreApprovals
+            foreach (var id in preApprovalIds)
+                await _incomeCalculationService.DeleteByPreApprovalId(id);
         }
         catch (Exception e)
         {

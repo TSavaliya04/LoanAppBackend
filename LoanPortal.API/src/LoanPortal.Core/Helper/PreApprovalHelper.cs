@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using MongoDB.Bson.Serialization.Conventions;
 using System;
 using System.Collections.Generic;

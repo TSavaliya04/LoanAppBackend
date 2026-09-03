@@ -20,6 +20,7 @@ namespace LoanPortal.Tests.Services
         private readonly Mock<IPreApprovalRepository> _mockPreApprovalRepository;
         private readonly Mock<IUserRepository> _mockUserRepository;
         private readonly Mock<ICompanyRepository> _mockCompanyRepository;
+        private readonly Mock<ICountyLoanLimitRepository> _mockCountyRepository;
         private readonly PreApprovalService _service;
 
         public PreApprovalServiceTests()
@@ -28,11 +29,13 @@ namespace LoanPortal.Tests.Services
             _mockPreApprovalRepository = new Mock<IPreApprovalRepository>();
             _mockUserRepository = new Mock<IUserRepository>();
             _mockCompanyRepository = new Mock<ICompanyRepository>();
+            _mockCountyRepository = new Mock<ICountyLoanLimitRepository>();
             _service = new PreApprovalService(
                 _mockLoginUserDetails.Object,
                 _mockPreApprovalRepository.Object,
                 _mockUserRepository.Object,
-                _mockCompanyRepository.Object
+                _mockCompanyRepository.Object,
+                _mockCountyRepository.Object
             );
         }
 
@@ -174,8 +177,8 @@ namespace LoanPortal.Tests.Services
                             Refinance = new RefinanceScenarioDTO
                             {
                                 BorrowerInfo = new RefinanceBorrowerInfoDTO { BorrowerName = "Jane Refi" },
-                                RefinanceInfo = new RefinanceInfoDTO { LoanAmount = 250000 },
-                                LoanStructure = new RefinanceLoanStructureDTO { InterestRate = 4.0m, LoanProgram = (int)LoanProgram.Conventional },
+                                RefinanceInfo = new RefinanceInfoDTO { LoanAmount = 250000, InterestRate = 4.0m },
+                                LoanStructure = new RefinanceLoanStructureDTO { LoanProgram = (int)LoanProgram.Conventional },
                                 LoanProgram = new RefinanceLoanProgramDTO { MonthlyTotal = 1200m }
                             },
                             LastSubmittedFormNo = (int)LoanPortal.Shared.Enum.FormType.LoanProgram
@@ -473,16 +476,16 @@ namespace LoanPortal.Tests.Services
                             RefinanceInfo = new RefinanceInfoDTO
                             {
                                 EstimatedPropertyValue = 400000,
-                                LoanAmount = 300000
-                            },
-                            LoanStructure = new RefinanceLoanStructureDTO
-                            {
+                                LoanAmount = 300000,
                                 InterestRate = 4.0m,
-                                LoanProgram = (int)LoanProgram.FHA,
                                 MonthlyTaxAmount = 250,
                                 HazardInsurance = 100,
                                 MI = 50,
                                 AssociationFee = 25
+                            },
+                            LoanStructure = new RefinanceLoanStructureDTO
+                            {
+                                LoanProgram = (int)LoanProgram.FHA
                             },
                             LoanProgram = new RefinanceLoanProgramDTO
                             {
@@ -911,16 +914,16 @@ namespace LoanPortal.Tests.Services
                             RefinanceInfo = new RefinanceInfoDTO
                             {
                                 EstimatedPropertyValue = 400000,
-                                LoanAmount = 300000
-                            },
-                            LoanStructure = new RefinanceLoanStructureDTO
-                            {
+                                LoanAmount = 300000,
                                 InterestRate = 4.0m,
-                                LoanProgram = (int)LoanProgram.FHA,
                                 MonthlyTaxAmount = 250,
                                 HazardInsurance = 100,
                                 MI = 50,
                                 AssociationFee = 25
+                            },
+                            LoanStructure = new RefinanceLoanStructureDTO
+                            {
+                                LoanProgram = (int)LoanProgram.FHA
                             },
                             LoanProgram = new RefinanceLoanProgramDTO
                             {
@@ -964,6 +967,125 @@ namespace LoanPortal.Tests.Services
             Assert.Equal(0, result.EarnestMoneyDeposit);
             Assert.Equal(0, result.MiscFee4);
             Assert.Equal((int)LoanProgram.FHA, result.LoanProgram);
+        }
+
+        [Fact]
+        public async Task GetContinueWorkingQuotes_ReturnsPagedQuotes()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var teamId = Guid.NewGuid();
+            var quoteId = Guid.NewGuid();
+            var request = new GetContinueWorkingRequest { PageNumber = 0, PageSize = 10 };
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = quoteId,
+                UserId = userId,
+                LoanType = 2, // Purchase
+                UpdatedAt = DateTime.UtcNow,
+                Scenarios = new List<ScenarioDTO>
+                {
+                    new ScenarioDTO
+                    {
+                        Purchase = new PurchaseScenarioDTO
+                        {
+                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Buyer" },
+                            LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.Conventional }
+                        }
+                    }
+                }
+            };
+
+            var user = new UserEntity { Id = userId, TeamId = teamId, FirstName = "Agent", LastName = "Smith" };
+
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockUserRepository.Setup(x => x.GetUserById(userId)).ReturnsAsync(user);
+            
+            _mockPreApprovalRepository
+                .Setup(x => x.GetRecentQuotesAsync(teamId, null, request))
+                .ReturnsAsync((new List<PreApprovalDocument> { preApproval }, 1));
+
+            _mockUserRepository.Setup(x => x.GetUsersByIds(It.IsAny<List<Guid>>()))
+                .ReturnsAsync(new List<UserEntity> { user });
+
+            // Act
+            var result = await _service.GetContinueWorkingQuotes(request);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Items);
+            Assert.Equal("John Buyer", result.Items[0].BorrowerName);
+            Assert.Equal("Purchase", result.Items[0].LoanType);
+            Assert.Equal("Conventional", result.Items[0].LoanProgram);
+            Assert.Equal("Agent Smith", result.Items[0].OwnerName);
+        }
+
+        [Fact]
+        public async Task CreateLoanFile_ValidPurchase_ReturnsResponseAndStampsMismo()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                LoanType = (int)LoanType.Purchase,
+                Scenarios = new List<ScenarioDTO>
+                {
+                    new ScenarioDTO
+                    {
+                        Id = scenarioId,
+                        MismoDownloadedAt = null,
+                        Purchase = new PurchaseScenarioDTO
+                        {
+                            BorrowerInfo = new BorrowerInfoDTO { BorrowerName = "John Mismo" },
+                            PurchaseInfo = new PurchaseInfoDTO { PurchasePrice = 500000 },
+                            LoanProgram = new LoanProgramDTO { LoanProgram = (int)LoanProgram.Conventional, BaseLoanAmount = 400000, InterestRate = 3.5m, Term = 30 },
+                            BorrowerIncomes = new List<BorrowerIncomeDTO>
+                            {
+                                new BorrowerIncomeDTO { BorrowerName = "John Mismo", MonthlyIncome = 5000 }
+                            }
+                        }
+                    }
+                }
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId)).ReturnsAsync(preApproval);
+            _mockPreApprovalRepository.Setup(x => x.UpdateAsync(preApprovalId, It.IsAny<PreApprovalDocument>())).Returns(Task.CompletedTask);
+            // also mock county limits if needed? GetPreApproval does that but returns safely if missing.
+
+            // Act
+            var result = await _service.CreateLoanFile(preApprovalId, scenarioId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(preApprovalId, result.PreApprovalId);
+            Assert.Equal(scenarioId, result.ScenarioId);
+            Assert.False(string.IsNullOrEmpty(result.XmlData));
+            
+            // Verify MismoDownloadedAt was stamped
+            _mockPreApprovalRepository.Verify(x => x.UpdateAsync(preApprovalId, It.Is<PreApprovalDocument>(d => d.Scenarios[0].MismoDownloadedAt != null)), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateLoanFile_MissingScenario_ThrowsNotFoundException()
+        {
+            // Arrange
+            var preApprovalId = Guid.NewGuid();
+            var preApproval = new PreApprovalDocument
+            {
+                Id = preApprovalId,
+                Scenarios = new List<ScenarioDTO>() // empty
+            };
+
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(preApprovalId)).ReturnsAsync(preApproval);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<NotFoundException>(() => _service.CreateLoanFile(preApprovalId, Guid.NewGuid()));
+            Assert.Contains("not found on this PreApproval", ex.Message);
         }
     }
 } 

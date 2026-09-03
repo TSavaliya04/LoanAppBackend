@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,5 +17,6 @@ namespace LoanPortal.Core.Interfaces
         Task<UserDTO> ValidateAdminToken(string token);
         Task<bool> ResetPassword(string email);
         Task<GetNewTokenResponse> GetNewToken(string refreshToken);
+        Task RequestDemo(RequestDemoRequest request);
     }
 }

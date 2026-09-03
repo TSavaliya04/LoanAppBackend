@@ -340,5 +340,132 @@ namespace LoanPortal.Tests.Controllers.PreApproval
 
             _mockPreApprovalService.Verify(x => x.GetDashboardData(), Times.Once);
         }
+
+        #region GetContinueWorkingQuotes Tests
+
+        [Fact]
+        public async Task GetContinueWorkingQuotes_ValidRequest_ReturnsOkResult()
+        {
+            var request = new GetContinueWorkingRequestWrapper { Params = new GetContinueWorkingRequest() };
+            var expectedResponse = new PagedContinueWorkingQuotesDTO { Items = new List<ContinueWorkingQuoteDTO>() };
+
+            _mockPreApprovalService.Setup(x => x.GetContinueWorkingQuotes(request.Params))
+                .ReturnsAsync(expectedResponse);
+
+            var result = await _controller.GetContinueWorkingQuotes(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<PagedContinueWorkingQuotesDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedResponse, response.Data);
+        }
+
+        [Fact]
+        public async Task GetContinueWorkingQuotes_Exception_ReturnsInternalServerError()
+        {
+            var request = new GetContinueWorkingRequestWrapper { Params = new GetContinueWorkingRequest() };
+            var errorMessage = "Unexpected error";
+
+            _mockPreApprovalService.Setup(x => x.GetContinueWorkingQuotes(request.Params))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.GetContinueWorkingQuotes(request);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<PagedContinueWorkingQuotesDTO>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Request Failed.", response.Message);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task GetContinueWorkingQuotes_ServiceCalled_VerifyMethodInvocation()
+        {
+            var request = new GetContinueWorkingRequestWrapper { Params = new GetContinueWorkingRequest() };
+
+            _mockPreApprovalService.Setup(x => x.GetContinueWorkingQuotes(request.Params))
+                .ReturnsAsync(new PagedContinueWorkingQuotesDTO { Items = new List<ContinueWorkingQuoteDTO>() });
+
+            await _controller.GetContinueWorkingQuotes(request);
+
+            _mockPreApprovalService.Verify(x => x.GetContinueWorkingQuotes(request.Params), Times.Once);
+        }
+
+        #endregion
+
+        #region CreateLoanFile Tests
+
+        [Fact]
+        public async Task CreateLoanFile_ValidIds_ReturnsOkResult()
+        {
+            var preApprovalId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+            var expectedResponse = new CreateLoanFileResponse();
+
+            _mockPreApprovalService.Setup(x => x.CreateLoanFile(preApprovalId, scenarioId))
+                .ReturnsAsync(expectedResponse);
+
+            var result = await _controller.CreateLoanFile(preApprovalId, scenarioId);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CreateLoanFileResponse>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedResponse, response.Data);
+        }
+
+        [Fact]
+        public async Task CreateLoanFile_NotFound_ReturnsNotFoundResult()
+        {
+            var preApprovalId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+            var errorMessage = "PreApproval not found";
+
+            _mockPreApprovalService.Setup(x => x.CreateLoanFile(preApprovalId, scenarioId))
+                .ThrowsAsync(new NotFoundException(errorMessage));
+
+            var result = await _controller.CreateLoanFile(preApprovalId, scenarioId);
+
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<CreateLoanFileResponse>>(notFoundResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task CreateLoanFile_Exception_ReturnsInternalServerError()
+        {
+            var preApprovalId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+            var errorMessage = "Unexpected error";
+
+            _mockPreApprovalService.Setup(x => x.CreateLoanFile(preApprovalId, scenarioId))
+                .ThrowsAsync(new Exception(errorMessage));
+
+            var result = await _controller.CreateLoanFile(preApprovalId, scenarioId);
+
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            var response = Assert.IsType<ApiResponse<CreateLoanFileResponse>>(statusCodeResult.Value);
+            Assert.False(response.Success);
+            Assert.Equal("Request Failed.", response.Message);
+            Assert.Equal(errorMessage, response.Error);
+        }
+
+        [Fact]
+        public async Task CreateLoanFile_ServiceCalled_VerifyMethodInvocation()
+        {
+            var preApprovalId = Guid.NewGuid();
+            var scenarioId = Guid.NewGuid();
+
+            _mockPreApprovalService.Setup(x => x.CreateLoanFile(preApprovalId, scenarioId))
+                .ReturnsAsync(new CreateLoanFileResponse());
+
+            await _controller.CreateLoanFile(preApprovalId, scenarioId);
+
+            _mockPreApprovalService.Verify(x => x.CreateLoanFile(preApprovalId, scenarioId), Times.Once);
+        }
+
+        #endregion
     }
 } 

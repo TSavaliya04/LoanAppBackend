@@ -1,4 +1,4 @@
-﻿using FirebaseAdmin.Auth;
+using FirebaseAdmin.Auth;
 using LoanPortal.Core.Interfaces;
 using System.Net;
 

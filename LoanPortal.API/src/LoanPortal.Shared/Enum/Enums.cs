@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -105,5 +105,38 @@ namespace LoanPortal.Shared.Enum
         LowestDownPayment = 5,
         MaximumPurchasePrice = 6,
         BalancedOption = 7
+    }
+
+    public enum IncomeSourceType
+    {
+        Salary        = 1,
+        Hourly        = 2,
+        OvertimeBonus = 3,
+        Commission    = 4,
+        ScheduleC     = 5,
+        NonTaxable    = 6,
+        Other         = 7,
+        BankStatement = 8
+    }
+
+    public enum PayFrequency
+    {
+        Annual      = 1,
+        Monthly     = 2,
+        BiWeekly    = 3,
+        SemiMonthly = 4,
+        Weekly      = 5
+    }
+
+    public enum EmploymentType
+    {
+        FullTime     = 1,
+        PartTime     = 2,
+        Seasonal     = 3,
+        Temporary    = 4,
+        Contract1099 = 5,
+        SelfEmployed = 6,
+        Retired      = 7,
+        Other        = 8
     }
 }

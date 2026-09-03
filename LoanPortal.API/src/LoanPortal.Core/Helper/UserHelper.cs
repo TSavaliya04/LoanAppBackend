@@ -1,4 +1,4 @@
-﻿using LoanPortal.Core.Entities;
+using LoanPortal.Core.Entities;
 using LoanPortal.Core.Repositories;
 using Microsoft.Extensions.Options;
 using System;
@@ -17,6 +17,7 @@ namespace LoanPortal.Core.Helper
         Task<string> ValidateUser(CreateUserRequest request);
         Task SendWelcomeMail(string email, string displayName);
         Task ResetPassword(string email, string link);
+        Task SendDemoRequestMail(RequestDemoRequest request);
     }
 
         public class UserHelper : IUserHelper
@@ -102,7 +103,6 @@ namespace LoanPortal.Core.Helper
                 LastLoginDate = entity.LastLoginDate,
                 LastActivityDate = entity.LastActivityDate,
                 Role = entity.Role,
-
             };
         }
 
@@ -191,6 +191,31 @@ namespace LoanPortal.Core.Helper
             };
             options.Subject = UpdatePlaceHolders("Reset your password for {{APP_NAME}}", options.PlaceHolders);
             var body = "<p>Hello,</p>\r\n<p>Follow this link to reset your {{APP_NAME}} password for your {{EMAIL}} account.</p>\r\n<p><a href='{{link}}'>{{link}}</a></p>\r\n<p>If you didn’t ask to reset your password, you can ignore this email.</p>\r\n<p>Thanks,</p>\r\n<p>Your {{APP_NAME}} team</p>";
+            options.Body = UpdatePlaceHolders(body, options.PlaceHolders);
+
+            await SendEmail(options);
+        }
+
+        public async Task SendDemoRequestMail(RequestDemoRequest request)
+        {
+            UserEmailOptions options = new UserEmailOptions
+            {
+                ToEmails = new List<string>() { "tmamoyac@gmail.com", "sp@ntmrholdings.com" },
+                PlaceHolders = new List<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("{{FirstName}}", request.FirstName ?? ""),
+                    new KeyValuePair<string, string>("{{LastName}}", request.LastName ?? ""),
+                    new KeyValuePair<string, string>("{{Email}}", request.Email ?? ""),
+                    new KeyValuePair<string, string>("{{Phone}}", request.Phone ?? ""),
+                    new KeyValuePair<string, string>("{{Company}}", request.Company ?? ""),
+                },
+            };
+            options.Subject = "New Demo Request";
+            var body = "<p>New Demo Request Details:</p>\r\n" +
+                       "<p><strong>Name:</strong> {{FirstName}} {{LastName}}</p>\r\n" +
+                       "<p><strong>Email:</strong> {{Email}}</p>\r\n" +
+                       "<p><strong>Phone:</strong> {{Phone}}</p>\r\n" +
+                       "<p><strong>Company:</strong> {{Company}}</p>";
             options.Body = UpdatePlaceHolders(body, options.PlaceHolders);
 
             await SendEmail(options);

@@ -33,6 +33,7 @@ namespace LoanPortal.Core.Services
         {
             try
             {
+                //var (users, quotesThisWeek, totalCount) = await _userRepository.GetUsersWithFiltersAsync(request, _loginUserDetails.Role, _loginUserDetails.CompanyId);
                 var (users, quotesThisWeek, lastQuoteCreatedAt, totalCount) = await _userRepository.GetUsersWithFiltersAsync(request, _loginUserDetails.Role, _loginUserDetails.CompanyId);
 
                 var allCompanies = await _companyRepository.GetAllCompaniesAsync();
@@ -66,7 +67,6 @@ namespace LoanPortal.Core.Services
                         CreatedAt = user.CreatedAt,
                         TeamId = user.TeamId
                     });
-
                 }
 
                 var pageNumber = request.PageNumber < 0 ? 0 : request.PageNumber;

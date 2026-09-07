@@ -73,8 +73,7 @@ namespace LoanPortal.Core.Entities
         [BsonElement("scheduleC")]
         public ScheduleCIncomeDetailDTO? ScheduleC { get; set; }
 
-        [BsonElement("nonTaxable")]
-        public NonTaxableIncomeDetailDTO? NonTaxable { get; set; }
+
 
         [BsonElement("other")]
         public OtherIncomeDetailDTO? Other { get; set; }
@@ -234,28 +233,6 @@ namespace LoanPortal.Core.Entities
         public decimal MonthlyIncomeFromSource { get; set; }
     }
 
-    [BsonIgnoreExtraElements]
-    public class NonTaxableIncomeDetailDTO
-    {
-        [BsonElement("monthlyBenefit")]
-        public decimal? MonthlyBenefit { get; set; }
-
-        [BsonElement("annualUntaxedIncome")]
-        public decimal? AnnualUntaxedIncome { get; set; }
-
-        [BsonElement("directDepositCheckVerified")]
-        public bool DirectDepositCheckVerified { get; set; }
-
-        [BsonElement("grossUpForQualifying")]
-        public bool GrossUpForQualifying { get; set; }
-
-        [BsonElement("grossUpPercentage")]
-        public decimal? GrossUpPercentage { get; set; }
-
-        // Step 4 — Suggested income chosen by the user
-        [BsonElement("monthlyIncomeFromSource")]
-        public decimal MonthlyIncomeFromSource { get; set; }
-    }
 
     [BsonIgnoreExtraElements]
     public class OtherIncomeDetailDTO

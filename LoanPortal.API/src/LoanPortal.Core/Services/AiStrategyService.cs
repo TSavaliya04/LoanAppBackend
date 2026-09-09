@@ -96,7 +96,6 @@ namespace LoanPortal.Core.Services
                         FrontEndDTI = lp.FrontEndRatio ?? 0,
                         BackEndDTI = lp.BackEndRatio ?? 0,
                         PrincipalAndInterest = lp.PrincipalAndInterest ?? 0,
-                        PropertyTax = ri.MonthlyTaxAmount ?? 0,
                         PropertyTax = lp.MonthlyPropertyTax ?? 0,
                         MortgageInsurance = lp.MortgageInsurance ?? 0,
                         HoaFee = lp.HoaFee ?? 0,

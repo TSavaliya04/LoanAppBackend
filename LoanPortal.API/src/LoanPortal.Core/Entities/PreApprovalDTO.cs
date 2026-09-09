@@ -709,6 +709,12 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("annualMipRate")]
         public decimal? AnnualMIPRate { get; set; }
+
+        [BsonElement("monthlyPropertyTax")]
+        public decimal? MonthlyPropertyTax { get; set; }
+
+        [BsonElement("monthlyPropertyTaxPercentage")]
+        public decimal? monthlyPropertyTaxPercentage { get; set; }
         // Refinance-specific
 
         [BsonElement("ltv")]

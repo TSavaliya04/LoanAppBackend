@@ -114,9 +114,8 @@ namespace LoanPortal.Shared.Enum
         OvertimeBonus = 3,
         Commission    = 4,
         ScheduleC     = 5,
-        NonTaxable    = 6,
-        Other         = 7,
-        BankStatement = 8
+        BankStatement = 6,
+        Other         = 7
     }
 
     public enum PayFrequency

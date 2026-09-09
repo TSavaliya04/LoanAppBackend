@@ -21,6 +21,7 @@ namespace LoanPortal.Tests.Services
         private readonly Mock<IUserRepository> _mockUserRepository;
         private readonly Mock<ICompanyRepository> _mockCompanyRepository;
         private readonly Mock<ICountyLoanLimitRepository> _mockCountyRepository;
+        private readonly Mock<IIncomeCalculationService> _mockIncomeCalculationService;
         private readonly PreApprovalService _service;
 
         public PreApprovalServiceTests()
@@ -30,12 +31,14 @@ namespace LoanPortal.Tests.Services
             _mockUserRepository = new Mock<IUserRepository>();
             _mockCompanyRepository = new Mock<ICompanyRepository>();
             _mockCountyRepository = new Mock<ICountyLoanLimitRepository>();
+            _mockIncomeCalculationService = new Mock<IIncomeCalculationService>();
             _service = new PreApprovalService(
                 _mockLoginUserDetails.Object,
                 _mockPreApprovalRepository.Object,
                 _mockUserRepository.Object,
                 _mockCompanyRepository.Object,
-                _mockCountyRepository.Object
+                _mockCountyRepository.Object,
+                _mockIncomeCalculationService.Object
             );
         }
 
@@ -382,7 +385,8 @@ namespace LoanPortal.Tests.Services
                                 AnnualInterestRate = 3.5m,
                                 HazardInsurance = 1200,
                                 MiPercent = 0m,
-                                AssociationFee = 0m
+                                AssociationFee = 0m,
+                                MonthlyPropertyTax = 3000
                             },
                             LoanProgram = new LoanProgramDTO
                             {
@@ -391,8 +395,7 @@ namespace LoanPortal.Tests.Services
                                 MMI = 0.85m,
                                 UPMIPRate = 0m,
                                 BaseLoanAmount = 294750,
-                                Price = 300000,
-                                MonthlyPropertyTax = 3000
+                                Price = 300000
                             },
                             PrepaidItems = new PrepaidItemsDTO
                             {
@@ -717,7 +720,6 @@ namespace LoanPortal.Tests.Services
                                 Price = purchasePrice,
                                 InterestRate = interestRate,
                                 Term = term,
-                                MonthlyPropertyTax = monthlyPropertyTax,
                                 UPMIPRate = 0m
                             },
                             PurchaseInfo = new PurchaseInfoDTO
@@ -726,7 +728,8 @@ namespace LoanPortal.Tests.Services
                                 HazardInsurance = hazardInsurance,
                                 MiPercent = mortgageInsurance,
                                 AssociationFee = hoaFee,
-                                MipFundingFee = 1.75m
+                                MipFundingFee = 1.75m,
+                                MonthlyPropertyTax = monthlyPropertyTax
                             },
                             PrepaidItems = new PrepaidItemsDTO
                             {
@@ -820,7 +823,6 @@ namespace LoanPortal.Tests.Services
                                 Price = purchasePrice,
                                 InterestRate = interestRate,
                                 Term = term,
-                                MonthlyPropertyTax = monthlyPropertyTax,
                                 UPMIPRate = 0m
                             },
                             PurchaseInfo = new PurchaseInfoDTO
@@ -829,7 +831,8 @@ namespace LoanPortal.Tests.Services
                                 HazardInsurance = hazardInsurance,
                                 MiPercent = mortgageInsurance,
                                 AssociationFee = hoaFee,
-                                MipFundingFee = 0m
+                                MipFundingFee = 0m,
+                                MonthlyPropertyTax = monthlyPropertyTax
                             },
                             PrepaidItems = new PrepaidItemsDTO
                             {

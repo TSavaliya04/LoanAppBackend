@@ -313,7 +313,7 @@ public class PreApprovalService : IPreApprovalService
                 report.InterestRate = interestRate;
                 report.LoanTerm = loanTerm;
                 report.PILoanAmount = (decimal)MonthlyPILoanAmount;
-                report.PropertyTax = scenario.Purchase.LoanProgram.MonthlyPropertyTax.Value;
+                report.PropertyTax = scenario.Purchase.PurchaseInfo.MonthlyPropertyTax ?? 0;
                 report.HazardInsurancePremium = scenario.Purchase.PurchaseInfo.HazardInsurance.Value;
                 report.CoverageRate = scenario.Purchase.PurchaseInfo.MipFundingFee;
                 report.MortgageInsurance = scenario.Purchase.PurchaseInfo.MiPercent.Value;
@@ -443,7 +443,7 @@ public class PreApprovalService : IPreApprovalService
             double monthlyPI = PreApprovalHelper.CalculateMonthlyPI(totalLoanAmount + UPMIPAmount, quote.InterestRate, scenario.Purchase.LoanProgram.Term);
             quote.PrincipalAndInterest = (decimal)monthlyPI;
 
-            quote.PropertyTax = scenario.Purchase.LoanProgram.MonthlyPropertyTax.Value;
+            quote.PropertyTax = scenario.Purchase.PurchaseInfo.MonthlyPropertyTax ?? 0;
             quote.HazardInsurance = scenario.Purchase.PurchaseInfo.HazardInsurance.Value;
             quote.MortgageInsurance = scenario.Purchase.PurchaseInfo.MiPercent.Value;
             quote.HoaFee = scenario.Purchase.PurchaseInfo.AssociationFee.Value;

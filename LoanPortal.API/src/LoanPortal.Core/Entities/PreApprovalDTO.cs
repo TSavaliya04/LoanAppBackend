@@ -151,6 +151,12 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("updatedAt")]
         public DateTime? UpdatedAt { get; set; }
+
+        [BsonElement("monthlyPropertyTax")]
+        public decimal? MonthlyPropertyTax { get; set; }
+
+        [BsonElement("monthlyPropertyTaxPercentage")]
+        public decimal? monthlyPropertyTaxPercentage { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -608,9 +614,6 @@ namespace LoanPortal.Core.Entities
         [BsonElement("principalAndInterest")]
         public decimal? PrincipalAndInterest { get; set; }
 
-        [BsonElement("monthlyPropertyTax")]
-        public decimal? MonthlyPropertyTax { get; set; }
-
         [BsonElement("hazardInsurance")]
         public decimal? HazardInsurance { get; set; }
 
@@ -625,9 +628,6 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("annualMipRate")]
         public decimal? AnnualMIPRate { get; set; }
-
-        [BsonElement("monthlyPropertyTaxPercentage")]
-        public decimal? monthlyPropertyTaxPercentage { get; set; }
 
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
@@ -695,9 +695,6 @@ namespace LoanPortal.Core.Entities
         [BsonElement("principalAndInterest")]
         public decimal? PrincipalAndInterest { get; set; }
 
-        [BsonElement("monthlyPropertyTax")]
-        public decimal? MonthlyPropertyTax { get; set; }
-
         [BsonElement("hazardInsurance")]
         public decimal? HazardInsurance { get; set; }
 
@@ -712,9 +709,6 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("annualMipRate")]
         public decimal? AnnualMIPRate { get; set; }
-
-        [BsonElement("monthlyPropertyTaxPercentage")]
-        public decimal? monthlyPropertyTaxPercentage { get; set; }
         // Refinance-specific
 
         [BsonElement("ltv")]

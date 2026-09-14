@@ -326,6 +326,9 @@ namespace LoanPortal.Core.Entities
         [BsonIgnore]
         public Guid PreApprovalId { get; set; }
 
+        [BsonElement("agentName")]
+        public string AgentName { get; set; }
+
         [BsonElement("loanOriginationFee")]
         public decimal LoanOriginationFee { get; set; }
 

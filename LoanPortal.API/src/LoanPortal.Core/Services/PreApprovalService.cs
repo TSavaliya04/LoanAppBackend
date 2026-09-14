@@ -191,7 +191,7 @@ public class PreApprovalService : IPreApprovalService
                     Borrowers = new List<string>(),
                     LendingCompany = companyName,
                     OccupancyStatus = refi.RefinanceInfo?.OccupancyStatus ?? 0,
-                    AgentName = string.Empty,
+                    AgentName = refi.LenderFees?.AgentName ?? string.Empty,
                     AgentInfo = agent
                 };
             }

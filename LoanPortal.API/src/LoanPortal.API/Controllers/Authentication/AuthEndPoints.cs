@@ -129,6 +129,25 @@ namespace LoanPortal.API.Controllers.Authentication
         }
 
         [AllowAnonymous]
+        [HttpPost("borrower/ValidateBorrowerToken")]
+        public async Task<IActionResult> ValidateBorrowerToken([FromQuery] string token)
+        {
+            try
+            {
+                var result = await _userService.ValidateBorrowerToken(token);
+                return Ok(SuccessResponse(result));
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(400, ErrorResponse<UserDTO>(error: ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [AllowAnonymous]
         [HttpPost("user/RequestDemo")]
         public async Task<IActionResult> RequestDemo(RequestDemoRequest request)
         {

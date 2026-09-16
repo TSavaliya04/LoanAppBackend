@@ -39,5 +39,13 @@ namespace LoanPortal.Infrastructure
 
         public IMongoCollection<IncomeCalculationDocument> IncomeCalculations =>
             _database.GetCollection<IncomeCalculationDocument>("IncomeCalculations");
+
+        /// <summary>Stores borrower invite links (one per LO generate call).</summary>
+        public IMongoCollection<BorrowerLinkDocument> BorrowerLinks =>
+            _database.GetCollection<BorrowerLinkDocument>("BorrowerLinks");
+
+        /// <summary>Stores borrower employment draft and final submitted data (keyed by linkId).</summary>
+        public IMongoCollection<BorrowerEmploymentDocument> BorrowerEmployments =>
+            _database.GetCollection<BorrowerEmploymentDocument>("BorrowerEmploymentDocuments");
     }
 }

@@ -126,9 +126,9 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 });
 builder.Services.AddSingleton<MongoDbContext>();
 
-builder.Services.AddSingleton<ILoginUserDetails, LoginUserDetails>();
+builder.Services.AddScoped<ILoginUserDetails, LoginUserDetails>();
 
-builder.Services.AddSingleton<IPreApprovalService, PreApprovalService>();
+builder.Services.AddScoped<IPreApprovalService, PreApprovalService>();
 builder.Services.AddSingleton<IPreApprovalRepository, PreApprovalRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();

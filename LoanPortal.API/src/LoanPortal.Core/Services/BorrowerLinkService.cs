@@ -346,25 +346,7 @@ namespace LoanPortal.Core.Services
             // Compute monthly income based on whichever category the borrower selected
             var monthlyIncome = ComputeMonthlyIncome(employment);
 
-            var borrowerIncome = new BorrowerIncomeDTO
-            {
-                Id            = Guid.NewGuid(),
-                BorrowerName  = borrowerName,
-                MonthlyIncome = monthlyIncome,
-                Debts         = new List<DebtBreakdownDTO>(),
-                CreatedAt     = now,
-                UpdatedAt     = now
-            };
-
-            var borrowerInfo = new BorrowerInfoDTO
-            {
-                Id           = Guid.NewGuid(),
-                BorrowerName = borrowerName,
-                DateOfBirth  = employment.PersonalInfo?.DateOfBirth,
-                Ssn          = employment.PersonalInfo?.Last4SSN,
-                CreatedAt    = now,
-                UpdatedAt    = now
-            };
+            var isRefinance = employment.PersonalInfo?.LoanType == Shared.Enum.LoanType.Refinance;
 
             var scenario = new ScenarioDTO
             {
@@ -372,19 +354,69 @@ namespace LoanPortal.Core.Services
                 ScenarioOrder = 1,
                 ScenarioName  = "Scenario 1",
                 CreatedAt     = now,
-                UpdatedAt     = now,
-                Purchase = new PurchaseScenarioDTO
-                {
-                    BorrowerInfo    = borrowerInfo,
-                    BorrowerIncomes = new List<BorrowerIncomeDTO> { borrowerIncome }
-                }
+                UpdatedAt     = now
             };
+
+            if (isRefinance)
+            {
+                scenario.Refinance = new RefinanceScenarioDTO
+                {
+                    BorrowerInfo = new RefinanceBorrowerInfoDTO
+                    {
+                        Id           = Guid.NewGuid(),
+                        BorrowerName = borrowerName,
+                        DateOfBirth  = employment.PersonalInfo?.DateOfBirth,
+                        Ssn          = employment.PersonalInfo?.Last4SSN,
+                        CreatedAt    = now,
+                        UpdatedAt    = now
+                    },
+                    BorrowerIncomes = new List<RefinanceBorrowerIncomeDTO>
+                    {
+                        new RefinanceBorrowerIncomeDTO
+                        {
+                            Id            = Guid.NewGuid(),
+                            BorrowerName  = borrowerName,
+                            MonthlyIncome = monthlyIncome,
+                            Debts         = new List<RefinanceDebtBreakdownDTO>(),
+                            CreatedAt     = now,
+                            UpdatedAt     = now
+                        }
+                    }
+                };
+            }
+            else
+            {
+                scenario.Purchase = new PurchaseScenarioDTO
+                {
+                    BorrowerInfo = new BorrowerInfoDTO
+                    {
+                        Id           = Guid.NewGuid(),
+                        BorrowerName = borrowerName,
+                        DateOfBirth  = employment.PersonalInfo?.DateOfBirth,
+                        Ssn          = employment.PersonalInfo?.Last4SSN,
+                        CreatedAt    = now,
+                        UpdatedAt    = now
+                    },
+                    BorrowerIncomes = new List<BorrowerIncomeDTO>
+                    {
+                        new BorrowerIncomeDTO
+                        {
+                            Id            = Guid.NewGuid(),
+                            BorrowerName  = borrowerName,
+                            MonthlyIncome = monthlyIncome,
+                            Debts         = new List<DebtBreakdownDTO>(),
+                            CreatedAt     = now,
+                            UpdatedAt     = now
+                        }
+                    }
+                };
+            }
 
             return new PreApprovalDocument
             {
                 Id        = Guid.NewGuid(),
                 UserId    = loanOfficerId,
-                LoanType  = (int)LoanType.Purchase,
+                LoanType  = isRefinance ? (int)Shared.Enum.LoanType.Refinance : (int)Shared.Enum.LoanType.Purchase,
                 Status    = 0,
                 CreatedAt = now,
                 UpdatedAt = now,

@@ -145,6 +145,9 @@ namespace LoanPortal.Core.Entities
         /// <summary>Last 4 digits of SSN. Used by LO for identity verification only.</summary>
         [BsonElement("last4SSN")]
         public string? Last4SSN { get; set; }
+
+        [BsonElement("loanType")]
+        public LoanType? LoanType { get; set; }
     }
 
     /// <summary>

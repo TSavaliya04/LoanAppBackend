@@ -10,7 +10,8 @@ namespace LoanPortal.Shared.Enum
     {
         SuperAdmin = 0,
         CompanyAdmin = 1,
-        User = 2
+        User = 2,
+        Borrower = 3
     }
 
     public enum UserStatus
@@ -138,4 +139,73 @@ namespace LoanPortal.Shared.Enum
         Retired      = 7,
         Other        = 8
     }
+
+    public enum BorrowerLinkStatus
+    {
+        Active    = 0,
+        Submitted = 1,
+        Expired   = 2,
+        Revoked   = 3    // when LO regenerates a new link, the old one is revoked
+    }
+
+    public enum EmploymentCategory
+    {
+        EmployedByCompany = 1,
+        SelfEmployed      = 2,
+        Military          = 3
+    }
+
+    // ── Self-Employed enums ────────────────────────────────────────────────
+
+    /// <summary>Ownership percentage threshold (Step 6: Self-Employment Income Details).</summary>
+    public enum OwnershipShareType
+    {
+        LessThan25Percent = 1,   // < 25%
+        AtLeast25Percent  = 2    // 25% or more
+    }
+
+    /// <summary>Business entity / tax filing type (Step 6: Self-Employment Income Details).</summary>
+    public enum BusinessEntityType
+    {
+        SoleProprietary     = 1,
+        Partnership         = 2,
+        SCorporation        = 3,
+        CCorporation        = 4,
+        LLC                 = 5,
+        Other               = 6
+    }
+
+    /// <summary>Income documentation preference (Step 6: Self-Employment Income Details).</summary>
+    public enum IncomeDocumentationType
+    {
+        TaxReturns        = 1,
+        BankStatements    = 2,
+        NotSure           = 3
+    }
+
+    // ── Military enums ────────────────────────────────────────────────────
+
+    /// <summary>Branch of U.S. military service (Step 3: Military Service Details).</summary>
+    public enum MilitaryBranch
+    {
+        Army           = 1,
+        Navy           = 2,
+        AirForce       = 3,
+        MarineCorps    = 4,
+        CoastGuard     = 5,
+        SpaceForce     = 6,
+        NationalGuard  = 7,
+        Reserves       = 8
+    }
+
+    /// <summary>Current duty status (Step 3: Military Service Details).</summary>
+    public enum MilitaryStatus
+    {
+        ActiveDuty  = 1,
+        Reserve     = 2,
+        NationalGuard = 3,
+        Retired     = 4,
+        Veteran     = 5
+    }
 }
+

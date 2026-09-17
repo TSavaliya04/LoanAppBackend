@@ -82,6 +82,7 @@ namespace LoanPortal.Core.Services
                     LastName = user.LastName,
                     Email = user.Email,
                     IsActive = true,
+                    Role = user.Role ?? Shared.Enum.UserRole.User, // Default to User if not specified
                     FirebaseId = newUserId,
                     CreatedAt = DateTime.UtcNow,
                 };
@@ -412,6 +413,67 @@ namespace LoanPortal.Core.Services
                 }
 
                 // Track login activity
+                await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);
+                await _userRepository.UpdateUserLastActivityAsync(user.Id, DateTime.UtcNow);
+
+                await _firebaseAuthService.SetCustomUserClaimsAsync(uid, claims);
+                return UserHelper.MaptoUserDTO(user);
+            }
+            catch (ValidationException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<UserDTO> ValidateBorrowerToken(string token)
+        {
+            try
+            {
+                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token);
+                UserRecord userRecord = await _firebaseAuthService.GetUserAsync(uid);
+
+                var user = new UserEntity();
+                var email = userRecord.Email;
+                var phone = userRecord.PhoneNumber;
+
+                if (userRecord.ProviderData != null && userRecord.ProviderData.ToList().Count > 0)
+                {
+                    if (userRecord.ProviderData[0].ProviderId == "phone")
+                    {
+                        phone = userRecord.PhoneNumber.Substring(1);
+                        user = await _userRepository.GetUserByPhone(phone);
+                    }
+                    else if (userRecord.ProviderData[0].ProviderId == "password")
+                    {
+                        email = userRecord.ProviderData[0].Email;
+                        user = await _userRepository.GetUserByEmail(email);
+                    }
+                }
+
+                // Throw if borrower doesn't exist (must use SignUp flow)
+                if (user == null || user.Id == Guid.Empty)
+                {
+                    throw new ValidationException($"Borrower with email {email} not found.");
+                }
+
+                if (user.Role != Shared.Enum.UserRole.Borrower)
+                {
+                    throw new UnauthorizedAccessException("Only borrowers can authenticate via this endpoint.");
+                }
+
+                var claims = new Dictionary<string, object>()
+                {
+                    { "UserId", user.Id },
+                    { "Phone", user.Phone ?? "" },
+                    { "Email", user.Email ?? "" },
+                    { "UserName", (user.FirstName + " " + user.LastName).Trim() },
+                    { "Role", (int)user.Role }
+                };
+
                 await _userRepository.UpdateUserLoginActivity(user.Id, DateTime.UtcNow);
                 await _userRepository.UpdateUserLastActivityAsync(user.Id, DateTime.UtcNow);
 

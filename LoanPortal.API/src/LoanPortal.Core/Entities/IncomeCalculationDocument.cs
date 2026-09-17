@@ -74,7 +74,6 @@ namespace LoanPortal.Core.Entities
         public ScheduleCIncomeDetailDTO? ScheduleC { get; set; }
 
 
-
         [BsonElement("other")]
         public OtherIncomeDetailDTO? Other { get; set; }
 

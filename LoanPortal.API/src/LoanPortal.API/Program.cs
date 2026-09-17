@@ -22,6 +22,7 @@ using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 
+
 var builder = WebApplication.CreateBuilder(args);
 var CORS_POLICY = "CorsPolicy";
 
@@ -143,6 +144,11 @@ builder.Services.AddSingleton<ICountyLoanLimitRepository, CountyLoanLimitReposit
 builder.Services.AddSingleton<IIncomeCalculationRepository, IncomeCalculationRepository>();
 builder.Services.AddSingleton<IIncomeCalculationService, IncomeCalculationService>();
 builder.Services.AddScoped<ICountyLoanLimitService, CountyLoanLimitService>();
+
+// Borrower Link Feature
+builder.Services.AddSingleton<IBorrowerLinkRepository, BorrowerLinkRepository>();
+builder.Services.AddSingleton<IBorrowerEmploymentRepository, BorrowerEmploymentRepository>();
+builder.Services.AddScoped<IBorrowerLinkService, BorrowerLinkService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

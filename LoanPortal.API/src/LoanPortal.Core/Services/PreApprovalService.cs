@@ -805,7 +805,9 @@ public class PreApprovalService : IPreApprovalService
         if (!string.IsNullOrWhiteSpace(coBorrowerName))
         {
             decimal? coIncome = borrowerIncomes.Count > 1 ? borrowerIncomes[1].MonthlyIncome : null;
-            parties.Add(PreApprovalHelper.BuildParty(2, coBorrowerName, "", coBorrowerPhone, coIncome, intentToOccupy, null, null, "", ""));
+            string coPhone   = !string.IsNullOrWhiteSpace(coBorrowerPhone) ? coBorrowerPhone : borrowerPhone;
+            string coAddress = !string.IsNullOrWhiteSpace(borrowerAddress)  ? borrowerAddress  : "";
+            parties.Add(PreApprovalHelper.BuildParty(2, coBorrowerName, "", coPhone, coIncome, intentToOccupy, null, null, "", coAddress));
         }
 
         var liabilities = PreApprovalHelper.BuildLiabilities(allDebts);

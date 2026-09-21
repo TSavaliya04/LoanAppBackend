@@ -633,5 +633,17 @@ namespace LoanPortal.Core.Services
                 throw;
             }
         }
+
+        public async Task UpdateFcmTokenAsync(Guid userId, string fcmToken)
+        {
+            try
+            {
+                await _userRepository.UpdateFcmTokenAsync(userId, fcmToken);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }

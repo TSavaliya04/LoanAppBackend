@@ -540,5 +540,34 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<List<UserEntity>> GetUsersByCompanyIdAsync(Guid companyId)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(u => u.CompanyId, companyId);
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.GetUsersByCompanyIdAsync -> " + ex.Message);
+                throw;
+            }
+        }
+
+        public async Task UpdateFcmTokenAsync(Guid userId, string fcmToken)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(u => u.Id, userId);
+                var update  = Builders<UserEntity>.Update.Set(u => u.FcmToken, fcmToken);
+                await _collection.UpdateOneAsync(filter, update);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in UserRepository.UpdateFcmTokenAsync -> " + ex.Message);
+                throw;
+            }
+        }
     }
 }

@@ -22,6 +22,7 @@ namespace LoanPortal.Tests.Services
         private readonly Mock<ICompanyRepository> _mockCompanyRepository;
         private readonly Mock<ICountyLoanLimitRepository> _mockCountyRepository;
         private readonly Mock<IIncomeCalculationService> _mockIncomeCalculationService;
+        private readonly Mock<INotificationService> _mockNotificationService;
         private readonly PreApprovalService _service;
 
         public PreApprovalServiceTests()
@@ -32,13 +33,15 @@ namespace LoanPortal.Tests.Services
             _mockCompanyRepository = new Mock<ICompanyRepository>();
             _mockCountyRepository = new Mock<ICountyLoanLimitRepository>();
             _mockIncomeCalculationService = new Mock<IIncomeCalculationService>();
+            _mockNotificationService = new Mock<INotificationService>();
             _service = new PreApprovalService(
                 _mockLoginUserDetails.Object,
                 _mockPreApprovalRepository.Object,
                 _mockUserRepository.Object,
                 _mockCompanyRepository.Object,
                 _mockCountyRepository.Object,
-                _mockIncomeCalculationService.Object
+                _mockIncomeCalculationService.Object,
+                _mockNotificationService.Object
             );
         }
 

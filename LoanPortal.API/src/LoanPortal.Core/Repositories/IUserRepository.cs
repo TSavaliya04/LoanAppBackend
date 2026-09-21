@@ -31,5 +31,11 @@ namespace LoanPortal.Core.Repositories
 
         /// <summary>Returns count of active users in a given team (used for delete-guard).</summary>
         Task<int> GetActiveUserCountByTeamIdAsync(Guid teamId);
+
+        /// <summary>Returns all users that belong to the given company. Used by NotificationService for company-mate lookup.</summary>
+        Task<List<UserEntity>> GetUsersByCompanyIdAsync(Guid companyId);
+
+        /// <summary>Saves or updates the FCM Web Push token for a user.</summary>
+        Task UpdateFcmTokenAsync(Guid userId, string fcmToken);
     }
 }

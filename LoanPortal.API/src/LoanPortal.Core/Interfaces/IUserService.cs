@@ -20,5 +20,6 @@ namespace LoanPortal.Core.Interfaces
         Task<bool> ResetPassword(string email);
         Task<GetNewTokenResponse> GetNewToken(string refreshToken);
         Task RequestDemo(RequestDemoRequest request);
+        Task UpdateFcmTokenAsync(Guid userId, string fcmToken);
     }
 }

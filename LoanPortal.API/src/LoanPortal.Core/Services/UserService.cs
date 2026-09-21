@@ -106,6 +106,19 @@ namespace LoanPortal.Core.Services
             }
         }
 
+        public async Task<UserDTO> SignUpBorrower(CreateUserRequest request)
+        {
+            return await SignUp(new CreateUserRequest
+            {
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Email = request.Email,
+                Password = request.Password,
+                Phone = request.Phone,
+                Role = Shared.Enum.UserRole.Borrower
+            });
+        }
+
         public async Task<LoginResponse> Login(LoginRequest request)
         {
             try

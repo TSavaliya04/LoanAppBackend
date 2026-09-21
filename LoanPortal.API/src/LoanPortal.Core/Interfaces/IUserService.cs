@@ -10,6 +10,7 @@ namespace LoanPortal.Core.Interfaces
     public interface IUserService
     {
         Task<UserDTO> SignUp(CreateUserRequest user);
+        Task<UserDTO> SignUpBorrower(CreateUserRequest request);
         Task<LoginResponse> Login(LoginRequest request);
         Task<UserDTO> UpdateProfile(UpdateProfileRequest request);
         Task<UserDTO> GetUserProfile(Guid userId);

@@ -40,6 +40,25 @@ namespace LoanPortal.API.Controllers.Authentication
         }
 
         [AllowAnonymous]
+        [HttpPost("borrower/SignUp")]
+        public async Task<IActionResult> SignUpBorrower(CreateUserRequest request)
+        {
+            try
+            {
+                var result = await _userService.SignUpBorrower(request);
+                return Ok(SuccessResponse(data: result, message: "Borrower Created Successfully."));
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(400, ErrorResponse<UserDTO>(error: ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [AllowAnonymous]
         [HttpPost("user/Login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {

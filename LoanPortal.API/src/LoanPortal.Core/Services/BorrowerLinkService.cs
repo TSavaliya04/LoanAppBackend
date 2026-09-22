@@ -147,7 +147,7 @@ namespace LoanPortal.Core.Services
                 LoanOfficerPhone = loanOfficer?.Phone,
                 Status           = linkDoc.Status,
                 LastCompletedStep = draftData?.LastCompletedStep ?? 0,
-                DraftData        = draftData
+                DraftData        = draftData,
                 LinkId              = linkDoc.Id,
                 LoanOfficerName     = loanOfficerName,
                 LoanOfficerPhone    = loanOfficer?.Phone,

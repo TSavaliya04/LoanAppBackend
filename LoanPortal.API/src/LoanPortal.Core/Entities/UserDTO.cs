@@ -110,6 +110,9 @@ namespace LoanPortal.Core.Entities
         [BsonElement("lastActivityDate")]
         public DateTime? LastActivityDate { get; set; }
 
+        [BsonElement("fcmToken")]
+        public string? FcmToken { get; set; }
+        
         //[BsonElement("loginHistory")]
         //public List<DateTime> LoginHistory { get; set; } = new List<DateTime>();
 

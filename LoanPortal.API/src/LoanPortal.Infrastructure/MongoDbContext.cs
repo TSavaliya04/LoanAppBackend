@@ -47,5 +47,9 @@ namespace LoanPortal.Infrastructure
         /// <summary>Stores borrower employment draft and final submitted data (keyed by linkId).</summary>
         public IMongoCollection<BorrowerEmploymentDocument> BorrowerEmployments =>
             _database.GetCollection<BorrowerEmploymentDocument>("BorrowerEmploymentDocuments");
+
+        /// <summary>Stores in-app notifications for all users.</summary>
+        public IMongoCollection<NotificationDocument> Notifications =>
+            _database.GetCollection<NotificationDocument>("Notifications");
     }
 }

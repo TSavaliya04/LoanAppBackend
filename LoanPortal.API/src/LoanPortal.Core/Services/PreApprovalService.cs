@@ -20,6 +20,7 @@ public class PreApprovalService : IPreApprovalService
     private readonly ICompanyRepository _companyRepository;
     private readonly ICountyLoanLimitRepository _countyRepository;
     private readonly IIncomeCalculationService _incomeCalculationService;
+    private readonly INotificationService _notificationService;
 
     public PreApprovalService(
         ILoginUserDetails loginUserDetails,
@@ -27,7 +28,8 @@ public class PreApprovalService : IPreApprovalService
         IUserRepository userRepository,
         ICompanyRepository companyRepository,
         ICountyLoanLimitRepository countyRepository,
-        IIncomeCalculationService incomeCalculationService
+        IIncomeCalculationService incomeCalculationService,
+        INotificationService notificationService
     )
     {
         _loginUserDetails = loginUserDetails;
@@ -36,6 +38,7 @@ public class PreApprovalService : IPreApprovalService
         _companyRepository = companyRepository;
         _countyRepository = countyRepository;
         _incomeCalculationService = incomeCalculationService;
+        _notificationService = notificationService;
     }
 
     public async Task<PreApprovalDocument> GetPreApproval(Guid id)
@@ -512,11 +515,21 @@ public class PreApprovalService : IPreApprovalService
                     preApprovalDocument.UserId = _loginUserDetails.UserID;
                 }
                 await _preApprovalRepository.UpdateAsync(preApprovalDocument.Id, preApprovalDocument);
+
+                // Notify company-mates that a quote was updated
+                var actorForUpdate = await _userRepository.GetUserById(_loginUserDetails.UserID);
+                var savedDocForUpdate = await _preApprovalRepository.GetByIdAsync(preApprovalDocument.Id);
+                _ = _notificationService.NotifyQuoteUpdatedAsync(savedDocForUpdate, actorForUpdate);
             }
             else
             {
                 preApprovalDocument.UserId = _loginUserDetails.UserID;
                 await _preApprovalRepository.InsertAsync(preApprovalDocument);
+
+                // Notify the creator that their new quote was created
+                var actorForCreate = await _userRepository.GetUserById(_loginUserDetails.UserID);
+                var savedDocForCreate = await _preApprovalRepository.GetByIdAsync(preApprovalDocument.Id);
+                _ = _notificationService.NotifyQuoteCreatedAsync(savedDocForCreate, actorForCreate);
             }
 
             // Track last activity
@@ -554,10 +567,15 @@ public class PreApprovalService : IPreApprovalService
         try
         {
             var preApprovalDoc = await _preApprovalRepository.GetByIdAsync(id);
+            var oldStatus = preApprovalDoc.Status; // capture before overwriting
             preApprovalDoc.Status = status;
             preApprovalDoc.StatusUpdatedAt = DateTime.Now;
 
             await _preApprovalRepository.UpdateAsync(id, preApprovalDoc);
+
+            // Notify company-mates of the status change
+            var actor = await _userRepository.GetUserById(_loginUserDetails.UserID);
+            _ = _notificationService.NotifyQuoteStatusChangedAsync(preApprovalDoc, actor, oldStatus, status);
 
             // Track last activity
             await _userRepository.UpdateUserLastActivityAsync(_loginUserDetails.UserID, DateTime.UtcNow);

@@ -7,6 +7,7 @@ using LoanPortal.Core.Helper;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
 using LoanPortal.Core.Services;
+using LoanPortal.Core.Services.Notifications.Handlers;
 using LoanPortal.Infrastructure;
 using LoanPortal.Infrastructure.Models;
 using LoanPortal.Infrastructure.Repositories;
@@ -149,6 +150,15 @@ builder.Services.AddScoped<ICountyLoanLimitService, CountyLoanLimitService>();
 builder.Services.AddSingleton<IBorrowerLinkRepository, BorrowerLinkRepository>();
 builder.Services.AddSingleton<IBorrowerEmploymentRepository, BorrowerEmploymentRepository>();
 builder.Services.AddScoped<IBorrowerLinkService, BorrowerLinkService>();
+
+// Notification System
+builder.Services.AddSingleton<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IFcmService, FcmService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+// Handlers — add one new line here for each future notification type
+builder.Services.AddScoped<INotificationEventHandler, QuoteCreatedHandler>();
+builder.Services.AddScoped<INotificationEventHandler, QuoteUpdatedHandler>();
+builder.Services.AddScoped<INotificationEventHandler, QuoteStatusChangedHandler>();
 
 builder.Services.AddSwaggerGen(c =>
 {

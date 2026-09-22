@@ -148,6 +148,15 @@ namespace LoanPortal.Core.Services
                 Status           = linkDoc.Status,
                 LastCompletedStep = draftData?.LastCompletedStep ?? 0,
                 DraftData        = draftData
+                LinkId              = linkDoc.Id,
+                LoanOfficerName     = loanOfficerName,
+                LoanOfficerPhone    = loanOfficer?.Phone,
+                LoanOfficerProfile  = loanOfficer?.Profile,
+                LoanOfficerJobTitle = loanOfficer?.JobTitle,
+                LoanOfficerNMLS     = loanOfficer?.NMLS,
+                Status              = linkDoc.Status,
+                LastCompletedStep   = draftData?.LastCompletedStep ?? 0,
+                DraftData           = draftData
             };
         }
 

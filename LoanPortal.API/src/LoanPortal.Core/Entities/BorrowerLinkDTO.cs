@@ -465,6 +465,9 @@ namespace LoanPortal.Core.Entities
         public Guid LinkId { get; set; }
         public string LoanOfficerName { get; set; }
         public string? LoanOfficerPhone { get; set; }
+        public string? LoanOfficerProfile { get; set; }
+        public string? LoanOfficerJobTitle { get; set; }
+        public string? LoanOfficerNMLS { get; set; }
         public BorrowerLinkStatus Status { get; set; }
         public int LastCompletedStep { get; set; }
         /// <summary>Full draft data so the borrower can resume exactly where they left off.</summary>

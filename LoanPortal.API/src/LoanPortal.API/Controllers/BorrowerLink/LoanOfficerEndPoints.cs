@@ -25,20 +25,40 @@ namespace LoanPortal.API.Controllers.BorrowerLink
         }
 
         /// <summary>
-        /// Generates (or regenerates) a secure borrower invite link.
-        /// If an Active link already exists for this Loan Officer, it is revoked first.
+        /// Retrieves the Loan Officer's permanent portal URL. Creates it if it doesn't exist.
         /// </summary>
-        [HttpPost("borrowerlink/generate")]
-        public async Task<IActionResult> GenerateLink([FromBody] GenerateBorrowerLinkRequest request)
+        [HttpGet("EmploymentLink/Me")]
+        public async Task<IActionResult> GetMyPortalLink()
         {
             try
             {
-                var result = await _borrowerLinkService.GenerateLinkAsync(request);
+                var result = await _borrowerLinkService.GetMyPortalLinkAsync();
                 return Ok(SuccessResponse(result));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ErrorResponse<GenerateBorrowerLinkResponse>(500, ex.Message));
+                return StatusCode(500, ErrorResponse<GetLOEmploymentLinkResponse>(500, ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Updates the status (Active/Disabled) of the Loan Officer's portal.
+        /// </summary>
+        [HttpPatch("EmploymentLink/Me/status")]
+        public async Task<IActionResult> UpdatePortalStatus([FromBody] UpdateLOEmploymentLinkStatusRequest request)
+        {
+            try
+            {
+                await _borrowerLinkService.UpdatePortalStatusAsync(request);
+                return Ok(SuccessResponse<string>("", 200, "Portal status updated successfully."));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ErrorResponse<string>(404, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ErrorResponse<string>(500, ex.Message));
             }
         }
     }

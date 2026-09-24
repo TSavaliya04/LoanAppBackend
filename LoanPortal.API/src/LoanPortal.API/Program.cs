@@ -147,7 +147,7 @@ builder.Services.AddSingleton<IIncomeCalculationService, IncomeCalculationServic
 builder.Services.AddScoped<ICountyLoanLimitService, CountyLoanLimitService>();
 
 // Borrower Link Feature
-builder.Services.AddSingleton<IBorrowerLinkRepository, BorrowerLinkRepository>();
+builder.Services.AddSingleton<ILOEmploymentLinkRepository, LOEmploymentLinkRepository>();
 builder.Services.AddSingleton<IBorrowerEmploymentRepository, BorrowerEmploymentRepository>();
 builder.Services.AddScoped<IBorrowerLinkService, BorrowerLinkService>();
 

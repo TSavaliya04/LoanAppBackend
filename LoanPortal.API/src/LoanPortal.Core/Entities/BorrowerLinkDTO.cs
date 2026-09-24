@@ -49,7 +49,7 @@ namespace LoanPortal.Core.Entities
 
         /// <summary>FK → Users._id (Borrower)</summary>
         [BsonElement("borrowerId")]
-        public Guid BorrowerId { get; set; }
+        public Guid? BorrowerId { get; set; }
 
         /// <summary>FK → PreApprovals._id — set on final submit.</summary>
         [BsonElement("preApprovalId")]

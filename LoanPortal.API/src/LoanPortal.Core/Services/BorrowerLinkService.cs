@@ -17,32 +17,28 @@ namespace LoanPortal.Core.Services
 {
     public class BorrowerLinkService : IBorrowerLinkService
     {
-        private readonly IBorrowerLinkRepository _borrowerLinkRepo;
-        private readonly IBorrowerEmploymentRepository _borrowerEmploymentRepo;
+        private readonly ILOEmploymentLinkRepository _portalRepo;
+        private readonly IBorrowerEmploymentRepository _draftRepo;
         private readonly IPreApprovalRepository _preApprovalRepo;
         private readonly IUserRepository _userRepo;
         private readonly ILoginUserDetails _loginUserDetails;
         private readonly SMTPConfigModel _smtpConfig;
         private readonly IConfiguration _configuration;
 
-        // Link validity period (configurable — defaults to 30 days)
-        private int LinkExpiryDays =>
-            int.TryParse(_configuration["BorrowerPortal:LinkExpiryDays"], out var days) ? days : 30;
-
         private string BorrowerPortalBaseUrl =>
             _configuration["BorrowerPortal:BaseUrl"] ?? "https://loansnstuff.com";
 
         public BorrowerLinkService(
-            IBorrowerLinkRepository borrowerLinkRepo,
-            IBorrowerEmploymentRepository borrowerEmploymentRepo,
+            ILOEmploymentLinkRepository portalRepo,
+            IBorrowerEmploymentRepository draftRepo,
             IPreApprovalRepository preApprovalRepo,
             IUserRepository userRepo,
             ILoginUserDetails loginUserDetails,
             IOptions<SMTPConfigModel> smtpConfig,
             IConfiguration configuration)
         {
-            _borrowerLinkRepo = borrowerLinkRepo;
-            _borrowerEmploymentRepo = borrowerEmploymentRepo;
+            _portalRepo = portalRepo;
+            _draftRepo = draftRepo;
             _preApprovalRepo = preApprovalRepo;
             _userRepo = userRepo;
             _loginUserDetails = loginUserDetails;
@@ -51,211 +47,206 @@ namespace LoanPortal.Core.Services
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // Generate Link (Loan Officer)
+        // Get My Portal Link (Loan Officer)
         // ─────────────────────────────────────────────────────────────────────
 
-        public async Task<GenerateBorrowerLinkResponse> GenerateLinkAsync(GenerateBorrowerLinkRequest request)
+        public async Task<GetLOEmploymentLinkResponse> GetMyPortalLinkAsync()
         {
             var loanOfficerId = _loginUserDetails.UserID;
+            var existingLink = await _portalRepo.GetByLoanOfficerIdAsync(loanOfficerId);
+            var now = DateTime.UtcNow;
 
-            // Revoke any existing Active link for this Loan Officer
-            var existingLink = await _borrowerLinkRepo.GetActiveByLoanOfficerIdAsync(loanOfficerId);
-            if (existingLink != null)
+            if (existingLink == null)
             {
-                existingLink.Status = BorrowerLinkStatus.Revoked;
-                existingLink.UpdatedAt = DateTime.UtcNow;
-                await _borrowerLinkRepo.UpdateAsync(existingLink.Id, existingLink);
+                existingLink = new LOEmploymentLinkDocument
+                {
+                    Id = Guid.NewGuid(),
+                    LoanOfficerId = loanOfficerId,
+                    Status = LOEmploymentLinkStatus.Active,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
+                await _portalRepo.InsertAsync(existingLink);
             }
 
-            // Generate cryptographically secure opaque token
-            var rawTokenBytes = RandomNumberGenerator.GetBytes(32);
-            var rawToken = Convert.ToBase64String(rawTokenBytes)
-                .Replace('+', '-')   // make URL-safe
-                .Replace('/', '_')
-                .TrimEnd('=');
+            var secureUrl = $"{BorrowerPortalBaseUrl}/borrower/{loanOfficerId}";
 
-            var tokenHash = ComputeSha256Hash(rawToken);
-
-            var now = DateTime.UtcNow;
-            var linkDoc = new BorrowerLinkDocument
+            return new GetLOEmploymentLinkResponse
             {
-                Id                = Guid.NewGuid(),
-                LoanOfficerId     = loanOfficerId,
-                TokenHash         = tokenHash,
-                Status            = BorrowerLinkStatus.Active,
-                BorrowerEmailHint = request.BorrowerEmailHint?.Trim(),
-                ExpiresAt         = now.AddDays(LinkExpiryDays),
-                CreatedAt         = now,
-                UpdatedAt         = now
+                PortalUrl = secureUrl,
+                Status = existingLink.Status
             };
+        }
 
-            await _borrowerLinkRepo.InsertAsync(linkDoc);
+        public async Task UpdatePortalStatusAsync(UpdateLOEmploymentLinkStatusRequest request)
+        {
+            var loanOfficerId = _loginUserDetails.UserID;
+            var existingLink = await _portalRepo.GetByLoanOfficerIdAsync(loanOfficerId);
 
-            var secureUrl = $"{BorrowerPortalBaseUrl}/borrower/{Uri.EscapeDataString(rawToken)}";
+            if (existingLink == null)
+                throw new NotFoundException("Portal link not found. Please generate one first.");
 
-            return new GenerateBorrowerLinkResponse
-            {
-                LinkId    = linkDoc.Id,
-                SecureUrl = secureUrl,
-                ExpiresAt = linkDoc.ExpiresAt
-            };
+            existingLink.Status = request.Status;
+            existingLink.UpdatedAt = DateTime.UtcNow;
+            await _portalRepo.UpdateAsync(existingLink.Id, existingLink);
         }
 
         // ─────────────────────────────────────────────────────────────────────
         // Resolve Link (Public — no auth required)
         // ─────────────────────────────────────────────────────────────────────
 
-        public async Task<ResolveBorrowerLinkResponse> ResolveLinkAsync(string rawToken)
+        public async Task<ResolveBorrowerLinkResponse> ResolveLinkAsync(Guid loanOfficerId)
         {
-            var tokenHash = ComputeSha256Hash(rawToken);
-            var linkDoc = await _borrowerLinkRepo.GetByTokenHashAsync(tokenHash);
-
+            var linkDoc = await _portalRepo.GetByLoanOfficerIdAsync(loanOfficerId);
             if (linkDoc == null)
                 throw new NotFoundException("Borrower link not found.");
 
-            if (linkDoc.Status == BorrowerLinkStatus.Revoked)
-                throw new InvalidOperationException("This link has been revoked. Please ask your loan officer for a new link.");
-
-            if (linkDoc.Status == BorrowerLinkStatus.Submitted)
-                throw new InvalidOperationException("This link has already been submitted. Your information has been received.");
-
-            // Check expiry — mark as Expired if past due
-            if (DateTime.UtcNow > linkDoc.ExpiresAt)
-            {
-                if (linkDoc.Status == BorrowerLinkStatus.Active)
-                {
-                    linkDoc.Status = BorrowerLinkStatus.Expired;
-                    linkDoc.UpdatedAt = DateTime.UtcNow;
-                    await _borrowerLinkRepo.UpdateAsync(linkDoc.Id, linkDoc);
-                }
-                throw new InvalidOperationException("This link has expired. Please ask your loan officer for a new link.");
-            }
-
             // Load LO info for welcome screen branding
-            var loanOfficer = await _userRepo.GetUserById(linkDoc.LoanOfficerId);
+            var loanOfficer = await _userRepo.GetUserById(loanOfficerId);
             var loanOfficerName = loanOfficer != null
                 ? $"{loanOfficer.FirstName} {loanOfficer.LastName}".Trim()
                 : "Your Loan Officer";
 
-            // Load draft if borrower has already started
-            var draftData = await _borrowerEmploymentRepo.GetByLinkIdAsync(linkDoc.Id);
-
             return new ResolveBorrowerLinkResponse
             {
-                LinkId              = linkDoc.Id,
                 LoanOfficerName     = loanOfficerName,
                 LoanOfficerPhone    = loanOfficer?.Phone,
                 LoanOfficerProfile  = loanOfficer?.Profile,
                 LoanOfficerJobTitle = loanOfficer?.JobTitle,
                 LoanOfficerNMLS     = loanOfficer?.NMLS,
-                Status              = linkDoc.Status,
-                LastCompletedStep   = draftData?.LastCompletedStep ?? 0,
-                DraftData           = draftData
+                PortalStatus        = linkDoc.Status
             };
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Get My Drafts (Borrower)
+        // ─────────────────────────────────────────────────────────────────────
+
+        public async Task<List<GetMyDraftsResponseItem>> GetMyDraftsAsync()
+        {
+            var borrowerId = _loginUserDetails.UserID;
+            var drafts = await _draftRepo.GetAllByBorrowerIdAsync(borrowerId);
+
+            var result = new List<GetMyDraftsResponseItem>();
+            foreach (var draft in drafts)
+            {
+                var loanOfficer = await _userRepo.GetUserById(draft.LoanOfficerId);
+                var loanOfficerName = loanOfficer != null
+                    ? $"{loanOfficer.FirstName} {loanOfficer.LastName}".Trim()
+                    : "Loan Officer";
+
+                result.Add(new GetMyDraftsResponseItem
+                {
+                    DraftId = draft.Id,
+                    LoanOfficerId = draft.LoanOfficerId,
+                    LoanOfficerName = loanOfficerName,
+                    LastCompletedStep = draft.LastCompletedStep,
+                    IsSubmitted = draft.IsSubmitted,
+                    UpdatedAt = draft.UpdatedAt,
+                    DraftData = draft
+                });
+            }
+
+            return result;
         }
 
         // ─────────────────────────────────────────────────────────────────────
         // Save Draft (Borrower — step-by-step auto-save)
         // ─────────────────────────────────────────────────────────────────────
 
-        public async Task SaveDraftAsync(SaveBorrowerDraftRequest request, string borrowerFirebaseUid)
+        public async Task<SaveBorrowerDraftResponse> SaveDraftAsync(SaveBorrowerDraftRequest request)
         {
-            var linkDoc = await GetValidatedActiveLinkAsync(request.LinkId);
-
-            // Bind borrower Firebase UID on first save (locks the draft to this person)
-            if (string.IsNullOrEmpty(linkDoc.BorrowerFirebaseUid))
-            {
-                linkDoc.BorrowerFirebaseUid = borrowerFirebaseUid;
-                linkDoc.UpdatedAt = DateTime.UtcNow;
-                await _borrowerLinkRepo.UpdateAsync(linkDoc.Id, linkDoc);
-            }
-            else if (linkDoc.BorrowerFirebaseUid != borrowerFirebaseUid)
-            {
-                // Different borrower trying to access this link
-                throw new UnauthorizedAccessException("This link belongs to another borrower.");
-            }
-
+            var borrowerId = _loginUserDetails.UserID;
             var now = DateTime.UtcNow;
-            var existing = await _borrowerEmploymentRepo.GetByLinkIdAsync(linkDoc.Id);
+            
+            // Validate that the LO portal is active
+            var portal = await _portalRepo.GetByLoanOfficerIdAsync(request.LoanOfficerId);
+            if (portal == null)
+                throw new NotFoundException("Loan officer portal not found.");
+            
+            if (portal.Status != LOEmploymentLinkStatus.Active)
+                throw new InvalidOperationException("This portal is no longer accepting applications.");
 
-            if (existing == null)
+            BorrowerEmploymentDetails? draft = null;
+
+            if (request.DraftId.HasValue)
+            {
+                draft = await _draftRepo.GetByIdAsync(request.DraftId.Value);
+                if (draft != null && draft.BorrowerId != borrowerId)
+                    throw new UnauthorizedAccessException("This draft belongs to another borrower.");
+                if (draft != null && draft.IsSubmitted)
+                    throw new InvalidOperationException("This draft has already been submitted.");
+            }
+
+            if (draft == null)
             {
                 // First save — create the employment document
-                var newDoc = request.StepData;
-                newDoc.Id = Guid.NewGuid();
-                newDoc.LinkId = linkDoc.Id;
-                newDoc.LastCompletedStep = request.CompletedStep;
-                newDoc.IsSubmitted = false;
-                newDoc.CreatedAt = now;
-                newDoc.UpdatedAt = now;
+                draft = request.StepData;
+                draft.Id = Guid.NewGuid();
+                draft.LoanOfficerId = request.LoanOfficerId;
+                draft.BorrowerId = borrowerId;
+                draft.LastCompletedStep = request.CompletedStep;
+                draft.IsSubmitted = false;
+                draft.CreatedAt = now;
+                draft.UpdatedAt = now;
 
-                await _borrowerEmploymentRepo.InsertAsync(newDoc);
+                await _draftRepo.InsertAsync(draft);
             }
             else
             {
                 // Merge incoming step data into the existing document
-                MergeStepData(existing, request.StepData, request.CompletedStep);
-                existing.UpdatedAt = now;
+                MergeStepData(draft, request.StepData, request.CompletedStep);
+                draft.UpdatedAt = now;
 
-                await _borrowerEmploymentRepo.UpdateAsync(existing.Id, existing);
+                await _draftRepo.UpdateAsync(draft.Id, draft);
             }
+
+            return new SaveBorrowerDraftResponse
+            {
+                DraftId = draft.Id
+            };
         }
 
         // ─────────────────────────────────────────────────────────────────────
         // Submit (Borrower — final submission)
         // ─────────────────────────────────────────────────────────────────────
 
-        public async Task<SubmitBorrowerEmploymentResponse> SubmitAsync(
-            SubmitBorrowerEmploymentRequest request,
-            string borrowerFirebaseUid)
+        public async Task<SubmitBorrowerEmploymentResponse> SubmitAsync(SubmitBorrowerEmploymentRequest request)
         {
-            var linkDoc = await GetValidatedActiveLinkAsync(request.LinkId);
-
-            // Validate the same borrower who was drafting is submitting
-            if (!string.IsNullOrEmpty(linkDoc.BorrowerFirebaseUid) &&
-                linkDoc.BorrowerFirebaseUid != borrowerFirebaseUid)
-            {
-                throw new UnauthorizedAccessException("This link belongs to another borrower.");
-            }
-
+            var borrowerId = _loginUserDetails.UserID;
             var now = DateTime.UtcNow;
+
+            var draft = await _draftRepo.GetByIdAsync(request.DraftId);
+            if (draft == null)
+                throw new NotFoundException("Draft not found.");
+
+            if (draft.BorrowerId != borrowerId)
+                throw new UnauthorizedAccessException("This draft belongs to another borrower.");
+            
+            if (draft.IsSubmitted)
+                throw new InvalidOperationException("This draft has already been submitted.");
+
+            var portal = await _portalRepo.GetByLoanOfficerIdAsync(draft.LoanOfficerId);
+            if (portal == null || portal.Status != LOEmploymentLinkStatus.Active)
+                throw new InvalidOperationException("This portal is no longer accepting applications.");
+
             var employmentData = request.EmploymentData;
+            
+            // Merge final data to ensure everything is captured
+            MergeStepData(draft, employmentData, 9);
+            draft.UpdatedAt = now;
 
             // 1. Map borrower employment data → new PreApprovalDocument under LO's userId
-            var preApproval = MapToPreApprovalDocument(employmentData, linkDoc.LoanOfficerId, now);
+            var preApproval = MapToPreApprovalDocument(draft, draft.LoanOfficerId, now);
             await _preApprovalRepo.InsertAsync(preApproval);
 
             // 2. Finalize the employment document
-            var existing = await _borrowerEmploymentRepo.GetByLinkIdAsync(linkDoc.Id);
-            if (existing == null)
-            {
-                employmentData.Id = Guid.NewGuid();
-                employmentData.LinkId = linkDoc.Id;
-                employmentData.PreApprovalId = preApproval.Id;
-                employmentData.IsSubmitted = true;
-                employmentData.LastCompletedStep = 9;
-                employmentData.CreatedAt = now;
-                employmentData.UpdatedAt = now;
-                await _borrowerEmploymentRepo.InsertAsync(employmentData);
-            }
-            else
-            {
-                MergeStepData(existing, employmentData, 9);
-                existing.PreApprovalId = preApproval.Id;
-                existing.IsSubmitted = true;
-                existing.UpdatedAt = now;
-                await _borrowerEmploymentRepo.UpdateAsync(existing.Id, existing);
-            }
+            draft.PreApprovalId = preApproval.Id;
+            draft.IsSubmitted = true;
+            await _draftRepo.UpdateAsync(draft.Id, draft);
 
-            // 3. Mark the link as Submitted
-            linkDoc.Status = BorrowerLinkStatus.Submitted;
-            linkDoc.PreApprovalId = preApproval.Id;
-            linkDoc.BorrowerFirebaseUid = borrowerFirebaseUid;
-            linkDoc.UpdatedAt = now;
-            await _borrowerLinkRepo.UpdateAsync(linkDoc.Id, linkDoc);
-
-            // 4. Notify the Loan Officer by email
-            await SendLoanOfficerNotificationAsync(linkDoc.LoanOfficerId, employmentData);
+            // 3. Notify the Loan Officer by email
+            await SendLoanOfficerNotificationAsync(draft.LoanOfficerId, draft);
 
             return new SubmitBorrowerEmploymentResponse
             {
@@ -269,33 +260,12 @@ namespace LoanPortal.Core.Services
         // ─────────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Validates a link is Active and not expired. Throws descriptive exceptions on failure.
-        /// </summary>
-        private async Task<BorrowerLinkDocument> GetValidatedActiveLinkAsync(Guid linkId)
-        {
-            var linkDoc = await _borrowerLinkRepo.GetByIdAsync(linkId);
-            if (linkDoc == null)
-                throw new NotFoundException("Borrower link not found.");
-
-            if (linkDoc.Status == BorrowerLinkStatus.Submitted)
-                throw new InvalidOperationException("This link has already been submitted.");
-
-            if (linkDoc.Status == BorrowerLinkStatus.Revoked)
-                throw new InvalidOperationException("This link has been revoked.");
-
-            if (linkDoc.Status == BorrowerLinkStatus.Expired || DateTime.UtcNow > linkDoc.ExpiresAt)
-                throw new InvalidOperationException("This link has expired.");
-
-            return linkDoc;
-        }
-
-        /// <summary>
         /// Merges data from an incoming step request into an existing employment document.
         /// Only overwrites non-null fields so earlier step data is never lost.
         /// </summary>
         private static void MergeStepData(
-            BorrowerEmploymentDocument target,
-            BorrowerEmploymentDocument source,
+            BorrowerEmploymentDetails target,
+            BorrowerEmploymentDetails source,
             int completedStep)
         {
             if (source.PersonalInfo != null)
@@ -331,14 +301,13 @@ namespace LoanPortal.Core.Services
                 target.LastCompletedStep = completedStep;
         }
 
-
         /// <summary>
         /// Maps completed borrower employment data into a new PreApprovalDocument
         /// owned by the Loan Officer. The LO can edit/complete the quote from their dashboard.
         /// Monthly income is computed based on employment category.
         /// </summary>
         private static PreApprovalDocument MapToPreApprovalDocument(
-            BorrowerEmploymentDocument employment,
+            BorrowerEmploymentDetails employment,
             Guid loanOfficerId,
             DateTime now)
         {
@@ -430,7 +399,7 @@ namespace LoanPortal.Core.Services
         /// <summary>
         /// Dispatches to the correct income calculator based on the borrower's employment category.
         /// </summary>
-        private static decimal ComputeMonthlyIncome(BorrowerEmploymentDocument employment)
+        private static decimal ComputeMonthlyIncome(BorrowerEmploymentDetails employment)
         {
             return employment.EmploymentCategory switch
             {
@@ -509,7 +478,7 @@ namespace LoanPortal.Core.Services
         /// <summary>Sends an email to the Loan Officer notifying them of the borrower submission.</summary>
         private async Task SendLoanOfficerNotificationAsync(
             Guid loanOfficerId,
-            BorrowerEmploymentDocument employment)
+            BorrowerEmploymentDetails employment)
         {
             try
             {
@@ -562,14 +531,6 @@ namespace LoanPortal.Core.Services
 
             mail.BodyEncoding = Encoding.UTF8;
             await smtpClient.SendMailAsync(mail);
-        }
-
-        /// <summary>Computes the SHA-256 hex hash of a raw string token.</summary>
-        private static string ComputeSha256Hash(string rawToken)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(rawToken));
-            return Convert.ToHexString(bytes).ToLowerInvariant();
         }
     }
 }

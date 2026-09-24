@@ -140,12 +140,10 @@ namespace LoanPortal.Shared.Enum
         Other        = 8
     }
 
-    public enum BorrowerLinkStatus
+    public enum LOEmploymentLinkStatus
     {
-        Active    = 0,
-        Submitted = 1,
-        Expired   = 2,
-        Revoked   = 3    // when LO regenerates a new link, the old one is revoked
+        Active   = 0,
+        Disabled = 1
     }
 
     public enum EmploymentCategory

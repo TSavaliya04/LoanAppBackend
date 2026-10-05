@@ -514,6 +514,117 @@ namespace LoanPortal.Tests.Controllers.Authentication
         }
         #endregion
 
+                #region SignUpBorrower Tests
+        [Fact]
+        public async Task SignUpBorrower_ValidRequest_ReturnsOkResult()
+        {
+            var request = new CreateUserRequest { Email = "borrower@example.com" };
+            var expectedUser = new UserDTO { Email = "borrower@example.com" };
+            _mockUserService.Setup(x => x.SignUpBorrower(request)).ReturnsAsync(expectedUser);
+
+            var result = await _controller.SignUpBorrower(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedUser, response.Data);
+        }
+
+        [Fact]
+        public async Task SignUpBorrower_ValidationException_ReturnsBadRequest()
+        {
+            var request = new CreateUserRequest();
+            var errorMessage = "Email is required";
+            _mockUserService.Setup(x => x.SignUpBorrower(request)).ThrowsAsync(new ValidationException(errorMessage));
+
+            var result = await _controller.SignUpBorrower(request);
+
+            var badRequestResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task SignUpBorrower_GenericException_ReturnsInternalServerError()
+        {
+            var request = new CreateUserRequest();
+            _mockUserService.Setup(x => x.SignUpBorrower(request)).ThrowsAsync(new Exception("Error"));
+
+            var result = await _controller.SignUpBorrower(request);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
+        }
+        #endregion
+
+        #region ValidateBorrowerToken Tests
+        [Fact]
+        public async Task ValidateBorrowerToken_ValidToken_ReturnsOkWithUserData()
+        {
+            var token = "valid-borrower-token";
+            var expectedUser = new UserDTO { Email = "borrower@example.com" };
+            _mockUserService.Setup(x => x.ValidateBorrowerToken(token)).ReturnsAsync(expectedUser);
+
+            var result = await _controller.ValidateBorrowerToken(token);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<UserDTO>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedUser, response.Data);
+        }
+
+        [Fact]
+        public async Task ValidateBorrowerToken_ValidationException_ReturnsBadRequest()
+        {
+            var token = "invalid-token";
+            _mockUserService.Setup(x => x.ValidateBorrowerToken(token)).ThrowsAsync(new ValidationException("Invalid"));
+
+            var result = await _controller.ValidateBorrowerToken(token);
+
+            var badRequestResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(400, badRequestResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task ValidateBorrowerToken_GenericException_ReturnsInternalServerError()
+        {
+            var token = "valid-token";
+            _mockUserService.Setup(x => x.ValidateBorrowerToken(token)).ThrowsAsync(new Exception("Error"));
+
+            var result = await _controller.ValidateBorrowerToken(token);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
+        }
+        #endregion
+
+        #region RequestDemo Tests
+        [Fact]
+        public async Task RequestDemo_ValidRequest_ReturnsOkResult()
+        {
+            var request = new RequestDemoRequest { Email = "demo@example.com" };
+            _mockUserService.Setup(x => x.RequestDemo(request)).Returns(Task.CompletedTask);
+
+            var result = await _controller.RequestDemo(request);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse<bool>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.True(response.Data);
+        }
+
+        [Fact]
+        public async Task RequestDemo_GenericException_ReturnsInternalServerError()
+        {
+            var request = new RequestDemoRequest();
+            _mockUserService.Setup(x => x.RequestDemo(request)).ThrowsAsync(new Exception("Error"));
+
+            var result = await _controller.RequestDemo(request);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, objectResult.StatusCode);
+        }
+        #endregion
+
         #region ValidateAdminToken Tests
         [Fact]
         public async Task ValidateAdminToken_ValidToken_ReturnsOkWithUserData()

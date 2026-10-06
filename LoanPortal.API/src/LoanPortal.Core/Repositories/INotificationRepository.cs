@@ -6,7 +6,7 @@ namespace LoanPortal.Core.Repositories
     {
         Task InsertAsync(NotificationDocument notification);
         Task InsertManyAsync(IEnumerable<NotificationDocument> notifications);
-        Task<List<NotificationDocument>> GetByUserIdAsync(Guid userId, int pageSize, int pageNumber);
+        Task<List<NotificationDocument>> GetByUserIdAsync(Guid userId, int pageSize, int pageNumber, bool? isRead = null);
         Task<int> GetUnreadCountAsync(Guid userId);
         Task MarkAsReadAsync(Guid notificationId, Guid userId);
         Task MarkAllAsReadAsync(Guid userId);

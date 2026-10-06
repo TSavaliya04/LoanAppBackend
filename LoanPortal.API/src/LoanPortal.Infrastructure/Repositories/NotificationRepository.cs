@@ -53,15 +53,22 @@ namespace LoanPortal.Infrastructure.Repositories
             }
         }
 
-        public async Task<List<NotificationDocument>> GetByUserIdAsync(Guid userId, int pageSize, int pageNumber)
+        public async Task<List<NotificationDocument>> GetByUserIdAsync(Guid userId, int pageSize, int pageNumber, bool? isRead = null)
         {
             try
             {
                 var pageIndex = pageNumber < 1 ? 0 : pageNumber - 1;
                 var skip      = pageIndex * pageSize;
 
+                // Base filter: match the user
+                var filter = Builders<NotificationDocument>.Filter.Eq(n => n.UserId, userId);
+
+                // Optionally narrow by read/unread status
+                if (isRead.HasValue)
+                    filter &= Builders<NotificationDocument>.Filter.Eq(n => n.IsRead, isRead.Value);
+
                 return await _collection
-                    .Find(n => n.UserId == userId)
+                    .Find(filter)
                     .SortByDescending(n => n.CreatedAt)
                     .Skip(skip)
                     .Limit(pageSize)

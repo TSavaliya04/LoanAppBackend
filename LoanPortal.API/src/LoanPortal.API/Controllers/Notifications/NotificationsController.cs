@@ -25,16 +25,20 @@ namespace LoanPortal.API.Controllers.Notifications
             _userService         = userService;
         }
 
-        /// <summary>Get paginated notifications for the currently logged-in user.</summary>
+        /// <summary>
+        /// Get paginated notifications for the currently logged-in user.
+        /// Optionally filter by read status: isRead=true (read only), isRead=false (unread only), omit for all.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetNotifications(
-            [FromQuery] int pageSize   = 20,
-            [FromQuery] int pageNumber = 1)
+            [FromQuery] int   pageSize   = 20,
+            [FromQuery] int   pageNumber = 1,
+            [FromQuery] bool? isRead     = null)
         {
             try
             {
                 var userId        = _loginUserDetails.UserID;
-                var notifications = await _notificationService.GetNotificationsAsync(userId, pageSize, pageNumber);
+                var notifications = await _notificationService.GetNotificationsAsync(userId, pageSize, pageNumber, isRead);
                 return Ok(SuccessResponse(notifications));
             }
             catch (Exception ex)

@@ -245,8 +245,20 @@ namespace LoanPortal.Core.Services
             draft.IsSubmitted = true;
             await _draftRepo.UpdateAsync(draft.Id, draft);
 
-            // 3. Notify the Loan Officer by email
-            await SendLoanOfficerNotificationAsync(draft.LoanOfficerId, draft);
+            // 3. Notify the Loan Officer by email (fire-and-forget — must not block the response)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await SendLoanOfficerNotificationAsync(draft.LoanOfficerId, draft);
+                }
+                catch (Exception ex)
+                {
+                    // Log the error without surfacing it to the caller
+                    // Replace with your logger if available, e.g. _logger.LogError(ex, "LO email notification failed");
+                    Console.Error.WriteLine($"[BorrowerLinkService] LO email notification failed: {ex.Message}");
+                }
+            });
 
             return new SubmitBorrowerEmploymentResponse
             {

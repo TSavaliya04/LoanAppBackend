@@ -182,6 +182,12 @@ namespace LoanPortal.Core.Entities
         [BsonElement("basePayFrequency")]
         public PayFrequency? BasePayFrequency { get; set; }
 
+        [BsonElement("hourlyRate")]
+        public decimal? HourlyRate { get; set; }
+
+        [BsonElement("hoursPerWeek")]
+        public decimal? HoursPerWeek { get; set; }
+
         [BsonElement("bonusPay")]
         public decimal? BonusPay { get; set; }
 

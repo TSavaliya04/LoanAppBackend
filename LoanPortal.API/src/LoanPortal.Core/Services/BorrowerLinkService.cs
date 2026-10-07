@@ -404,7 +404,9 @@ namespace LoanPortal.Core.Services
                 Status    = 0,
                 CreatedAt = now,
                 UpdatedAt = now,
-                Scenarios = new List<ScenarioDTO> { scenario }
+                Scenarios = new List<ScenarioDTO> { scenario },
+                IsCreatedByBorrower = true,
+                IsViewedByLO = false
             };
         }
 
@@ -427,7 +429,18 @@ namespace LoanPortal.Core.Services
             if (income == null) return 0m;
 
             var total = 0m;
-            total += ToMonthly(income.BasePay, income.BasePayFrequency);
+
+            if (income.IsSalary)
+            {
+                total += ToMonthly(income.BasePay, income.BasePayFrequency);
+            }
+            else
+            {
+                var rate = income.HourlyRate ?? 0m;
+                var hours = income.HoursPerWeek ?? 0m;
+                total += (rate * hours * 52m) / 12m;
+            }
+
             total += ToMonthly(income.BonusPay, income.BonusFrequency);
             total += ToMonthly(income.OvertimePay, income.OvertimeFrequency);
             total += ToMonthly(income.CommissionPay, income.CommissionFrequency);

@@ -95,8 +95,8 @@ namespace LoanPortal.Core.Services
 
         // ── Read / management ───────────────────────────────────────────────
 
-        public Task<List<NotificationDocument>> GetNotificationsAsync(Guid userId, int pageSize, int pageNumber)
-            => _notificationRepo.GetByUserIdAsync(userId, pageSize, pageNumber);
+        public Task<List<NotificationDocument>> GetNotificationsAsync(Guid userId, int pageSize, int pageNumber, bool? isRead = null)
+            => _notificationRepo.GetByUserIdAsync(userId, pageSize, pageNumber, isRead);
 
         public Task<int> GetUnreadCountAsync(Guid userId)
             => _notificationRepo.GetUnreadCountAsync(userId);

@@ -16,6 +16,8 @@ namespace LoanPortal.Core.Entities
         public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
         public int TotalScenarios { get; set; }
+        public bool IsCreatedByBorrower { get; set; }
+        public bool IsViewedByLO { get; set; }
     }
 
     public class PagedContinueWorkingQuotesDTO

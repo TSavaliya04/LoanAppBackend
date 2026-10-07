@@ -81,6 +81,12 @@ public class PreApprovalService : IPreApprovalService
             }
         }
 
+        if (!document.IsViewedByLO)
+        {
+            document.IsViewedByLO = true;
+            _ = Task.Run(() => _preApprovalRepository.UpdateAsync(document.Id, document));
+        }
+
         return document;
     }
 

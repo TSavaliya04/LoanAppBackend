@@ -1031,6 +1031,12 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("statusUpdatedAt")]
         public DateTime? StatusUpdatedAt { get; set; }
+
+        [BsonElement("isCreatedByBorrower")]
+        public bool IsCreatedByBorrower { get; set; }
+
+        [BsonElement("isViewedByLO")]
+        public bool IsViewedByLO { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -1058,5 +1064,9 @@ namespace LoanPortal.Core.Entities
         public List<ScenarioDTO> Scenarios { get; set; }
         
         public DateTime? StatusUpdatedAt { get; set; }
+
+        public bool IsCreatedByBorrower { get; set; }
+
+        public bool IsViewedByLO { get; set; }
     }
 }

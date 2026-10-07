@@ -26,6 +26,7 @@ namespace LoanPortal.Core.Services
         private readonly IFirebaseAuthService _firebaseAuthService;
         private readonly ILoginUserDetails _loginUserDetails;
         private readonly ICompanyRepository _companyRepository;
+        private readonly INotificationService _notificationService;
 
         public UserService(
             IUserHelper userHelper,
@@ -35,7 +36,8 @@ namespace LoanPortal.Core.Services
             IBlobStorageHelper blobStorageHelper,
             IFirebaseAuthService firebaseAuthService,
             ILoginUserDetails loginUserDetails,
-            ICompanyRepository companyRepository)
+            ICompanyRepository companyRepository,
+            INotificationService notificationService)
         {
             _userHelper = userHelper;
             _config = config;
@@ -45,6 +47,7 @@ namespace LoanPortal.Core.Services
             _firebaseAuthService = firebaseAuthService;
             _loginUserDetails = loginUserDetails; 
             _companyRepository = companyRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<UserDTO> SignUp(CreateUserRequest user)
@@ -108,15 +111,29 @@ namespace LoanPortal.Core.Services
 
         public async Task<UserDTO> SignUpBorrower(CreateUserRequest request)
         {
-            return await SignUp(new CreateUserRequest
+            var userDto = await SignUp(new CreateUserRequest
             {
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Email = request.Email,
                 Password = request.Password,
                 Phone = request.Phone,
-                Role = Shared.Enum.UserRole.Borrower
+                Role = Shared.Enum.UserRole.Borrower,
+                LoanOfficerId = request.LoanOfficerId
             });
+
+            if (request.LoanOfficerId.HasValue && userDto.Id.HasValue)
+            {
+                var loUser = await _userRepository.GetUserById(request.LoanOfficerId.Value);
+                var borrowerUser = await _userRepository.GetUserById(userDto.Id.Value);
+
+                if (loUser != null && borrowerUser != null)
+                {
+                    _ = _notificationService.NotifyBorrowerCreatedViaLinkAsync(borrowerUser, loUser);
+                }
+            }
+
+            return userDto;
         }
 
         public async Task<LoginResponse> Login(LoginRequest request)

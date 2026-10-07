@@ -34,6 +34,7 @@ namespace LoanPortal.Tests.Services.BorrowerLink
             _mockSmtpConfig.Setup(x => x.Value).Returns(new SMTPConfigModel());
             
             _mockConfig = new Mock<IConfiguration>();
+            var _mockNotificationService = new Mock<INotificationService>();
 
             _service = new BorrowerLinkService(
                 _mockPortalRepo.Object,
@@ -42,7 +43,8 @@ namespace LoanPortal.Tests.Services.BorrowerLink
                 _mockUserRepo.Object,
                 _mockLoginUserDetails.Object,
                 _mockSmtpConfig.Object,
-                _mockConfig.Object
+                _mockConfig.Object,
+                _mockNotificationService.Object
             );
         }
 

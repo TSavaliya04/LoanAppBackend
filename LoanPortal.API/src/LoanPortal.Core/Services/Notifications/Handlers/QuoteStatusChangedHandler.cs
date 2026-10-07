@@ -15,10 +15,13 @@ namespace LoanPortal.Core.Services.Notifications.Handlers
         public Task<IEnumerable<NotificationDocument>> BuildNotificationsAsync(NotificationContext context)
         {
             var actorName    = $"{context.Actor.FirstName} {context.Actor.LastName}".Trim();
-            var borrowerName = GetBorrowerName(context.Quote);
+            var metadata     = NotificationMetadataHelper.BuildMetadata(context.Quote, actorName);
+            var borrowerName = NotificationMetadataHelper.GetBorrowerName(context.Quote);
             var oldLabel     = StatusLabel(context.OldStatus);
             var newLabel     = StatusLabel(context.NewStatus);
-            var quoteId      = context.Quote.Id.ToString();
+            
+            metadata["oldStatus"] = oldLabel;
+            metadata["newStatus"] = newLabel;
 
             var notifications = context.CompanyMates.Select(recipient => new NotificationDocument
             {
@@ -30,14 +33,7 @@ namespace LoanPortal.Core.Services.Notifications.Handlers
                 IsRead          = false,
                 CreatedAt       = DateTime.UtcNow,
                 RelatedEntityId = context.Quote.Id,
-                Metadata        = new Dictionary<string, string>
-                {
-                    ["borrowerName"] = borrowerName,
-                    ["actorName"]    = actorName,
-                    ["oldStatus"]    = oldLabel,
-                    ["newStatus"]    = newLabel,
-                    ["quoteId"]      = quoteId
-                }
+                Metadata        = metadata
             });
 
             return Task.FromResult<IEnumerable<NotificationDocument>>(notifications.ToList());
@@ -57,14 +53,6 @@ namespace LoanPortal.Core.Services.Notifications.Handlers
                 ApplicationStatus.ClosedEscrow => "Closed Escrow",
                 _                              => "Unknown"
             };
-        }
-
-        private static string GetBorrowerName(PreApprovalDocument quote)
-        {
-            var first = quote.Scenarios?.FirstOrDefault();
-            return first?.Purchase?.BorrowerInfo?.BorrowerName
-                ?? first?.Refinance?.BorrowerInfo?.BorrowerName
-                ?? "Unknown Borrower";
         }
     }
 }

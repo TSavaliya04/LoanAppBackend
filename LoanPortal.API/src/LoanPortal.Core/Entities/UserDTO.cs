@@ -23,6 +23,7 @@ namespace LoanPortal.Core.Entities
         public Guid? CompanyId { get; set; }
         public Guid? TeamId { get; set; }
         public UserRole? Role { get; set; }
+        public Guid? LoanOfficerId { get; set; }
     }
 
     public class CreateAdminRequest : CreateUserRequest

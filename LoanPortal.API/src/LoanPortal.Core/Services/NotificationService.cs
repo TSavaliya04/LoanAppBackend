@@ -29,7 +29,7 @@ namespace LoanPortal.Core.Services
 
         // ── Event triggers ──────────────────────────────────────────────────
 
-        public async Task NotifyQuoteCreatedAsync(PreApprovalDocument quote, UserEntity creator)
+        public async Task NotifyQuoteCreatedAsync(PreApprovalDocument quote, UserEntity creator, bool sendPush = true)
         {
             try
             {
@@ -39,7 +39,8 @@ namespace LoanPortal.Core.Services
                     Type         = NotificationType.QuoteCreated,
                     Quote        = quote,
                     Actor        = creator,
-                    CompanyMates = new List<UserEntity>()
+                    CompanyMates = new List<UserEntity>(),
+                    SendPush     = sendPush
                 };
                 await DispatchAsync(context);
             }
@@ -50,7 +51,7 @@ namespace LoanPortal.Core.Services
             }
         }
 
-        public async Task NotifyQuoteUpdatedAsync(PreApprovalDocument quote, UserEntity actor)
+        public async Task NotifyQuoteUpdatedAsync(PreApprovalDocument quote, UserEntity actor, bool sendPush = true)
         {
             try
             {
@@ -60,7 +61,8 @@ namespace LoanPortal.Core.Services
                     Type         = NotificationType.QuoteUpdated,
                     Quote        = quote,
                     Actor        = actor,
-                    CompanyMates = companyMates
+                    CompanyMates = companyMates,
+                    SendPush     = sendPush
                 };
                 await DispatchAsync(context);
             }
@@ -71,7 +73,7 @@ namespace LoanPortal.Core.Services
         }
 
         public async Task NotifyQuoteStatusChangedAsync(
-            PreApprovalDocument quote, UserEntity actor, int oldStatus, int newStatus)
+            PreApprovalDocument quote, UserEntity actor, int oldStatus, int newStatus, bool sendPush = true)
         {
             try
             {
@@ -83,13 +85,56 @@ namespace LoanPortal.Core.Services
                     Actor        = actor,
                     CompanyMates = companyMates,
                     OldStatus    = oldStatus,
-                    NewStatus    = newStatus
+                    NewStatus    = newStatus,
+                    SendPush     = sendPush
                 };
                 await DispatchAsync(context);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[NotificationService] NotifyQuoteStatusChangedAsync failed: {ex.Message}");
+            }
+        }
+
+        public async Task NotifyEmploymentSubmittedAsync(
+            Guid quoteId, BorrowerEmploymentDetails draft, UserEntity loanOfficer, bool sendPush = true)
+        {
+            try
+            {
+                var context = new NotificationContext
+                {
+                    Type            = NotificationType.BorrowerSubmittedEmployment,
+                    QuoteId         = quoteId,
+                    EmploymentDraft = draft,
+                    Actor           = loanOfficer, // LO is the recipient, so we'll use them here as the actor/recipient combo
+                    CompanyMates    = new List<UserEntity>(),
+                    SendPush        = sendPush
+                };
+                await DispatchAsync(context);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[NotificationService] NotifyEmploymentSubmittedAsync failed: {ex.Message}");
+            }
+        }
+
+        public async Task NotifyBorrowerCreatedViaLinkAsync(UserEntity borrower, UserEntity loanOfficer, bool sendPush = true)
+        {
+            try
+            {
+                var context = new NotificationContext
+                {
+                    Type            = NotificationType.BorrowerCreatedViaLink,
+                    CreatedBorrower = borrower,
+                    Actor           = loanOfficer, // LO is the recipient
+                    CompanyMates    = new List<UserEntity>(),
+                    SendPush        = sendPush
+                };
+                await DispatchAsync(context);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[NotificationService] NotifyBorrowerCreatedViaLinkAsync failed: {ex.Message}");
             }
         }
 
@@ -111,7 +156,7 @@ namespace LoanPortal.Core.Services
 
         /// <summary>
         /// Routes the context to the correct handler, persists the resulting notifications,
-        /// and fires FCM push to each recipient that has a registered token.
+        /// and fires FCM push to each recipient that has a registered token (if SendPush is true).
         /// </summary>
         private async Task DispatchAsync(NotificationContext context)
         {
@@ -128,9 +173,14 @@ namespace LoanPortal.Core.Services
             // Persist all to MongoDB
             await _notificationRepo.InsertManyAsync(notifications);
 
+            // Respect the SendPush flag from the caller
+            if (!context.SendPush) return;
+
             // Determine push recipients and their tokens
-            // For QuoteCreated: actor is the only recipient; for others: company-mates
-            var pushRecipients = context.Type == NotificationType.QuoteCreated
+            // For QuoteCreated, BorrowerSubmittedEmployment, and BorrowerCreatedViaLink: actor is the recipient
+            var pushRecipients = (context.Type == NotificationType.QuoteCreated || 
+                                  context.Type == NotificationType.BorrowerSubmittedEmployment ||
+                                  context.Type == NotificationType.BorrowerCreatedViaLink)
                 ? new List<UserEntity> { context.Actor }
                 : context.CompanyMates;
 

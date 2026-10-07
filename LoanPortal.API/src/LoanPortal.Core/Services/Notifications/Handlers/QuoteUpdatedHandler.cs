@@ -15,8 +15,8 @@ namespace LoanPortal.Core.Services.Notifications.Handlers
         public Task<IEnumerable<NotificationDocument>> BuildNotificationsAsync(NotificationContext context)
         {
             var actorName    = $"{context.Actor.FirstName} {context.Actor.LastName}".Trim();
-            var borrowerName = GetBorrowerName(context.Quote);
-            var quoteId      = context.Quote.Id.ToString();
+            var metadata     = NotificationMetadataHelper.BuildMetadata(context.Quote, actorName);
+            var borrowerName = NotificationMetadataHelper.GetBorrowerName(context.Quote);
 
             var notifications = context.CompanyMates.Select(recipient => new NotificationDocument
             {
@@ -28,23 +28,10 @@ namespace LoanPortal.Core.Services.Notifications.Handlers
                 IsRead          = false,
                 CreatedAt       = DateTime.UtcNow,
                 RelatedEntityId = context.Quote.Id,
-                Metadata        = new Dictionary<string, string>
-                {
-                    ["borrowerName"] = borrowerName,
-                    ["actorName"]    = actorName,
-                    ["quoteId"]      = quoteId
-                }
+                Metadata        = metadata
             });
 
             return Task.FromResult<IEnumerable<NotificationDocument>>(notifications.ToList());
-        }
-
-        private static string GetBorrowerName(PreApprovalDocument quote)
-        {
-            var first = quote.Scenarios?.FirstOrDefault();
-            return first?.Purchase?.BorrowerInfo?.BorrowerName
-                ?? first?.Refinance?.BorrowerInfo?.BorrowerName
-                ?? "Unknown Borrower";
         }
     }
 }

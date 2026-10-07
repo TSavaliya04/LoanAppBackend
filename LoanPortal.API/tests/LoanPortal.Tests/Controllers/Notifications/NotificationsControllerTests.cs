@@ -35,7 +35,7 @@ namespace LoanPortal.Tests.Controllers.Notifications
         public async Task GetNotifications_ValidRequest_ReturnsOkResult()
         {
             var expected = new List<NotificationDocument>();
-            _mockNotificationService.Setup(x => x.GetNotificationsAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(expected);
+            _mockNotificationService.Setup(x => x.GetNotificationsAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<bool?>())).ReturnsAsync(expected);
 
             var result = await _controller.GetNotifications();
 

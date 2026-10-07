@@ -24,6 +24,7 @@ namespace LoanPortal.Core.Services
         private readonly ILoginUserDetails _loginUserDetails;
         private readonly SMTPConfigModel _smtpConfig;
         private readonly IConfiguration _configuration;
+        private readonly INotificationService _notificationService;
 
         private string BorrowerPortalBaseUrl =>
             _configuration["BorrowerPortal:BaseUrl"] ?? "https://loansnstuff.com";
@@ -35,7 +36,8 @@ namespace LoanPortal.Core.Services
             IUserRepository userRepo,
             ILoginUserDetails loginUserDetails,
             IOptions<SMTPConfigModel> smtpConfig,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            INotificationService notificationService)
         {
             _portalRepo = portalRepo;
             _draftRepo = draftRepo;
@@ -44,6 +46,7 @@ namespace LoanPortal.Core.Services
             _loginUserDetails = loginUserDetails;
             _smtpConfig = smtpConfig.Value;
             _configuration = configuration;
+            _notificationService = notificationService;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -245,7 +248,14 @@ namespace LoanPortal.Core.Services
             draft.IsSubmitted = true;
             await _draftRepo.UpdateAsync(draft.Id, draft);
 
-            // 3. Notify the Loan Officer by email (fire-and-forget — must not block the response)
+            // 3. Notify the Loan Officer via App/Push
+            var loUser = await _userRepo.GetUserById(draft.LoanOfficerId);
+            if (loUser != null)
+            {
+                _ = _notificationService.NotifyEmploymentSubmittedAsync(preApproval.Id, draft, loUser);
+            }
+
+            // 4. Notify the Loan Officer by email (fire-and-forget — must not block the response)
             _ = Task.Run(async () =>
             {
                 try

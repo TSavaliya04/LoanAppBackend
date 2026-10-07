@@ -30,6 +30,18 @@ namespace LoanPortal.Core.Entities
 
         /// <summary>For QuoteStatusChanged: the new ApplicationStatus int value.</summary>
         public int? NewStatus { get; init; }
+
+        /// <summary>For EmploymentSubmitted: the draft submitted by the borrower.</summary>
+        public BorrowerEmploymentDetails? EmploymentDraft { get; init; }
+        
+        /// <summary>For BorrowerCreatedViaLink: the borrower who just signed up.</summary>
+        public UserEntity? CreatedBorrower { get; init; }
+
+        /// <summary>Explicit quote ID, useful when Quote is null.</summary>
+        public Guid? QuoteId { get; init; }
+
+        /// <summary>If false, the notification is only saved to MongoDB and no FCM push is sent.</summary>
+        public bool SendPush { get; init; } = true;
     }
 }
 

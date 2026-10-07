@@ -159,6 +159,8 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationEventHandler, QuoteCreatedHandler>();
 builder.Services.AddScoped<INotificationEventHandler, QuoteUpdatedHandler>();
 builder.Services.AddScoped<INotificationEventHandler, QuoteStatusChangedHandler>();
+builder.Services.AddScoped<INotificationEventHandler, BorrowerSubmittedEmploymentHandler>();
+builder.Services.AddScoped<INotificationEventHandler, BorrowerCreatedViaLinkHandler>();
 
 builder.Services.AddSwaggerGen(c =>
 {

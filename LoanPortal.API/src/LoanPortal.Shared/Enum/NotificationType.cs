@@ -5,7 +5,9 @@ namespace LoanPortal.Shared.Enum
         QuoteCreated       = 1,
         QuoteUpdated       = 2,
         QuoteStatusChanged = 3,
-        // Future: BorrowerLinkCreated = 4, LoanFileCreated = 5, TeamMemberAdded = 6, ...
+        BorrowerSubmittedEmployment = 4,
+        BorrowerCreatedViaLink = 5,
+        // Future: LoanFileCreated = 6, TeamMemberAdded = 7, ...
     }
 }
 

@@ -721,7 +721,9 @@ public class PreApprovalService : IPreApprovalService
                 OwnerName = ownerName ?? "",
                 UpdatedAt = quote.UpdatedAt,
                 UpdatedBy = updatedByName,
-                TotalScenarios = quote.Scenarios?.Count ?? 0
+                TotalScenarios = quote.Scenarios?.Count ?? 0,
+                IsCreatedByBorrower = quote.IsCreatedByBorrower,
+                IsViewedByLO = quote.IsViewedByLO
             });
         }
 

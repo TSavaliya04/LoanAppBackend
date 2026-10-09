@@ -416,7 +416,8 @@ namespace LoanPortal.Core.Services
                 UpdatedAt = now,
                 Scenarios = new List<ScenarioDTO> { scenario },
                 IsCreatedByBorrower = true,
-                IsViewedByLO = false
+                IsViewedByLO = false,
+                LastSubmittedFormNo = 1
             };
         }
 

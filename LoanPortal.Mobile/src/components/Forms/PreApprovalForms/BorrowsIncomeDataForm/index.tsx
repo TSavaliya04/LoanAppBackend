@@ -7,20 +7,24 @@ import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSch
 import SVGs from "@/components/SVGs";
 import BorrowerIncomeItem from "./BorrowerIncomeItem";
 import { useEffect, useMemo } from "react";
-import { usePreApprovalStore } from "@/store/usePreApprovalStore";
+import { usePreApprovalIndexStore, usePreApprovalStore } from "@/store/usePreApprovalStore";
 
 type BorrowersIncomeDataFormProps = {
+  index: number;
   expanded: boolean;
   onToggle: () => void;
   isCompleted?: boolean;
   isDisabled?: boolean;
+  handleFieldChange: (index: number) => void;
 };
 
 export default function BorrowersIncomeDataForm({
+  index,
   expanded,
   onToggle,
   isCompleted,
   isDisabled,
+  handleFieldChange,
 }: BorrowersIncomeDataFormProps) {
   const {
     control,
@@ -28,116 +32,23 @@ export default function BorrowersIncomeDataForm({
     getValues,
     formState: { errors },
   } = useFormContext<CombinedPreApprovalFormData>();
-  // const setFrontEndRatio = usePreApprovalStore(
-  //   (state) => state.setFrontEndRatio
+
+  const handleIncomeFieldChange = () => {
+    const scenarios = getValues("scenarios") || [];
+    scenarios.forEach((_, i) => {
+      handleFieldChange(i);
+    });
+  };
+
+  // const setMonthlyIncome = usePreApprovalIndexStore(
+  //   (state) => state.setMonthlyIncome
   // );
-  const setMonthlyIncome = usePreApprovalStore(
-    (state) => state.setMonthlyIncome
-  );
-  const setBackEndRatio = usePreApprovalStore((state) => state.setBackEndRatio);
+  // const setBackEndRatio = usePreApprovalIndexStore((state) => state.setBackEndRatio);
 
   const { fields, append } = useFieldArray({
     control,
-    name: "borrowersIncomeData.borrowerIncome",
+    name: `scenarios.0.borrowersIncomeData.borrowerIncome`,
   });
-
-  const borrowerIncome = useWatch({
-    control,
-    name: "borrowersIncomeData.borrowerIncome",
-  });
-
-  const principalAndInterest =
-    useWatch({ control, name: "loanProgram.principalAndInterest" }) ?? 0;
-  const propertyTax =
-    useWatch({ control, name: "loanProgram.propertyTax" }) ?? 0;
-  const mortgageInsurance =
-    useWatch({ control, name: "loanProgram.mortgageInsurance" }) ?? 0;
-  const associationFee =
-    useWatch({ control, name: "purchaseInfo.associationFee" }) ?? 0;
-
-  // const ratioFront = useMemo(() => {
-  //   let totalIncome = 0;
-  //   let totalPayment = 0;
-
-  //   borrowerIncome?.forEach((borrower) => {
-  //     totalIncome += Number(borrower.monthlyIncome) || 0;
-  //     borrower?.debts?.forEach((debt) => {
-  //       totalPayment += Number(debt.monthlyPayment) || 0;
-  //     });
-  //   });
-
-  //   if (totalPayment === 0) return 0;
-
-  //   return parseFloat((totalIncome / totalPayment).toFixed(2));
-  // }, [borrowerIncome]);
-
-  // useEffect(() => {
-  //   setFrontEndRatio(ratioFront);
-  // }, [ratioFront, setFrontEndRatio]);
-
-  const calMonthlyIncome = useMemo(() => {
-    let totalIncome = 0;
-
-    borrowerIncome?.forEach((borrower) => {
-      totalIncome += Number(borrower.monthlyIncome) || 0;
-    });
-
-    return totalIncome;
-  }, [borrowerIncome]);
-
-  useEffect(() => {
-    setMonthlyIncome(calMonthlyIncome);
-  }, [calMonthlyIncome, setMonthlyIncome]);
-
-  const ratioBack = useMemo(() => {
-    let totalIncome = 0;
-    let totalPayment = 0;
-
-    borrowerIncome?.forEach((borrower) => {
-      totalIncome += Number(borrower.monthlyIncome) || 0;
-      borrower?.debts?.forEach((debt) => {
-        totalPayment += Number(debt.monthlyPayment) || 0;
-      });
-    });
-
-    const monthlyHousingExpenses =
-      principalAndInterest + propertyTax + mortgageInsurance + associationFee;
-
-    if (totalIncome === 0) return 0;
-
-    return parseFloat(
-      (((monthlyHousingExpenses + totalPayment) / totalIncome) * 100).toFixed(2)
-    );
-  }, [
-    principalAndInterest,
-    propertyTax,
-    mortgageInsurance,
-    associationFee,
-    borrowerIncome,
-  ]);
-
-  useEffect(() => {
-    if (!borrowerIncome) return;
-
-    const loanProgramBorrowers = borrowerIncome.map((borrower) => {
-      const totalDebts = borrower.debts?.reduce(
-        (sum, debt) => sum + (Number(debt.monthlyPayment) || 0),
-        0
-      );
-
-      return {
-        monthlyIncome: Number(borrower.monthlyIncome) || 0,
-        debts: totalDebts,
-        ficoScore: borrower.ficoScore,
-      };
-    });
-
-    setValue("loanProgram.borrowers", loanProgramBorrowers);
-  }, [borrowerIncome, setValue]);
-
-  useEffect(() => {
-    setBackEndRatio(ratioBack);
-  }, [ratioBack, setBackEndRatio]);
 
   return (
     <Box sx={{ borderRadius: 4 }}>
@@ -169,8 +80,8 @@ export default function BorrowersIncomeDataForm({
                   backgroundColor: isCompleted
                     ? "#1F9A00"
                     : isDisabled
-                    ? "gray"
-                    : "#7444F5",
+                      ? "gray"
+                      : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -206,12 +117,14 @@ export default function BorrowersIncomeDataForm({
 
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <Box>
-          {fields.map((field, index) => (
+          {fields.map((field, borrowerIncomeIndex) => (
             <BorrowerIncomeItem
               key={field.id}
-              index={index}
+              index={0}
+              borrowerIncomeIndex={borrowerIncomeIndex}
               control={control}
               errors={errors}
+              handleFieldChange={handleIncomeFieldChange}
             />
           ))}
 
@@ -220,7 +133,7 @@ export default function BorrowersIncomeDataForm({
               onClick={() =>
                 append({
                   borrowerName: "",
-                  ficoScore: getValues("borrowerInfo.ficoScore") ?? 0,
+                  ficoScore: "",
                   monthlyIncome: 0,
                   debts: [
                     {

@@ -10,14 +10,15 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   signInWithEmailAndPassword,
-  setPersistence,
-  browserSessionPersistence,
-  onAuthStateChanged,
+  // setPersistence,
+  // browserSessionPersistence,
+  // onAuthStateChanged,
 } from "@firebase/auth";
 import SVGs from "@/components/SVGs";
 // import Loader from "@/components/CassavaLoader";
 import ControlledInput from "@/components/Forms/Fields/ControlledInput";
 // import { User } from "@/api/models/user";
+// import { getOfficeUser, getRefreshToken } from "@/api/network/user";
 import { getOfficeUser } from "@/api/network/user";
 import { useSessionStore } from "@/stores/SessionStore";
 // import { useUserOrganisationStore } from "@/store/useUserOrganisationStore";
@@ -27,6 +28,14 @@ import AuthButton from "@/components/Auth/AuthButton";
 import { useSnackBarStore } from "@/store/SnackBarStore";
 import CustomSnackBar from "@/components/CustomSnackBar";
 import { firebaseAuth as auth } from "@/api/instances/firebase";
+import { jwtDecode, JwtPayload } from "jwt-decode";
+
+type CustomJwtPayload = JwtPayload & {
+  isAdmin?: boolean;
+  Role?: number | string;
+};
+
+const BORROWER_ROLE = 3;
 
 type OfficeUserResponse = {
   status: string;
@@ -63,7 +72,7 @@ const SignInPage = () => {
   } = useForm<SignInSchemaType>({ resolver: zodResolver(SignInSchema) });
 
   const router = useRouter();
-  const { setUser } = useSessionStore();
+  const { setUser, setHasHydrated } = useSessionStore();
   // const { setUserOrganizations } = useUserOrganisationStore();
   // const { setVerificationId } = useSessionStore();
   const { openErrorDialog } = useSnackBarStore();
@@ -76,51 +85,100 @@ const SignInPage = () => {
   // const auth = getAuth();
 
   // 🔹 Ensure Firebase session persistence
-  useEffect(() => {
-    console.log("Setting Firebase session persistence...");
-    let unsubscribe: () => void;
+  // useEffect(() => {
+  //   console.log("Setting Firebase session persistence...");
+  //   let unsubscribe: () => void;
 
-    setPersistence(auth, browserSessionPersistence)
-      .then(() => {
-        console.log("Session persistence set. Listening for auth changes...");
-        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-          console.log("Auth state changed:", firebaseUser);
+  //   setPersistence(auth, browserSessionPersistence)
+  //     .then(() => {
+  //       console.log("Session persistence set. Listening for auth changes...");
+  //       unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+  //         console.log("Auth state changed:", firebaseUser);
+  //         const { user } =
+  //             useSessionStore.getState();
 
-          if (firebaseUser) {
-            const token = await firebaseUser.getIdToken();
+  //         if (firebaseUser) {
+  //           const token = await firebaseUser.getIdToken();
+  //           const refreshToken = await firebaseUser.refreshToken;
 
-            // console.log("User is authenticated. Token:", token);
+  //           // console.log("User is authenticated. Token:", token);
 
-            const customUser = {
-              token,
-              displayName: firebaseUser.displayName ?? "",
-              firstName: "", // You might fetch or derive this elsewhere
-              lastName: "", // You might fetch or derive this elsewhere
-              userId: firebaseUser.uid,
-              phone: firebaseUser.phoneNumber ?? "",
-              email: firebaseUser.email ?? "",
-              profilePicture: firebaseUser.photoURL ?? "",
-            };
-            // console.log("111", customUser);
-            
-            setUser(customUser);
-          } else {
-            // console.log("222");
-            setUser(null);
-          }
+  //           const customUser = {
+  //             token,
+  //             refreshToken,
+  //             displayName: firebaseUser.displayName ?? "",
+  //             firstName: "", // You might fetch or derive this elsewhere
+  //             lastName: "", // You might fetch or derive this elsewhere
+  //             userId: firebaseUser.uid,
+  //             phone: firebaseUser.phoneNumber ?? "",
+  //             email: firebaseUser.email ?? "",
+  //             profilePicture: firebaseUser.photoURL ?? "",
+  //           };
+  //           // console.log("111", customUser);
 
-          setLoading(false);
-        });
-        return () => unsubscribe();
-      })
-      .catch((error) => {
-        console.error("Error setting Firebase persistence:", error);
-      });
+  //           setUser(customUser);
+  //           setHasHydrated(true);
+  //         } else {
+  //           if (user) {
+  //             // window.alert("No Firebase user. Attempting token refresh.");
+  //             const response = await getRefreshToken(user?.refreshToken || "");
+  //             const data = response.data?.data;
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [setUser]);
+  //             // window.alert(`Token refresh response: ${JSON.stringify(data)}`);
+
+  //             if (!data) {
+  //               // window.alert("Token refresh failed. Logging out.");
+  //               setUser(null);
+  //               setHasHydrated(false);
+  //               return;
+  //             }
+
+  //             const userId = data.id;
+  //             const firstName = data.firstName || "";
+  //             const lastName = data.lastName || "";
+  //             const displayName = `${firstName} ${lastName}`.trim();
+  //             const email = data.email;
+  //             const phone = data.phone;
+  //             const token = data.idToken;
+  //             const refreshToken = data.refreshToken;
+
+  //             // window.alert(`data: ${JSON.stringify(data)}`);
+  //             // window.alert(`token: ${JSON.stringify(token)}`);
+  //             // window.alert(`user: ${JSON.stringify(user)}`);
+
+  //             if (token && user) {
+  //               // window.alert("if token and user exist, setting new one. 2");
+  //               setUser({
+  //                 userId,
+  //                 displayName,
+  //                 firstName,
+  //                 lastName,
+  //                 email,
+  //                 phone,
+  //                 token,
+  //                 refreshToken,
+  //               });
+  //               setHasHydrated(true);
+  //             } else {
+  //               // window.alert("setting user null 2");
+  //               setUser(null);
+  //               setHasHydrated(false);
+  //             }
+  //           }
+  //         }
+
+  //         setLoading(false);
+  //       });
+  //       return () => unsubscribe();
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error setting Firebase persistence:", error);
+  //     });
+
+  //   return () => {
+  //     if (unsubscribe) unsubscribe();
+  //   };
+  // }, [setUser]);
 
   const onSubmit: SubmitHandler<SignInSchemaType> = async (data) => {
     if (isRateLimited) {
@@ -139,10 +197,21 @@ const SignInPage = () => {
       );
 
       const user = userCredential.user;
+      console.log("user =>", user);
+
       const token = await user?.getIdToken();
+      const refreshToken = await user?.refreshToken;
       // console.log("token =>", token);
 
       if (user && token) {
+        // Borrowers (Role 3) must use the borrower portal, not the agent sign in
+        const { Role } = jwtDecode<CustomJwtPayload>(token);
+        if (Number(Role) === BORROWER_ROLE) {
+          await auth.signOut();
+          openErrorDialog("Login failed: incorrect credentials.");
+          return;
+        }
+
         const axiosResponse = await getOfficeUser(await token);
         const response: OfficeUserResponse = {
           status: String(axiosResponse.status),
@@ -150,22 +219,34 @@ const SignInPage = () => {
         if (response.status === "499") {
           router.push("/downtime");
         } else {
+          const decoded = jwtDecode<CustomJwtPayload>(token);
+          const isAdmin = decoded.isAdmin ?? false;
+          // console.log("decoded user =>",decoded);
+          // console.log("isAdmin =>",isAdmin);
+
           // console.log("Log new =>", axiosResponse?.data?.data);
           // console.log("user id =>",user.uid);
-          
+
           const customUser = {
             token,
+            refreshToken,
             displayName: user.displayName ?? "",
             firstName: axiosResponse?.data?.data?.firstName, // You might fetch or derive this elsewhere
             lastName: axiosResponse?.data?.data?.lastName, // You might fetch or derive this elsewhere
             userId: user.uid,
             phone: user.phoneNumber ?? "",
             email: user.email ?? "",
+            isAdmin
           };
           // console.log("111111",customUser);
           setUser(customUser);
+          setHasHydrated(true);
           if (axiosResponse) {
-            router.push("/dashboard");
+            if (isAdmin) {
+              router.push("/admin/dashboard");
+            } else {
+              router.push("/dashboard");
+            }
           }
           // }
         }

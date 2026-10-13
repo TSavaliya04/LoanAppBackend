@@ -17,17 +17,21 @@ import { NumericFormat } from "react-number-format";
 import { useEffect } from "react";
 
 type LenderFeesFormProps = {
+  index: number;
   expanded: boolean;
   onToggle: () => void;
   isCompleted?: boolean;
   isDisabled?: boolean;
+  handleFieldChange: (index: number) => void;
 };
 
 export default function LenderFeesForm({
+  index,
   expanded,
   onToggle,
   isCompleted,
   isDisabled,
+  handleFieldChange,
 }: LenderFeesFormProps) {
   const {
     control,
@@ -35,71 +39,102 @@ export default function LenderFeesForm({
     formState: { errors },
   } = useFormContext<CombinedPreApprovalFormData>();
 
-  const loanAmount =
-    useWatch({ control, name: "purchaseInfo.loanAmount" }) ?? 0;
-  const loanOriginationFee =
-    useWatch({ control, name: "lenderFees.loanOriginationFee" }) ?? 0;
-  const loanOriginationFeePercentage =
-    useWatch({ control, name: "lenderFees.loanOriginationFeePercentage" }) ?? 0;
-  const discountFee =
-    useWatch({ control, name: "lenderFees.discountFee" }) ?? 0;
-  const discountFeePercentage =
-    useWatch({ control, name: "lenderFees.discountFeePercentage" }) ?? 0;
-  const upfrontMip = useWatch({ control, name: "lenderFees.upfrontMip" }) ?? 0;
-  const upfrontMipPercentage =
-    useWatch({ control, name: "lenderFees.upfrontMipPercentage" }) ?? 0;
-  const appraisalFee =
-    useWatch({ control, name: "lenderFees.appraisalFee" }) ?? 0;
-  const escrowFees = useWatch({ control, name: "lenderFees.escrowFees" }) ?? 0;
-  const titleFees = useWatch({ control, name: "lenderFees.titleFees" }) ?? 0;
-  const thirdPartyLenderFee =
+  const loanProgram =
     useWatch({
       control,
-      name: "lenderFees.thirdPartyLenderFee",
+      name: `scenarios.${index}.purchaseInfo.loanProgram`,
     }) ?? 0;
+  // const loanAmount =
+  //   useWatch({ control, name: `scenarios.${index}.purchaseInfo.loanAmount` }) ?? 0;
+  // const loanOriginationFee =
+  //   useWatch({ control, name: `scenarios.${index}.lenderFees.loanOriginationFee` }) ?? 0;
+  // const loanOriginationFeePercentage =
+  //   useWatch({ control, name: `scenarios.${index}.lenderFees.loanOriginationFeePercentage` }) ?? 0;
+  // const discountFee =
+  //   useWatch({ control, name: `scenarios.${index}.lenderFees.discountFee` }) ?? 0;
+  // const discountFeePercentage =
+  //   useWatch({ control, name: `scenarios.${index}.lenderFees.discountFeePercentage` }) ?? 0;
+  // // const upfrontMip = useWatch({ control, name: "lenderFees.upfrontMip" }) ?? 0;
+  // const upfrontMipPercentage =
+  //   useWatch({ control, name: `scenarios.${index}.lenderFees.upfrontMipPercentage` }) ?? 0;
+  // const appraisalFee =
+  //   useWatch({ control, name: `scenarios.${index}.lenderFees.appraisalFee` }) ?? 0;
+  // const escrowFees = useWatch({ control, name: `scenarios.${index}.lenderFees.escrowFees` }) ?? 0;
+  // const titleFees = useWatch({ control, name: `scenarios.${index}.lenderFees.titleFees` }) ?? 0;
+  // const thirdPartyLenderFee =
+  //   useWatch({
+  //     control,
+  //     name: `scenarios.${index}.lenderFees.thirdPartyLenderFee`,
+  //   }) ?? 0;
+  // const prepaidInterestAmount = useWatch({ control, name: `scenarios.${index}.prepaidItems.prepaidInterestAmount` }) ?? 0;
+  // const hazardInsurance = useWatch({ control, name: `scenarios.${index}.prepaidItems.hazardInsurance` }) ?? 0;
+  // const hazardInsuranceReserves = useWatch({ control, name: `scenarios.${index}.prepaidItems.hazardInsuranceReserves` }) ?? 0;
+  // const propertyTaxAmount = useWatch({ control, name: `scenarios.${index}.prepaidItems.propertyTaxAmount` }) ?? 0;
 
-  useEffect(() => {
-    if (loanAmount > 0) {
-      const loanOriginationFee = Math.round(
-        (loanOriginationFeePercentage / 100) * loanAmount
-      );
-      const discountFee = Math.round(
-        (discountFeePercentage / 100) * loanAmount
-      );
-      const upfrontMip = Math.round((upfrontMipPercentage / 100) * loanAmount);
+  // useEffect(() => {
+  //   if (loanAmount > 0) {
+  //     const loanOriginationFee = Math.round(
+  //       (loanOriginationFeePercentage / 100) * loanAmount
+  //     );
+  //     const discountFee = Math.round(
+  //       (discountFeePercentage / 100) * loanAmount
+  //     );
+  //     const upfrontMip = Math.round((upfrontMipPercentage / 100) * loanAmount);
 
-      setValue("lenderFees.loanOriginationFee", loanOriginationFee);
-      setValue("lenderFees.discountFee", discountFee);
-      setValue("lenderFees.upfrontMip", upfrontMip);
-    }
-  }, [
-    loanAmount,
-    loanOriginationFeePercentage,
-    discountFeePercentage,
-    upfrontMipPercentage,
-    setValue,
-  ]);
+  //     setValue(`scenarios.${index}.lenderFees.loanOriginationFee`, loanOriginationFee);
+  //     setValue(`scenarios.${index}.lenderFees.discountFee`, discountFee);
+  //     setValue(`scenarios.${index}.lenderFees.upfrontMip`, upfrontMip);
+  //   }
+  // }, [
+  //   loanAmount,
+  //   loanOriginationFeePercentage,
+  //   discountFeePercentage,
+  //   upfrontMipPercentage,
+  //   setValue,
+  // ]);
 
-  useEffect(() => {
-    const closingCosts =
-      loanOriginationFee +
-      discountFee +
-      upfrontMip +
-      appraisalFee +
-      escrowFees +
-      titleFees +
-      thirdPartyLenderFee;
-      setValue("loanProgram.clearingCart", Math.round(closingCosts));
-  }, [
-    loanOriginationFee,
-    discountFee,
-    upfrontMip,
-    appraisalFee,
-    escrowFees,
-    titleFees,
-    thirdPartyLenderFee,
-    setValue,
-  ]);
+  // useEffect(() => {
+  //   const closingCosts =
+  //     loanOriginationFee +
+  //     discountFee +
+  //     // upfrontMip +
+  //     appraisalFee +
+  //     prepaidInterestAmount +
+  //     hazardInsurance +
+  //     hazardInsuranceReserves +
+  //     propertyTaxAmount +
+  //     escrowFees +
+  //     titleFees +
+  //     thirdPartyLenderFee;
+  //     // console.log("============================");
+  //     // console.log("loanOriginationFee =>", loanOriginationFee);
+  //     // console.log("discountFee =>", discountFee);
+  //     // console.log("appraisalFee =>", appraisalFee);
+  //     // console.log("prepaidInterestAmount =>", prepaidInterestAmount);
+  //     // console.log("hazardInsurance =>", hazardInsurance);
+  //     // console.log("hazardInsuranceReserves =>", hazardInsuranceReserves);
+  //     // console.log("propertyTaxAmount =>", propertyTaxAmount);
+  //     // console.log("escrowFees =>", escrowFees);
+  //     // console.log("titleFees =>", titleFees);
+  //     // console.log("thirdPartyLenderFee =>", thirdPartyLenderFee);
+
+  //     // console.log("closingCosts =>",closingCosts);
+
+  //     setValue(`scenarios.${index}.loanProgram.clearingCart`, Math.round(closingCosts));
+  // }, [
+  //   loanOriginationFee,
+  //   discountFee,
+  //   // upfrontMip,
+  //   appraisalFee,
+  //   prepaidInterestAmount,
+  //   hazardInsurance,
+  //   hazardInsuranceReserves,
+  //   propertyTaxAmount,
+  //   escrowFees,
+  //   titleFees,
+  //   thirdPartyLenderFee,
+  //   setValue,
+  // ]);
 
   return (
     <Box
@@ -138,8 +173,8 @@ export default function LenderFeesForm({
                   backgroundColor: isCompleted
                     ? "#1F9A00"
                     : isDisabled
-                    ? "gray"
-                    : "#7444F5",
+                      ? "gray"
+                      : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -176,64 +211,65 @@ export default function LenderFeesForm({
       {/* Collapsible Content */}
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <Box sx={{ mt: 2 }}>
-          <Grid container>
+          <Grid container spacing={2}>
             {/* Agent Name Full Width */}
             <Grid size={{ xs: 12 }}>
               <Controller
-                name="lenderFees.agentName"
+                name={`scenarios.${index}.lenderFees.agentName`}
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
                     label="Agent Name *"
-                    error={!!errors.lenderFees?.agentName}
-                    helperText={errors.lenderFees?.agentName?.message}
+                    error={!!errors.scenarios?.[index]?.lenderFees?.agentName}
+                    helperText={
+                      errors.scenarios?.[index]?.lenderFees?.agentName?.message
+                    }
                   />
                 )}
               />
             </Grid>
-
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
                 <Typography fontWeight={600} sx={{ fontSize: 14 }}>
                   Loan Orig. Fee
                 </Typography>
                 <Box display="flex" gap={1} alignItems="center">
                   <Controller
-                    name="lenderFees.loanOriginationFeePercentage"
+                    name={`scenarios.${index}.lenderFees.loanOriginationFeePercentage`}
                     control={control}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === "" ? "" : Number(e.target.value);
+                          field.onChange(value);
+                          handleFieldChange(index);
+                        }}
                         value={field.value ?? ""}
                         type="number"
                         inputMode="numeric"
                         placeholder="0"
                         size="small"
                         error={
-                          !!errors.lenderFees?.loanOriginationFeePercentage
+                          !!errors.scenarios?.[index]?.lenderFees
+                            ?.loanOriginationFeePercentage
                         }
                         helperText={
-                          errors.lenderFees?.loanOriginationFeePercentage
-                            ?.message
+                          errors.scenarios?.[index]?.lenderFees
+                            ?.loanOriginationFeePercentage?.message
                         }
                         sx={{
-                          maxWidth: 76,
+                          maxWidth: {
+                            xs: 76,   // mobile
+                            sm: 85,  // tablet
+                          },
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             paddingRight: "8.5px",
@@ -256,6 +292,9 @@ export default function LenderFeesForm({
                             },
                           },
                         }}
+                        inputProps={{
+                          step: 0.01
+                        }}
                         InputProps={{
                           endAdornment: (
                             <InputAdornment
@@ -274,7 +313,7 @@ export default function LenderFeesForm({
                     )}
                   />
                   <Controller
-                    name="lenderFees.loanOriginationFee"
+                    name={`scenarios.${index}.lenderFees.loanOriginationFee`}
                     control={control}
                     render={({ field }) => (
                       <NumericFormat
@@ -296,9 +335,13 @@ export default function LenderFeesForm({
                         }}
                         thousandSeparator=","
                         allowNegative={false}
-                        error={!!errors.lenderFees?.loanOriginationFee}
+                        error={
+                          !!errors.scenarios?.[index]?.lenderFees
+                            ?.loanOriginationFee
+                        }
                         helperText={
-                          errors.lenderFees?.loanOriginationFee?.message
+                          errors.scenarios?.[index]?.lenderFees
+                            ?.loanOriginationFee?.message
                         }
                         sx={{
                           maxWidth: 120,
@@ -331,43 +374,46 @@ export default function LenderFeesForm({
                 </Box>
               </Box>
             </Grid>
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
                 <Typography fontWeight={600} sx={{ fontSize: 14 }}>
                   Discount Fee
                 </Typography>
                 <Box display="flex" gap={1} alignItems="center">
                   <Controller
-                    name="lenderFees.discountFeePercentage"
+                    name={`scenarios.${index}.lenderFees.discountFeePercentage`}
                     control={control}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === "" ? "" : Number(e.target.value);
+                          field.onChange(value);
+                          handleFieldChange(index);
+                        }}
                         value={field.value ?? ""}
                         type="number"
                         inputMode="numeric"
                         placeholder="0"
                         size="small"
-                        error={!!errors.lenderFees?.discountFeePercentage}
+                        error={
+                          !!errors.scenarios?.[index]?.lenderFees
+                            ?.discountFeePercentage
+                        }
                         helperText={
-                          errors.lenderFees?.discountFeePercentage?.message
+                          errors.scenarios?.[index]?.lenderFees
+                            ?.discountFeePercentage?.message
                         }
                         sx={{
-                          maxWidth: 76,
+                          maxWidth: {
+                            xs: 76,   // mobile
+                            sm: 85,  // tablet
+                          },
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             borderRadius: 2,
@@ -390,6 +436,9 @@ export default function LenderFeesForm({
                             },
                           },
                         }}
+                        inputProps={{
+                          step: 0.01
+                        }}
                         InputProps={{
                           endAdornment: (
                             <InputAdornment
@@ -408,7 +457,7 @@ export default function LenderFeesForm({
                     )}
                   />
                   <Controller
-                    name="lenderFees.discountFee"
+                    name={`scenarios.${index}.lenderFees.discountFee`}
                     control={control}
                     render={({ field }) => (
                       <NumericFormat
@@ -430,8 +479,13 @@ export default function LenderFeesForm({
                         }}
                         thousandSeparator=","
                         allowNegative={false}
-                        error={!!errors.lenderFees?.discountFee}
-                        helperText={errors.lenderFees?.discountFee?.message}
+                        error={
+                          !!errors.scenarios?.[index]?.lenderFees?.discountFee
+                        }
+                        helperText={
+                          errors.scenarios?.[index]?.lenderFees?.discountFee
+                            ?.message
+                        }
                         sx={{
                           maxWidth: 120,
                           borderRadius: 2,
@@ -463,16 +517,11 @@ export default function LenderFeesForm({
                 </Box>
               </Box>
             </Grid>
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
                 <Box>
                   <Typography fontWeight={600} sx={{ fontSize: 14 }}>
@@ -484,27 +533,36 @@ export default function LenderFeesForm({
                 </Box>
                 <Box display="flex" gap={1} alignItems="center">
                   <Controller
-                    name="lenderFees.upfrontMipPercentage"
+                    name={`scenarios.${index}.lenderFees.upfrontMipPercentage`}
                     control={control}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === "" ? "" : Number(e.target.value);
+                          field.onChange(value);
+                          handleFieldChange(index);
+                        }}
                         value={field.value ?? ""}
+                        disabled={loanProgram === "3"}
                         type="number"
                         inputMode="numeric"
                         placeholder="0"
                         size="small"
-                        error={!!errors.lenderFees?.upfrontMipPercentage}
+                        error={
+                          !!errors.scenarios?.[index]?.lenderFees
+                            ?.upfrontMipPercentage
+                        }
                         helperText={
-                          errors.lenderFees?.upfrontMipPercentage?.message
+                          errors.scenarios?.[index]?.lenderFees
+                            ?.upfrontMipPercentage?.message
                         }
                         sx={{
-                          maxWidth: 76,
+                          maxWidth: {
+                            xs: 76,   // mobile
+                            sm: 85,  // tablet
+                          },
                           borderRadius: 2,
                           "& .MuiOutlinedInput-root": {
                             borderRadius: 2,
@@ -527,6 +585,9 @@ export default function LenderFeesForm({
                             },
                           },
                         }}
+                        inputProps={{
+                          step: 0.01
+                        }}
                         InputProps={{
                           endAdornment: (
                             <InputAdornment
@@ -545,7 +606,7 @@ export default function LenderFeesForm({
                     )}
                   />
                   <Controller
-                    name="lenderFees.upfrontMip"
+                    name={`scenarios.${index}.lenderFees.upfrontMip`}
                     control={control}
                     render={({ field }) => (
                       <NumericFormat
@@ -567,8 +628,13 @@ export default function LenderFeesForm({
                         }}
                         thousandSeparator=","
                         allowNegative={false}
-                        error={!!errors.lenderFees?.upfrontMip}
-                        helperText={errors.lenderFees?.upfrontMip?.message}
+                        error={
+                          !!errors.scenarios?.[index]?.lenderFees?.upfrontMip
+                        }
+                        helperText={
+                          errors.scenarios?.[index]?.lenderFees?.upfrontMip
+                            ?.message
+                        }
                         sx={{
                           maxWidth: 120,
                           borderRadius: 2,
@@ -600,16 +666,11 @@ export default function LenderFeesForm({
                 </Box>
               </Box>
             </Grid>
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
                 <Box>
                   <Typography fontWeight={600} sx={{ fontSize: 14 }}>
@@ -617,7 +678,7 @@ export default function LenderFeesForm({
                   </Typography>
                 </Box>
                 <Controller
-                  name="lenderFees.appraisalFee"
+                  name={`scenarios.${index}.lenderFees.appraisalFee`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -625,18 +686,24 @@ export default function LenderFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
+                      onValueChange={(values) => {
+                        const value =
                           values.floatValue === undefined
                             ? ""
-                            : values.floatValue
-                        )
-                      }
+                            : values.floatValue;
+                        field.onChange(value);
+                        handleFieldChange(index);
+                      }}
                       inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.lenderFees?.appraisalFee}
-                      helperText={errors.lenderFees?.appraisalFee?.message}
+                      error={
+                        !!errors.scenarios?.[index]?.lenderFees?.appraisalFee
+                      }
+                      helperText={
+                        errors.scenarios?.[index]?.lenderFees?.appraisalFee
+                          ?.message
+                      }
                       sx={{
                         maxWidth: 120,
                         borderRadius: 2,
@@ -667,16 +734,11 @@ export default function LenderFeesForm({
                 />
               </Box>
             </Grid>
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
                 <Box>
                   <Typography fontWeight={600} sx={{ fontSize: 14 }}>
@@ -684,7 +746,7 @@ export default function LenderFeesForm({
                   </Typography>
                 </Box>
                 <Controller
-                  name="lenderFees.escrowFees"
+                  name={`scenarios.${index}.lenderFees.escrowFees`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -692,18 +754,24 @@ export default function LenderFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
+                      onValueChange={(values) => {
+                        const value =
                           values.floatValue === undefined
                             ? ""
-                            : values.floatValue
-                        )
-                      }
+                            : values.floatValue;
+                        field.onChange(value);
+                        handleFieldChange(index);
+                      }}
                       inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.lenderFees?.escrowFees}
-                      helperText={errors.lenderFees?.escrowFees?.message}
+                      error={
+                        !!errors.scenarios?.[index]?.lenderFees?.escrowFees
+                      }
+                      helperText={
+                        errors.scenarios?.[index]?.lenderFees?.escrowFees
+                          ?.message
+                      }
                       sx={{
                         maxWidth: 120,
                         borderRadius: 2,
@@ -734,16 +802,11 @@ export default function LenderFeesForm({
                 />
               </Box>
             </Grid>
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
                 <Box>
                   <Typography fontWeight={600} sx={{ fontSize: 14 }}>
@@ -751,7 +814,7 @@ export default function LenderFeesForm({
                   </Typography>
                 </Box>
                 <Controller
-                  name="lenderFees.titleFees"
+                  name={`scenarios.${index}.lenderFees.titleFees`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -759,18 +822,22 @@ export default function LenderFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
+                      onValueChange={(values) => {
+                        const value =
                           values.floatValue === undefined
                             ? ""
-                            : values.floatValue
-                        )
-                      }
+                            : values.floatValue;
+                        field.onChange(value);
+                        handleFieldChange(index);
+                      }}
                       inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.lenderFees?.titleFees}
-                      helperText={errors.lenderFees?.titleFees?.message}
+                      error={!!errors.scenarios?.[index]?.lenderFees?.titleFees}
+                      helperText={
+                        errors.scenarios?.[index]?.lenderFees?.titleFees
+                          ?.message
+                      }
                       sx={{
                         maxWidth: 120,
                         borderRadius: 2,
@@ -801,16 +868,11 @@ export default function LenderFeesForm({
                 />
               </Box>
             </Grid>
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
                 <Box>
                   <Typography fontWeight={600} sx={{ fontSize: 14 }}>
@@ -818,7 +880,7 @@ export default function LenderFeesForm({
                   </Typography>
                 </Box>
                 <Controller
-                  name="lenderFees.thirdPartyLenderFee"
+                  name={`scenarios.${index}.lenderFees.thirdPartyLenderFee`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -826,19 +888,24 @@ export default function LenderFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
+                      onValueChange={(values) => {
+                        const value =
                           values.floatValue === undefined
                             ? ""
-                            : values.floatValue
-                        )
-                      }
+                            : values.floatValue;
+                        field.onChange(value);
+                        handleFieldChange(index);
+                      }}
                       inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.lenderFees?.thirdPartyLenderFee}
+                      error={
+                        !!errors.scenarios?.[index]?.lenderFees
+                          ?.thirdPartyLenderFee
+                      }
                       helperText={
-                        errors.lenderFees?.thirdPartyLenderFee?.message
+                        errors.scenarios?.[index]?.lenderFees
+                          ?.thirdPartyLenderFee?.message
                       }
                       sx={{
                         maxWidth: 120,

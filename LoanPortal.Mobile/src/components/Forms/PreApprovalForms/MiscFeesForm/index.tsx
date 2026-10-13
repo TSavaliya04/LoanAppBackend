@@ -15,17 +15,21 @@ import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSch
 import { NumericFormat } from "react-number-format";
 
 type MiscFeesFormProps = {
+  index: number;
   expanded: boolean;
   onToggle: () => void;
   isCompleted?: boolean;
   isDisabled?: boolean;
+  handleFieldChange: (index: number) => void;
 };
 
 export default function MiscFeesForm({
+  index,
   expanded,
   onToggle,
   isCompleted,
   isDisabled,
+  handleFieldChange,
 }: MiscFeesFormProps) {
   const {
     control,
@@ -77,8 +81,8 @@ export default function MiscFeesForm({
                   backgroundColor: isCompleted
                     ? "#1F9A00"
                     : isDisabled
-                    ? "gray"
-                    : "#7444F5",
+                      ? "gray"
+                      : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -115,21 +119,16 @@ export default function MiscFeesForm({
       {/* Collapsible Content */}
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <Box sx={{ mt: 2 }}>
-          <Grid container spacing={0}>
-            <Grid size={{ xs: 12 }}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Misc Fee 1</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Earnest Money Deposit (EMD)</Typography>
                 <Controller
-                  name="miscFees.miscFee1"
+                  name={`scenarios.${index}.miscFees.earnestMoneyDeposit`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -137,13 +136,14 @@ export default function MiscFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
+                      onValueChange={(values) => {
+                        const value =
                           values.floatValue === undefined
                             ? ""
-                            : values.floatValue
-                        )
-                      }
+                            : values.floatValue;
+                        field.onChange(value);
+                        handleFieldChange(index);
+                      }}
                       sx={{
                         maxWidth: 120,
                         borderRadius: 2,
@@ -162,27 +162,22 @@ export default function MiscFeesForm({
                       inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.miscFees?.miscFee1}
-                      helperText={errors.miscFees?.miscFee1?.message}
+                      error={!!errors.scenarios?.[index]?.miscFees?.earnestMoneyDeposit}
+                      helperText={errors.scenarios?.[index]?.miscFees?.earnestMoneyDeposit?.message}
                     />
                   )}
                 />
               </Box>
             </Grid>
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Misc Fee 2</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Seller Credit</Typography>
                 <Controller
-                  name="miscFees.miscFee2"
+                  name={`scenarios.${index}.miscFees.sellerCredit`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -190,13 +185,14 @@ export default function MiscFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
+                      onValueChange={(values) => {
+                        const value =
                           values.floatValue === undefined
                             ? ""
-                            : values.floatValue
-                        )
-                      }
+                            : values.floatValue;
+                        field.onChange(value);
+                        handleFieldChange(index);
+                      }}
                       sx={{
                         maxWidth: 120,
                         borderRadius: 2,
@@ -215,27 +211,22 @@ export default function MiscFeesForm({
                       inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.miscFees?.miscFee2}
-                      helperText={errors.miscFees?.miscFee2?.message}
+                      error={!!errors.scenarios?.[index]?.miscFees?.sellerCredit}
+                      helperText={errors.scenarios?.[index]?.miscFees?.sellerCredit?.message}
                     />
                   )}
                 />
               </Box>
             </Grid>
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Misc Fee 3</Typography>
+                <Typography fontWeight={600} sx={{ fontSize: 14 }}>Lender Credit</Typography>
                 <Controller
-                  name="miscFees.miscFee3"
+                  name={`scenarios.${index}.miscFees.lenderCredit`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -243,13 +234,14 @@ export default function MiscFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
+                      onValueChange={(values) => {
+                        const value =
                           values.floatValue === undefined
                             ? ""
-                            : values.floatValue
-                        )
-                      }
+                            : values.floatValue;
+                        field.onChange(value);
+                        handleFieldChange(index);
+                      }}
                       sx={{
                         maxWidth: 120,
                         borderRadius: 2,
@@ -268,27 +260,22 @@ export default function MiscFeesForm({
                       inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.miscFees?.miscFee3}
-                      helperText={errors.miscFees?.miscFee3?.message}
+                      error={!!errors.scenarios?.[index]?.miscFees?.lenderCredit}
+                      helperText={errors.scenarios?.[index]?.miscFees?.lenderCredit?.message}
                     />
                   )}
                 />
               </Box>
             </Grid>
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
               >
                 <Typography fontWeight={600} sx={{ fontSize: 14 }}>Misc Fee 4</Typography>
                 <Controller
-                  name="miscFees.miscFee4"
+                  name={`scenarios.${index}.miscFees.miscFee4`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -296,13 +283,14 @@ export default function MiscFeesForm({
                       fullWidth
                       value={field.value ?? ""}
                       placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
+                      onValueChange={(values) => {
+                        const value =
                           values.floatValue === undefined
                             ? ""
-                            : values.floatValue
-                        )
-                      }
+                            : values.floatValue;
+                        field.onChange(value);
+                        handleFieldChange(index);
+                      }}
                       sx={{
                         maxWidth: 120,
                         borderRadius: 2,
@@ -321,8 +309,8 @@ export default function MiscFeesForm({
                       inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.miscFees?.miscFee4}
-                      helperText={errors.miscFees?.miscFee4?.message}
+                      error={!!errors.scenarios?.[index]?.miscFees?.miscFee4}
+                      helperText={errors.scenarios?.[index]?.miscFees?.miscFee4?.message}
                     />
                   )}
                 />

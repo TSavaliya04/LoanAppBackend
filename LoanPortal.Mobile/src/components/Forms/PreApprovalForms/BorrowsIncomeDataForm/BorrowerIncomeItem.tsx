@@ -17,23 +17,35 @@ import {
 } from "react-hook-form";
 import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSchema";
 import AddIcon from "@mui/icons-material/Add";
-import { Delete } from "@mui/icons-material";
+import { Delete, Calculate as CalculateIcon } from "@mui/icons-material";
 import { NumericFormat } from "react-number-format";
+import { useState } from "react";
+import IncomeCalculatorModal from "@/components/IncomeCalculator/IncomeCalculatorModal";
 
 type Props = {
   index: number;
+  borrowerIncomeIndex: number;
   control: Control<CombinedPreApprovalFormData>;
   errors: FieldErrors<CombinedPreApprovalFormData>;
+  handleFieldChange: (index: number) => void;
 };
 
-export default function BorrowerIncomeItem({ index, control, errors }: Props) {
+export default function BorrowerIncomeItem({
+  index,
+  borrowerIncomeIndex,
+  control,
+  errors,
+  handleFieldChange,
+}: Props) {
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+
   const {
     fields: debtFields,
     append: appendDebt,
     remove: removeDebt,
   } = useFieldArray({
     control,
-    name: `borrowersIncomeData.borrowerIncome.${index}.debts`,
+    name: `scenarios.${index}.borrowersIncomeData.borrowerIncome.${borrowerIncomeIndex}.debts`,
   });
 
   return (
@@ -53,9 +65,9 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
       </Typography>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Controller
-            name={`borrowersIncomeData.borrowerIncome.${index}.borrowerName`}
+            name={`scenarios.${index}.borrowersIncomeData.borrowerIncome.${borrowerIncomeIndex}.borrowerName`}
             control={control}
             render={({ field }) => (
               <TextField
@@ -63,41 +75,12 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                 fullWidth
                 label="Borrower Name *"
                 error={
-                  !!errors.borrowersIncomeData?.borrowerIncome?.[index]
-                    ?.borrowerName
+                  !!errors.scenarios?.[index]?.borrowersIncomeData
+                    ?.borrowerIncome?.[borrowerIncomeIndex]?.borrowerName
                 }
                 helperText={
-                  errors.borrowersIncomeData?.borrowerIncome?.[index]
-                    ?.borrowerName?.message
-                }
-              />
-            )}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12 }}>
-          <Controller
-            name={`borrowersIncomeData.borrowerIncome.${index}.ficoScore`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? "" : Number(e.target.value)
-                  )
-                }
-                value={field.value ?? ""}
-                fullWidth
-                label="FICO Score *"
-                type="number"
-                inputMode="numeric"
-                error={
-                  !!errors.borrowersIncomeData?.borrowerIncome?.[index]
-                    ?.ficoScore
-                }
-                helperText={
-                  errors.borrowersIncomeData?.borrowerIncome?.[index]?.ficoScore
+                  errors.scenarios?.[index]?.borrowersIncomeData
+                    ?.borrowerIncome?.[borrowerIncomeIndex]?.borrowerName
                     ?.message
                 }
               />
@@ -105,21 +88,51 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
           />
         </Grid>
 
-        <Grid size={{ xs: 12 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Controller
-            name={`borrowersIncomeData.borrowerIncome.${index}.monthlyIncome`}
+            name={`scenarios.${index}.borrowersIncomeData.borrowerIncome.${borrowerIncomeIndex}.ficoScore`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                onChange={(e) => {
+                  field.onChange(e.target.value === "" ? "" : e.target.value);
+                  handleFieldChange(index);
+                }}
+                value={field.value ?? ""}
+                fullWidth
+                label="FICO Score"
+                type="text"
+                inputMode="numeric"
+                error={
+                  !!errors.scenarios?.[index]?.borrowersIncomeData
+                    ?.borrowerIncome?.[borrowerIncomeIndex]?.ficoScore
+                }
+                helperText={
+                  errors.scenarios?.[index]?.borrowersIncomeData
+                    ?.borrowerIncome?.[borrowerIncomeIndex]?.ficoScore?.message
+                }
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Controller
+            name={`scenarios.${index}.borrowersIncomeData.borrowerIncome.${borrowerIncomeIndex}.monthlyIncome`}
             control={control}
             render={({ field }) => (
               <NumericFormat
                 customInput={TextField}
                 fullWidth
-                label="Monthly Income *"
+                label="Monthly Income"
                 value={field.value ?? ""}
-                onValueChange={(values) =>
-                  field.onChange(
-                    values.floatValue === undefined ? "" : values.floatValue
-                  )
-                }
+                onValueChange={(values) => {
+                  const value =
+                    values.floatValue === undefined ? "" : values.floatValue;
+                  field.onChange(value);
+                  handleFieldChange(index);
+                }}
                 inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
                 thousandSeparator=","
                 allowNegative={false}
@@ -129,16 +142,33 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                   ),
                 }}
                 error={
-                  !!errors.borrowersIncomeData?.borrowerIncome?.[index]
-                    ?.monthlyIncome
+                  !!errors.scenarios?.[index]?.borrowersIncomeData
+                    ?.borrowerIncome?.[borrowerIncomeIndex]?.monthlyIncome
                 }
                 helperText={
-                  errors.borrowersIncomeData?.borrowerIncome?.[index]
-                    ?.monthlyIncome?.message
+                  errors.scenarios?.[index]?.borrowersIncomeData
+                    ?.borrowerIncome?.[borrowerIncomeIndex]?.monthlyIncome
+                    ?.message
                 }
               />
             )}
           />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }} display="flex" alignItems="center">
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<CalculateIcon />}
+            onClick={() => setCalculatorOpen(true)}
+            sx={{
+              height: "56px",
+              borderRadius: "8px",
+              width: { xs: "100%", md: "auto" }
+            }}
+          >
+            Income Calculator
+          </Button>
         </Grid>
 
         {/* Debt Fields */}
@@ -168,16 +198,12 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                 </Button>
               </Box>
 
-              <Grid container>
+              <Grid container spacing={2}>
                 <Grid
-                  size={{ xs: 12 }}
-                  sx={{
-                    borderBottom: "1px solid #f0f0f0",
-                    py: 1.5,
-                  }}
+                  size={{ xs: 12, md: 6 }}
                 >
                   <Controller
-                    name={`borrowersIncomeData.borrowerIncome.${index}.debts.${debtIndex}.debtType`}
+                    name={`scenarios.${index}.borrowersIncomeData.borrowerIncome.${borrowerIncomeIndex}.debts.${debtIndex}.debtType`}
                     control={control}
                     render={({ field }) => (
                       <TextField
@@ -186,12 +212,16 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                         select
                         label="Debt Type *"
                         error={
-                          !!errors.borrowersIncomeData?.borrowerIncome?.[index]
-                            ?.debts?.[debtIndex]?.debtType
+                          !!errors.scenarios?.[index]?.borrowersIncomeData
+                            ?.borrowerIncome?.[borrowerIncomeIndex]?.debts?.[
+                            debtIndex
+                          ]?.debtType
                         }
                         helperText={
-                          errors.borrowersIncomeData?.borrowerIncome?.[index]
-                            ?.debts?.[debtIndex]?.debtType?.message
+                          errors.scenarios?.[index]?.borrowersIncomeData
+                            ?.borrowerIncome?.[borrowerIncomeIndex]?.debts?.[
+                            debtIndex
+                          ]?.debtType?.message
                         }
                       >
                         <MenuItem value="1">Mortgage Payment</MenuItem>
@@ -204,22 +234,17 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                   />
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Box
                     display="flex"
                     alignItems="center"
                     justifyContent="space-between"
-                    sx={{
-                      borderBottom: "1px solid #f0f0f0",
-                      paddingLeft: 0.5,
-                      py: 1.5,
-                    }}
                   >
                     <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                      Balance *
+                      Balance
                     </Typography>
                     <Controller
-                      name={`borrowersIncomeData.borrowerIncome.${index}.debts.${debtIndex}.balance`}
+                      name={`scenarios.${index}.borrowersIncomeData.borrowerIncome.${borrowerIncomeIndex}.debts.${debtIndex}.balance`}
                       control={control}
                       render={({ field }) => (
                         <NumericFormat
@@ -227,13 +252,14 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                           fullWidth
                           value={field.value ?? ""}
                           placeholder="0"
-                          onValueChange={(values) =>
-                            field.onChange(
+                          onValueChange={(values) => {
+                            const value =
                               values.floatValue === undefined
                                 ? ""
-                                : values.floatValue
-                            )
-                          }
+                                : values.floatValue;
+                            field.onChange(value);
+                            handleFieldChange(index);
+                          }}
                           inputProps={{
                             inputMode: "decimal",
                             pattern: "[0-9.,]*",
@@ -241,13 +267,16 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                           thousandSeparator=","
                           allowNegative={false}
                           error={
-                            !!errors.borrowersIncomeData?.borrowerIncome?.[
-                              index
-                            ]?.debts?.[debtIndex]?.balance
+                            !!errors.scenarios?.[index]?.borrowersIncomeData
+                              ?.borrowerIncome?.[borrowerIncomeIndex]?.debts?.[
+                              debtIndex
+                            ]?.balance
                           }
                           helperText={
-                            errors.borrowersIncomeData?.borrowerIncome?.[index]
-                              ?.debts?.[debtIndex]?.balance?.message
+                            errors.scenarios?.[index]?.borrowersIncomeData
+                              ?.borrowerIncome?.[borrowerIncomeIndex]?.debts?.[
+                              debtIndex
+                            ]?.balance?.message
                           }
                           sx={{
                             maxWidth: 120,
@@ -280,22 +309,17 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                   </Box>
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Box
                     display="flex"
                     alignItems="center"
                     justifyContent="space-between"
-                    sx={{
-                      borderBottom: "1px solid #f0f0f0",
-                      paddingLeft: 0.5,
-                      py: 1.5,
-                    }}
                   >
                     <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                      Monthly Payment *
+                      Monthly Payment
                     </Typography>
                     <Controller
-                      name={`borrowersIncomeData.borrowerIncome.${index}.debts.${debtIndex}.monthlyPayment`}
+                      name={`scenarios.${index}.borrowersIncomeData.borrowerIncome.${borrowerIncomeIndex}.debts.${debtIndex}.monthlyPayment`}
                       control={control}
                       render={({ field }) => (
                         <NumericFormat
@@ -303,13 +327,14 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                           fullWidth
                           value={field.value ?? ""}
                           placeholder="0"
-                          onValueChange={(values) =>
-                            field.onChange(
+                          onValueChange={(values) => {
+                            const value =
                               values.floatValue === undefined
                                 ? ""
-                                : values.floatValue
-                            )
-                          }
+                                : values.floatValue;
+                            field.onChange(value);
+                            handleFieldChange(index);
+                          }}
                           inputProps={{
                             inputMode: "decimal",
                             pattern: "[0-9.,]*",
@@ -317,13 +342,16 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
                           thousandSeparator=","
                           allowNegative={false}
                           error={
-                            !!errors.borrowersIncomeData?.borrowerIncome?.[
-                              index
-                            ]?.debts?.[debtIndex]?.monthlyPayment
+                            !!errors.scenarios?.[index]?.borrowersIncomeData
+                              ?.borrowerIncome?.[borrowerIncomeIndex]?.debts?.[
+                              debtIndex
+                            ]?.monthlyPayment
                           }
                           helperText={
-                            errors.borrowersIncomeData?.borrowerIncome?.[index]
-                              ?.debts?.[debtIndex]?.monthlyPayment?.message
+                            errors.scenarios?.[index]?.borrowersIncomeData
+                              ?.borrowerIncome?.[borrowerIncomeIndex]?.debts?.[
+                              debtIndex
+                            ]?.monthlyPayment?.message
                           }
                           sx={{
                             maxWidth: 120,
@@ -387,6 +415,31 @@ export default function BorrowerIncomeItem({ index, control, errors }: Props) {
           </Box>
         </Grid>
       </Grid>
+
+      <Controller
+        name={`scenarios.${index}.borrowersIncomeData.borrowerIncome.${borrowerIncomeIndex}.monthlyIncome`}
+        control={control}
+        render={({ field }) => {
+          const currentBorrowerName = control._formValues?.scenarios?.[index]?.borrowersIncomeData?.borrowerIncome?.[borrowerIncomeIndex]?.borrowerName || control._defaultValues?.scenarios?.[index]?.borrowersIncomeData?.borrowerIncome?.[borrowerIncomeIndex]?.borrowerName || `Borrower ${index + 1}`;
+          const currentScenarioId = control._formValues?.scenarios?.[index]?.id || control._defaultValues?.scenarios?.[index]?.id || "";
+          const currentPreApprovalId = control._formValues?.preapprovalDetail?.preApprovalId || control._defaultValues?.preapprovalDetail?.preApprovalId || "";
+
+          return (
+            <IncomeCalculatorModal
+              open={calculatorOpen}
+              onClose={() => setCalculatorOpen(false)}
+              borrowerName={currentBorrowerName}
+              scenarioId={currentScenarioId}
+              preApprovalId={currentPreApprovalId}
+              onIncomeCalculated={(amount: number) => {
+                const roundedAmount = Math.ceil(amount * 100) / 100;
+                field.onChange(roundedAmount);
+                handleFieldChange(index);
+              }}
+            />
+          );
+        }}
+      />
     </Box>
   );
 }

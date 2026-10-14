@@ -230,6 +230,9 @@ namespace LoanPortal.Core.Entities
         [BsonElement("currentDrawAmount")]
         public decimal? CurrentDrawAmount { get; set; }
 
+        [BsonElement("payOffExistingMortgage")]
+        public bool? PayOffExistingMortgage { get; set; }
+
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
 

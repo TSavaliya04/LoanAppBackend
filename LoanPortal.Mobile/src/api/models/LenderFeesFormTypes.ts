@@ -1,77 +1,69 @@
 import { ZodType, z } from "zod";
 
+const optionalNumber = (message?: string) =>
+  z.union([
+    z.number().nonnegative(message),
+    z.literal("").transform(() => undefined),
+  ]).optional();
+
+const optionalPercentage = (fieldName: string) =>
+  z
+    .union([
+      z
+        .number({
+          invalid_type_error: `${fieldName} must be a number`,
+        })
+        .min(0, `${fieldName} must be at least 0`)
+        .max(100, `${fieldName} cannot exceed 100`),
+      z.literal("").transform(() => undefined),
+    ])
+    .optional();
+
 export type LenderFeesFormData = {
   agentName: string;
-  loanOriginationFeePercentage: number;
+  loanOriginationFeePercentage?: number | string | undefined;
   loanOriginationFee?: number;
-  discountFeePercentage: number;
+  discountFeePercentage?: number | string | undefined;
   discountFee?: number;
-  upfrontMipPercentage: number;
+  upfrontMipPercentage?: number | string | undefined;
   upfrontMip?: number;
-  appraisalFee?: number;
-  escrowFees?: number;
-  titleFees?: number;
-  thirdPartyLenderFee?: number;
+  appraisalFee?: number | string | undefined;
+  escrowFees?: number | string | undefined;
+  titleFees?: number | string | undefined;
+  thirdPartyLenderFee?: number | string | undefined;
 };
 
 export const lenderFeesSchema: ZodType<LenderFeesFormData> = z.object({
   agentName: z.string().trim().min(1, "Agent name is required"),
 
-  loanOriginationFeePercentage: z
-    .number({
-      invalid_type_error: "Loan Organization Fee Percentage must be a number",
-    })
-    .min(0, "Loan Organization Fee Percentage must be at least 0")
-    .max(100, "Loan Organization Fee Percentage cannot exceed 100"),
+  loanOriginationFeePercentage: optionalPercentage("Loan Organization Fee Percentage"),
 
   loanOriginationFee: z
     .number({ invalid_type_error: "Loan Origination Fee must be a number" })
     .nonnegative("Loan Origination Fee cannot be negative")
     .optional(),
 
-  discountFeePercentage: z
-    .number({
-      invalid_type_error: "Loan Organization Fee Percentage must be a number",
-    })
-    .min(0, "Loan Organization Fee Percentage must be at least 0")
-    .max(100, "Loan Organization Fee Percentage cannot exceed 100"),
+  discountFeePercentage: optionalPercentage("Discount Fee Percentage"),
 
   discountFee: z
     .number({ invalid_type_error: "Discount Fee must be a number" })
     .nonnegative("Discount Fee cannot be negative")
     .optional(),
-    
-  upfrontMipPercentage: z
-    .number({
-      invalid_type_error: "Loan Organization Fee Percentage must be a number",
-    })
-    .min(0, "Loan Organization Fee Percentage must be at least 0")
-    .max(100, "Loan Organization Fee Percentage cannot exceed 100"),
+
+  upfrontMipPercentage: optionalPercentage("Upfront MIP Percentage"),
 
   upfrontMip: z
     .number({ invalid_type_error: "Upfront MIP must be a number" })
     .nonnegative("Upfront MIP cannot be negative")
     .optional(),
 
-  appraisalFee: z
-    .number({ invalid_type_error: "Appraisal Fee must be a number" })
-    .nonnegative("Appraisal Fee cannot be negative")
-    .optional(),
+  appraisalFee: optionalNumber("Must be 0 or greater"),
 
-  escrowFees: z
-    .number({ invalid_type_error: "Escrow Fees must be a number" })
-    .nonnegative("Escrow Fees cannot be negative")
-    .optional(),
+  escrowFees: optionalNumber("Must be 0 or greater"),
 
-  titleFees: z
-    .number({ invalid_type_error: "Title Fees must be a number" })
-    .nonnegative("Title Fees cannot be negative")
-    .optional(),
+  titleFees: optionalNumber("Must be 0 or greater"),
 
-  thirdPartyLenderFee: z
-    .number({ invalid_type_error: "3rd Party Lender Fee must be a number" })
-    .nonnegative("3rd Party Lender Fee cannot be negative")
-    .optional(),
+  thirdPartyLenderFee: optionalNumber("Must be 0 or greater"),
 });
 
 export type LenderFeesSchemaType = z.infer<typeof lenderFeesSchema>;

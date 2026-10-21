@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#ffffff',
+  viewportFit: 'cover',   // required for env(safe-area-inset-bottom) to work on iPhone
 };
 
 export default function RootLayout({
@@ -22,7 +23,7 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icons/icon-192x192.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-icon-192x192.png" />
         <meta name="theme-color" content="#ffffff" />
       </head>
       <body>

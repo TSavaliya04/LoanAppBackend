@@ -1,7 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Autocomplete,
   Box,
+  CircularProgress,
+  TextField,
   Typography,
   Stack,
   useTheme,
@@ -13,6 +16,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MuiTelInput } from "mui-tel-input";
 import { v4 as uuidv4 } from "uuid";
+import { CompanyOption } from "@/api/models/user";
 import Link from "next/link";
 // import ReCAPTCHA from "react-google-recaptcha";
 // <ReCAPTCHA
@@ -64,6 +68,8 @@ const SignUpSchema = z
         "Phone number must be a valid US (1XXXXXXXXXX) or IN (91XXXXXXXXXX) number",
     }),
 
+    companyId: z.string().min(1, "Enter company name or type N/A if you don't have one"),
+
     password: z
       .string()
       .min(6, { message: "Password must be at least 6 characters long" })
@@ -105,6 +111,7 @@ const SignUpPage = () => {
     handleSubmit,
     formState: { errors },
     setError,
+    setValue,
     // clearErrors,
     // getValues,
   } = useForm<SignUpSchemaType>({
@@ -121,6 +128,106 @@ const SignUpPage = () => {
   const { openErrorDialog, openSuccessDialog } = useSnackBarStore();
   const router = useRouter();
 
+  // Company search state
+  const [companySearchText, setCompanySearchText] = useState("");
+  const [companyOptions, setCompanyOptions] = useState<CompanyOption[]>([]);
+  const [companyLoading, setCompanyLoading] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const naCompanyIdRef = useRef<string>("");
+
+  const fetchCompanies = useCallback(async (searchText: string) => {
+    if (!searchText.trim()) {
+      searchText = "N/A";
+      // setCompanyOptions([]);
+      // return;
+    }
+    setCompanyLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}admin/GetCompanies`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            params: {
+              pageNumber: 0,
+              pageSize: 0,
+              searchText,
+              sortBy: "",
+              sortByDirection: "",
+            },
+          }),
+        }
+      );
+      if (response.ok) {
+        const json = await response.json();
+        // Extract companies array from the nested response shape
+        const list: CompanyOption[] = json?.data?.companies ?? [];
+        setCompanyOptions(list);
+      }
+    } catch {
+      setCompanyOptions([]);
+    } finally {
+      setCompanyLoading(false);
+    }
+  }, []);
+
+  // On mount: fetch companies and pre-select the "N/A" company as default
+  useEffect(() => {
+    const fetchDefaultCompany = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}admin/GetCompanies`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              params: {
+                pageNumber: 0,
+                pageSize: 0,
+                searchText: "N/A",
+                sortBy: "",
+                sortByDirection: "",
+              },
+            }),
+          }
+        );
+        if (response.ok) {
+          const json = await response.json();
+          const list: CompanyOption[] = json?.data?.companies ?? [];
+          const naCompany = list.find(
+            (c) => c.name.trim().toLowerCase() === "n/a"
+          );
+          if (naCompany) {
+            naCompanyIdRef.current = naCompany.id;
+            setSelectedCompany(naCompany);
+            setCompanySearchText(naCompany.name);
+            setValue("companyId", naCompany.id);
+          }
+        }
+      } catch {
+        // Silently ignore — company field is optional
+      }
+    };
+    fetchDefaultCompany();
+  }, [setValue]);
+
+  const handleCompanyInputChange = (
+    value: string,
+    onChange: (val: string) => void
+  ) => {
+    setCompanySearchText(value);
+    // Clear selection when user edits the text
+    setSelectedCompany(null);
+    onChange("");
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      fetchCompanies(value);
+    }, 400);
+  };
+
   const handleCreateSuccess = () => {
     handleCancel();
     openSuccessDialog("You have been registered successfully.");
@@ -128,7 +235,7 @@ const SignUpPage = () => {
 
   const handleError = (response: ErrorResponse): void => {
     // handleCancel();
-    
+
     if (response.error && response.error.toLowerCase().includes("phone")) {
       setError("phone", {
         type: "manual",
@@ -137,11 +244,11 @@ const SignUpPage = () => {
       return;
     } else if (response.error && response.error.toLowerCase().includes("email")) {
       setError("email", {
-        type: "manual", 
+        type: "manual",
         message: response.error,
       });
       return;
-    } 
+    }
     // else if (response.error && response.error.toLowerCase().includes("username")) {
     //   setError("userName", {
     //     type: "manual",
@@ -166,6 +273,7 @@ const SignUpPage = () => {
       email: data.email,
       phone: data.phone.replace(/[+\s]/g, ""),
       password: data.password,
+      companyId: data.companyId || naCompanyIdRef.current || "0",
     };
     // const captchaValue = captchaRef.current?.getValue() || null;
 
@@ -218,7 +326,7 @@ const SignUpPage = () => {
     );
 
     if (!response.ok) {
-      
+
       const errorData: ErrorResponse = await response.json();
       handleError(errorData);
     }
@@ -452,6 +560,55 @@ const SignUpPage = () => {
                         },
                       },
                     }}
+                  />
+                )}
+              />
+
+              {/* Company Search */}
+              <Controller
+                name="companyId"
+                control={control}
+                render={({ field: { onChange }, fieldState }) => (
+                  <Autocomplete
+                    options={companyOptions}
+                    getOptionLabel={(option) => option.name}
+                    isOptionEqualToValue={(option, value) =>
+                      option.id === value.id
+                    }
+                    loading={companyLoading}
+                    value={selectedCompany}
+                    inputValue={companySearchText}
+                    filterOptions={(x) => x}
+                    onInputChange={(_e, value, reason) => {
+                      if (reason === "input") {
+                        handleCompanyInputChange(value, onChange);
+                      }
+                    }}
+                    onChange={(_e, value) => {
+                      setSelectedCompany(value);
+                      setCompanySearchText(value?.name ?? "");
+                      onChange(value?.id ?? "");
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Company Name *"
+                        variant="outlined"
+                        error={!!fieldState.error}
+                        helperText={fieldState.error?.message}
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {companyLoading ? (
+                                <CircularProgress color="inherit" size={18} />
+                              ) : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                      />
+                    )}
                   />
                 )}
               />

@@ -16,17 +16,21 @@ import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSch
 import { NumericFormat } from "react-number-format";
 
 type PrepaidItemsFormProps = {
+  index: number;
   expanded: boolean;
   onToggle: () => void;
   isCompleted?: boolean;
   isDisabled?: boolean;
+  handleFieldChange: (index: number) => void;
 };
 
 export default function PrepaidItemsForm({
+  index,
   expanded,
   onToggle,
   isCompleted,
   isDisabled,
+  handleFieldChange,
 }: PrepaidItemsFormProps) {
   const {
     control,
@@ -35,63 +39,75 @@ export default function PrepaidItemsForm({
   } = useFormContext<CombinedPreApprovalFormData>();
 
   // Watch values from form
-  const purchasePrice = useWatch({ name: "purchaseInfo.purchasePrice" });
-  const annualInterestRate = useWatch({
-    name: "purchaseInfo.annualInterestRate",
-  });
-  const loanAmount = useWatch({ name: "purchaseInfo.loanAmount" });
-  const hazardInsurance = useWatch({ name: "purchaseInfo.hazardInsurance" });
-  const prepaidInterestDays = useWatch({
-    name: "prepaidItems.prepaidInterestDays",
-  });
-  const hazardInsuranceMonths = useWatch({
-    name: "prepaidItems.hazardInsuranceMonths",
-  });
-  const propertyTaxMonths = useWatch({
-    name: "prepaidItems.propertyTaxMonths",
-  });
+  // const purchasePrice = useWatch({ name: `scenarios.${index}.purchaseInfo.purchasePrice` });
+  // const annualInterestRate = useWatch({
+  //   name: `scenarios.${index}.purchaseInfo.annualInterestRate`,
+  // });
+  // const loanAmount = useWatch({ name: `scenarios.${index}.purchaseInfo.loanAmount` });
+  // const hazardInsurance = useWatch({ name: `scenarios.${index}.purchaseInfo.hazardInsurance` });
+  // const prepaidInterestDays = useWatch({
+  //   name: `scenarios.${index}.prepaidItems.prepaidInterestDays`,
+  // });
+  // const hazardInsuranceMonths = useWatch({
+  //   name: `scenarios.${index}.prepaidItems.hazardInsuranceMonths`,
+  // });
+  // const monthlyPropertyTaxPercentage =
+  //   useWatch({ control, name: `scenarios.${index}.loanProgram.monthlyPropertyTaxPercentage` }) ??
+  //   1.25;
+  // const propertyTaxMonths = useWatch({
+  //   name: `scenarios.${index}.prepaidItems.propertyTaxMonths`,
+  // });
 
-  useEffect(() => {
-    if (purchasePrice > 0 && propertyTaxMonths > 0) {
-      const months =
-        propertyTaxMonths && propertyTaxMonths > 0 ? propertyTaxMonths : 12;
-      const topLevelPropertyTax = (purchasePrice * 0.0125) / 12;
-      const calPropertyTaxAmount = Math.round(topLevelPropertyTax * months);
-      const propertyTax = Math.round(calPropertyTaxAmount);
-      setValue("prepaidItems.propertyTaxAmount", propertyTax);
-      setValue("prepaidItems.propertyTaxMonths", months);
-      setValue("loanProgram.propertyTax", propertyTax);
-      setValue("loanProgram.monthlyPropertyTax", Math.round(topLevelPropertyTax));
-    } else {
-      setValue("prepaidItems.propertyTaxAmount", 0);
-    }
-  }, [purchasePrice, propertyTaxMonths, setValue]);
+  // useEffect(() => {
+  //   if (purchasePrice > 0 && propertyTaxMonths > 0) {
+  //     const months =
+  //       propertyTaxMonths && propertyTaxMonths > 0 ? propertyTaxMonths : 12;
+  //     const topLevelPropertyTax =
+  //       (purchasePrice * (monthlyPropertyTaxPercentage / 100)) / 12;
+  //     const calPropertyTaxAmount = Math.round(topLevelPropertyTax * months);
+  //     const propertyTax = Math.round(calPropertyTaxAmount);
+  //     setValue(`scenarios.${index}.prepaidItems.propertyTaxAmount`, propertyTax);
+  //     setValue(`scenarios.${index}.prepaidItems.propertyTaxMonths`, months);
+  //     setValue(`scenarios.${index}.loanProgram.propertyTax`, propertyTax);
+  //     setValue(
+  //       `scenarios.${index}.loanProgram.monthlyPropertyTax`,
+  //       Math.round(topLevelPropertyTax)
+  //     );
+  //   } else {
+  //     setValue(`scenarios.${index}.prepaidItems.propertyTaxAmount`, 0);
+  //   }
+  // }, [
+  //   purchasePrice,
+  //   monthlyPropertyTaxPercentage,
+  //   propertyTaxMonths,
+  //   setValue,
+  // ]);
 
-  useEffect(() => {
-    if (
-      typeof loanAmount === "number" &&
-      typeof annualInterestRate === "number" &&
-      typeof prepaidInterestDays === "number"
-    ) {
-      const interest =
-        ((loanAmount * (annualInterestRate / 100)) / 365) * prepaidInterestDays;
-      setValue(
-        "prepaidItems.prepaidInterestAmount",
-        Math.round(interest) // No decimals
-      );
-    }
-  }, [loanAmount, annualInterestRate, prepaidInterestDays, setValue]);
+  // useEffect(() => {
+  //   if (
+  //     typeof loanAmount === "number" &&
+  //     typeof annualInterestRate === "number" &&
+  //     typeof prepaidInterestDays === "number"
+  //   ) {
+  //     const interest =
+  //       ((loanAmount * (annualInterestRate / 100)) / 365) * prepaidInterestDays;
+  //     setValue(
+  //       `scenarios.${index}.prepaidItems.prepaidInterestAmount`,
+  //       Math.round(interest) // No decimals
+  //     );
+  //   }
+  // }, [loanAmount, annualInterestRate, prepaidInterestDays, setValue]);
 
-  // Recalculate Hazard Insurance Reserves
-  useEffect(() => {
-    // if (hazardInsurance && hazardInsuranceMonths) {
-    const reserve = hazardInsurance * hazardInsuranceMonths;
-    setValue(
-      "prepaidItems.hazardInsuranceReserves",
-      parseFloat(reserve.toFixed(2))
-    );
-    // }
-  }, [hazardInsurance, hazardInsuranceMonths, setValue]);
+  // // Recalculate Hazard Insurance Reserves
+  // useEffect(() => {
+  //   // if (hazardInsurance && hazardInsuranceMonths) {
+  //   const reserve = hazardInsurance * hazardInsuranceMonths;
+  //   setValue(
+  //     `scenarios.${index}.prepaidItems.hazardInsuranceReserves`,
+  //     parseFloat(reserve.toFixed(2))
+  //   );
+  //   // }
+  // }, [hazardInsurance, hazardInsuranceMonths, setValue]);
 
   const currencyAdornment = {
     startAdornment: (
@@ -138,8 +154,8 @@ export default function PrepaidItemsForm({
                   backgroundColor: isCompleted
                     ? "#1F9A00"
                     : isDisabled
-                    ? "gray"
-                    : "#7444F5",
+                      ? "gray"
+                      : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -179,7 +195,7 @@ export default function PrepaidItemsForm({
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
             {/* Prepaid Interest */}
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
@@ -191,25 +207,30 @@ export default function PrepaidItemsForm({
                 </Typography>
                 <Box display="flex" gap={1}>
                   <Controller
-                    name="prepaidItems.prepaidInterestDays"
+                    name={`scenarios.${index}.prepaidItems.prepaidInterestDays`}
                     control={control}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === "" ? "" : Number(e.target.value);
+                          field.onChange(value);
+                          handleFieldChange(index);
+                        }}
                         value={field.value ?? ""}
                         fullWidth
                         type="number"
                         inputMode="numeric"
                         placeholder="DD"
                         size="medium"
-                        error={!!errors.prepaidItems?.prepaidInterestDays}
+                        error={
+                          !!errors.scenarios?.[index]?.prepaidItems
+                            ?.prepaidInterestDays
+                        }
                         helperText={
-                          errors.prepaidItems?.prepaidInterestDays?.message
+                          errors.scenarios?.[index]?.prepaidItems
+                            ?.prepaidInterestDays?.message
                         }
                         sx={{
                           width: 60,
@@ -223,7 +244,7 @@ export default function PrepaidItemsForm({
                     )}
                   />
                   <Controller
-                    name="prepaidItems.prepaidInterestAmount"
+                    name={`scenarios.${index}.prepaidItems.prepaidInterestAmount`}
                     control={control}
                     render={({ field }) => (
                       <NumericFormat
@@ -254,9 +275,13 @@ export default function PrepaidItemsForm({
                         }}
                         thousandSeparator=","
                         allowNegative={false}
-                        error={!!errors.prepaidItems?.prepaidInterestAmount}
+                        error={
+                          !!errors.scenarios?.[index]?.prepaidItems
+                            ?.prepaidInterestAmount
+                        }
                         helperText={
-                          errors.prepaidItems?.prepaidInterestAmount?.message
+                          errors.scenarios?.[index]?.prepaidItems
+                            ?.prepaidInterestAmount?.message
                         }
                       />
                     )}
@@ -266,7 +291,7 @@ export default function PrepaidItemsForm({
             </Grid>
 
             {/* Hazard Ins (First Year) */}
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
@@ -281,7 +306,7 @@ export default function PrepaidItemsForm({
                   </Typography>
                 </Box>
                 <Controller
-                  name="prepaidItems.hazardInsurance"
+                  name={`scenarios.${index}.prepaidItems.hazardInsurance`}
                   control={control}
                   render={({ field }) => (
                     <NumericFormat
@@ -308,8 +333,14 @@ export default function PrepaidItemsForm({
                       InputProps={currencyAdornment}
                       thousandSeparator=","
                       allowNegative={false}
-                      error={!!errors.prepaidItems?.hazardInsurance}
-                      helperText={errors.prepaidItems?.hazardInsurance?.message}
+                      error={
+                        !!errors.scenarios?.[index]?.prepaidItems
+                          ?.hazardInsurance
+                      }
+                      helperText={
+                        errors.scenarios?.[index]?.prepaidItems?.hazardInsurance
+                          ?.message
+                      }
                     />
                   )}
                 />
@@ -317,7 +348,7 @@ export default function PrepaidItemsForm({
             </Grid>
 
             {/* Hazard Ins Reserves */}
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
@@ -329,25 +360,30 @@ export default function PrepaidItemsForm({
                 </Typography>
                 <Box display="flex" gap={1}>
                   <Controller
-                    name="prepaidItems.hazardInsuranceMonths"
+                    name={`scenarios.${index}.prepaidItems.hazardInsuranceMonths`}
                     control={control}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === "" ? "" : Number(e.target.value);
+                          field.onChange(value);
+                          handleFieldChange(index);
+                        }}
                         value={field.value ?? ""}
                         fullWidth
                         type="number"
                         inputMode="numeric"
                         placeholder="MM"
                         size="medium"
-                        error={!!errors.prepaidItems?.hazardInsuranceMonths}
+                        error={
+                          !!errors.scenarios?.[index]?.prepaidItems
+                            ?.hazardInsuranceMonths
+                        }
                         helperText={
-                          errors.prepaidItems?.hazardInsuranceMonths?.message
+                          errors.scenarios?.[index]?.prepaidItems
+                            ?.hazardInsuranceMonths?.message
                         }
                         sx={{
                           width: 60,
@@ -361,7 +397,7 @@ export default function PrepaidItemsForm({
                     )}
                   />
                   <Controller
-                    name="prepaidItems.hazardInsuranceReserves"
+                    name={`scenarios.${index}.prepaidItems.hazardInsuranceReserves`}
                     control={control}
                     render={({ field }) => (
                       <NumericFormat
@@ -392,9 +428,13 @@ export default function PrepaidItemsForm({
                         }}
                         thousandSeparator=","
                         allowNegative={false}
-                        error={!!errors.prepaidItems?.hazardInsuranceReserves}
+                        error={
+                          !!errors.scenarios?.[index]?.prepaidItems
+                            ?.hazardInsuranceReserves
+                        }
                         helperText={
-                          errors.prepaidItems?.hazardInsuranceReserves?.message
+                          errors.scenarios?.[index]?.prepaidItems
+                            ?.hazardInsuranceReserves?.message
                         }
                       />
                     )}
@@ -404,7 +444,7 @@ export default function PrepaidItemsForm({
             </Grid>
 
             {/* Property Taxes */}
-            <Grid size={12}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 display="flex"
                 alignItems="center"
@@ -416,25 +456,30 @@ export default function PrepaidItemsForm({
                 </Typography>
                 <Box display="flex" gap={1}>
                   <Controller
-                    name="prepaidItems.propertyTaxMonths"
+                    name={`scenarios.${index}.prepaidItems.propertyTaxMonths`}
                     control={control}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === "" ? "" : Number(e.target.value);
+                          field.onChange(value);
+                          handleFieldChange(index);
+                        }}
                         value={field.value ?? ""}
                         fullWidth
                         type="number"
                         inputMode="numeric"
                         placeholder="MM"
                         size="medium"
-                        error={!!errors.prepaidItems?.propertyTaxMonths}
+                        error={
+                          !!errors.scenarios?.[index]?.prepaidItems
+                            ?.propertyTaxMonths
+                        }
                         helperText={
-                          errors.prepaidItems?.propertyTaxMonths?.message
+                          errors.scenarios?.[index]?.prepaidItems
+                            ?.propertyTaxMonths?.message
                         }
                         sx={{
                           width: 60,
@@ -448,7 +493,7 @@ export default function PrepaidItemsForm({
                     )}
                   />
                   <Controller
-                    name="prepaidItems.propertyTaxAmount"
+                    name={`scenarios.${index}.prepaidItems.propertyTaxAmount`}
                     control={control}
                     render={({ field }) => (
                       <NumericFormat
@@ -479,9 +524,13 @@ export default function PrepaidItemsForm({
                         InputProps={currencyAdornment}
                         thousandSeparator=","
                         allowNegative={false}
-                        error={!!errors.prepaidItems?.propertyTaxAmount}
+                        error={
+                          !!errors.scenarios?.[index]?.prepaidItems
+                            ?.propertyTaxAmount
+                        }
                         helperText={
-                          errors.prepaidItems?.propertyTaxAmount?.message
+                          errors.scenarios?.[index]?.prepaidItems
+                            ?.propertyTaxAmount?.message
                         }
                       />
                     )}

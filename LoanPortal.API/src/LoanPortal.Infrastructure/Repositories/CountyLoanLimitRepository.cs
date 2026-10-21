@@ -49,5 +49,14 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task<CountyLoanLimitEntity?> FindByNameAsync(string countyName)
+        {
+            var escapedCounty = System.Text.RegularExpressions.Regex.Escape(countyName.Trim());
+            var filter = Builders<CountyLoanLimitEntity>.Filter.Regex(
+                county => county.County,
+                new BsonRegularExpression($"^{escapedCounty}$", "i"));
+            return await _collection.Find(filter).FirstOrDefaultAsync();
+        }
     }
 }

@@ -557,6 +557,23 @@ namespace LoanPortal.Tests.Services
         }
 
         [Fact]
+        public async Task SaveImportedPreApproval_NewDocument_DoesNotCreateQuoteNotification()
+        {
+            var userId = Guid.NewGuid();
+            var dto = new PreApprovalDTO { Scenarios = new List<ScenarioDTO>() };
+            _mockLoginUserDetails.Setup(x => x.UserID).Returns(userId);
+            _mockPreApprovalRepository.Setup(x => x.InsertAsync(It.IsAny<PreApprovalDocument>())).Returns(Task.CompletedTask);
+            _mockPreApprovalRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .Returns<Guid>(id => Task.FromResult(new PreApprovalDocument { Id = id, UserId = userId, Scenarios = dto.Scenarios }));
+
+            await _service.SaveImportedPreApproval(dto);
+
+            _mockPreApprovalRepository.Verify(x => x.InsertAsync(It.IsAny<PreApprovalDocument>()), Times.Once);
+            _mockNotificationService.Verify(x => x.NotifyQuoteCreatedAsync(
+                It.IsAny<PreApprovalDocument>(), It.IsAny<UserEntity>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        [Fact]
         public async Task SavePreApproval_ExistingDocument_UpdatesAndReturns()
         {
             var id = Guid.NewGuid();

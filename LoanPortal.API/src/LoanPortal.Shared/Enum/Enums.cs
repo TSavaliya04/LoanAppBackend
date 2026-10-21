@@ -79,6 +79,22 @@ namespace LoanPortal.Shared.Enum
         Refinance = 1
     }
 
+    public enum ImportJobStatus
+    {
+        Pending,
+        Processing,
+        Completed,
+        Failed
+    }
+
+    public enum FileImportStatus
+    {
+        Pending,
+        Processing,
+        Success,
+        Failed
+    }
+
     public enum MaritalStatus
     {
         Single = 0,

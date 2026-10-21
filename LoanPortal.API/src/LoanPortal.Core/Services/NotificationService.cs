@@ -138,6 +138,26 @@ namespace LoanPortal.Core.Services
             }
         }
 
+        public async Task NotifyXmlImportCompletedAsync(ImportJobDocument job, UserEntity user, bool sendPush = true)
+        {
+            try
+            {
+                var context = new NotificationContext
+                {
+                    Type = NotificationType.XmlImportCompleted,
+                    ImportJob = job,
+                    Actor = user,
+                    CompanyMates = new List<UserEntity>(),
+                    SendPush = sendPush
+                };
+                await DispatchAsync(context);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[NotificationService] NotifyXmlImportCompletedAsync failed: {ex.Message}");
+            }
+        }
+
         // ── Read / management ───────────────────────────────────────────────
 
         public Task<List<NotificationDocument>> GetNotificationsAsync(Guid userId, int pageSize, int pageNumber, bool? isRead = null)
@@ -180,7 +200,8 @@ namespace LoanPortal.Core.Services
             // For QuoteCreated, BorrowerSubmittedEmployment, and BorrowerCreatedViaLink: actor is the recipient
             var pushRecipients = (context.Type == NotificationType.QuoteCreated || 
                                   context.Type == NotificationType.BorrowerSubmittedEmployment ||
-                                  context.Type == NotificationType.BorrowerCreatedViaLink)
+                                  context.Type == NotificationType.BorrowerCreatedViaLink ||
+                                  context.Type == NotificationType.XmlImportCompleted)
                 ? new List<UserEntity> { context.Actor }
                 : context.CompanyMates;
 

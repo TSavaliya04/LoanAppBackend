@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
+using LoanPortal.Core.Exceptions;
 
 namespace LoanPortal.API.Middleware;
 public class ErrorHandlerMiddleware
@@ -27,6 +28,10 @@ public class ErrorHandlerMiddleware
       int errorCode;
       switch (error)
       {
+        case ImportValidationException:
+          response.StatusCode = (int)HttpStatusCode.BadRequest;
+          errorCode = (int)HttpStatusCode.BadRequest;
+          break;
         case KeyNotFoundException e:
           response.StatusCode = (int)HttpStatusCode.NotFound;
           errorCode = (int)HttpStatusCode.NotFound;

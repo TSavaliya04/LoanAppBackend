@@ -8,5 +8,6 @@ namespace LoanPortal.Core.Repositories
     {
         Task<List<CountyLoanLimitEntity>> SearchCountiesAsync(string searchTerm);
         Task<CountyLoanLimitEntity> GetByIdAsync(Guid id);
+        Task<CountyLoanLimitEntity?> FindByNameAsync(string countyName);
     }
 }

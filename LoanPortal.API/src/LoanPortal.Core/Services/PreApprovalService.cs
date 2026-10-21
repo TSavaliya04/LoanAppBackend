@@ -490,7 +490,17 @@ public class PreApprovalService : IPreApprovalService
         }
     }
 
-    public async Task<PreApprovalDocument> SavePreApproval(PreApprovalDTO preApproval)
+    public Task<PreApprovalDocument> SavePreApproval(PreApprovalDTO preApproval)
+    {
+        return SavePreApprovalInternal(preApproval, notifyQuoteCreated: true);
+    }
+
+    public Task<PreApprovalDocument> SaveImportedPreApproval(PreApprovalDTO preApproval)
+    {
+        return SavePreApprovalInternal(preApproval, notifyQuoteCreated: false);
+    }
+
+    private async Task<PreApprovalDocument> SavePreApprovalInternal(PreApprovalDTO preApproval, bool notifyQuoteCreated)
     {
         try
         {
@@ -532,10 +542,13 @@ public class PreApprovalService : IPreApprovalService
                 preApprovalDocument.UserId = _loginUserDetails.UserID;
                 await _preApprovalRepository.InsertAsync(preApprovalDocument);
 
-                // Notify the creator that their new quote was created
-                var actorForCreate = await _userRepository.GetUserById(_loginUserDetails.UserID);
-                var savedDocForCreate = await _preApprovalRepository.GetByIdAsync(preApprovalDocument.Id);
-                _ = _notificationService.NotifyQuoteCreatedAsync(savedDocForCreate, actorForCreate);
+                if (notifyQuoteCreated)
+                {
+                    // Notify the creator that their new quote was created.
+                    var actorForCreate = await _userRepository.GetUserById(_loginUserDetails.UserID);
+                    var savedDocForCreate = await _preApprovalRepository.GetByIdAsync(preApprovalDocument.Id);
+                    _ = _notificationService.NotifyQuoteCreatedAsync(savedDocForCreate, actorForCreate);
+                }
             }
 
             // Track last activity

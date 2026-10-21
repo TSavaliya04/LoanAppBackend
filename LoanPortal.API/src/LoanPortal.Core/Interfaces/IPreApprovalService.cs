@@ -16,6 +16,7 @@ namespace LoanPortal.Core.Interfaces
         public Task<List<TopOpportunityDTO>> GetQuoteList(int status);
         public Task ClonePreApproval(Guid preApprovalId);
         public Task<PreApprovalDocument> SavePreApproval(PreApprovalDTO preApproval);
+        public Task<PreApprovalDocument> SaveImportedPreApproval(PreApprovalDTO preApproval);
         public Task DeletePreApproval(List<Guid> preApprovalIds);
         public Task<PreApprovalDocument> UpdateApplicationStatus(Guid id, int status);
         public Task<DashboardDTO> GetDashboardData();

@@ -40,6 +40,9 @@ namespace LoanPortal.Core.Entities
         /// <summary>Explicit quote ID, useful when Quote is null.</summary>
         public Guid? QuoteId { get; init; }
 
+        /// <summary>XML import job completed by the actor.</summary>
+        public ImportJobDocument? ImportJob { get; init; }
+
         /// <summary>If false, the notification is only saved to MongoDB and no FCM push is sent.</summary>
         public bool SendPush { get; init; } = true;
     }

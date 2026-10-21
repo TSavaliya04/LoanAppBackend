@@ -1,10 +1,12 @@
 // sessionStore.ts
 import { User } from "@/api/models/user";
+import { onAuthStateChanged } from "@firebase/auth";
 import { produce } from "immer";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { firebaseAuth } from "@/api/instances/firebase";
-import { onAuthStateChanged } from "@firebase/auth";
+import { getRefreshToken } from "@/api/network/user";
+import { getTokenRoles } from "@/utils/tokenRole";
 
 interface SessionStoreState {
   user: User | null;
@@ -47,18 +49,25 @@ interface FirebaseUser {
   email: string | null;
   phoneNumber: string | null;
   getIdToken: () => Promise<string>;
+  refreshToken: string;
 }
 
 interface SessionStoreSetUser {
   setUser: (user: User | null) => void;
+  user: User | null;
   setHasHydrated: (value: boolean) => void;
 }
 
 onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
-  const { setUser, setHasHydrated  }: SessionStoreSetUser = useSessionStore.getState();
+  // window.alert(`Auth state changed. User: ${firebaseUser ? firebaseUser.email : "None"}`);
+  const { setUser, user, setHasHydrated }: SessionStoreSetUser =
+    useSessionStore.getState();
 
   if (firebaseUser) {
     const token: string = await firebaseUser.getIdToken();
+    const refreshToken: string = await firebaseUser.refreshToken;
+    // Role always comes from the token so a silent re-login can never switch role
+    const { isAdmin, isBorrower } = getTokenRoles(token);
     setUser({
       userId: firebaseUser.uid,
       displayName: firebaseUser.displayName ?? "",
@@ -66,14 +75,66 @@ onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
       lastName: "",
       email: firebaseUser.email ?? "",
       phone: firebaseUser.phoneNumber ?? "",
-      token, // store token for UI if needed
+      token,
+      refreshToken,
+      isAdmin,
+      isBorrower,
     });
   } else {
-    setUser(null);
+    if (user) {
+      // window.alert("No Firebase user. Attempting token refresh.");
+      const response = await getRefreshToken(user?.refreshToken || "");
+      const data = response.data?.data;
+      
+
+      // window.alert(`Token refresh response: ${JSON.stringify(data)}`);
+
+      if (!data) {
+        // window.alert("Token refresh failed. Logging out.");
+        setUser(null);
+        return;
+      }
+
+      const userId = data.id;
+      const firstName = data.firstName || "";
+      const lastName = data.lastName || "";
+      const displayName = `${firstName} ${lastName}`.trim();
+      const email = data.email;
+      const phone = data.phone;
+      const token = data.idToken;
+      const refreshToken = data.refreshToken;
+
+      // window.alert(`data: ${JSON.stringify(data)}`);
+      // window.alert(`token: ${JSON.stringify(token)}`);
+      // window.alert(`user: ${JSON.stringify(user)}`);
+      
+
+      if (token && user) {
+        const { isAdmin, isBorrower } = getTokenRoles(token);
+        // window.alert("if token and user exist, setting new one.");
+        setUser({
+          userId,
+          displayName,
+          firstName,
+          lastName,
+          email,
+          phone,
+          token,
+          refreshToken,
+          isAdmin,
+          isBorrower,
+        });
+      } else {
+        // window.alert("setting user null");
+        setUser(null);
+      }
+    }
+
+    // window.alert("No Firebase user. setting existing one.");
+    // setUser(user);
   }
   setHasHydrated(true);
 });
-
 
 // import { User } from "@/api/models/user";
 // import { produce } from "immer";
@@ -127,7 +188,7 @@ onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
 //       onRehydrateStorage: (state) => {
 //         return () => {
 //           console.log(state.user);
-          
+
 //           console.log("✅ Zustand hydration complete");
 //           state.setHasHydrated(true);
 //         };

@@ -20,10 +20,19 @@ namespace LoanPortal.Infrastructure
             _settings = options.Value;
             var client = new MongoClient(_settings.ConnectionString);
             _database = client.GetDatabase(_settings.DatabaseName);
+
+            var importJobs = _database.GetCollection<ImportJobDocument>("import_jobs");
+            importJobs.Indexes.CreateOne(new CreateIndexModel<ImportJobDocument>(
+                Builders<ImportJobDocument>.IndexKeys
+                    .Ascending(job => job.UserId)
+                    .Descending(job => job.CreatedAt)));
         }
 
         public IMongoCollection<PreApprovalDocument> PreApprovals =>
             _database.GetCollection<PreApprovalDocument>("PreApprovals");
+
+        public IMongoCollection<ImportJobDocument> ImportJobs =>
+            _database.GetCollection<ImportJobDocument>("import_jobs");
 
         public IMongoCollection<UserEntity> Users =>
             _database.GetCollection<UserEntity>("Users");

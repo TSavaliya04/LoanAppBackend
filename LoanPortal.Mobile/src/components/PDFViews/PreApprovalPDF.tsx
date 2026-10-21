@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
-import ntmrLogo from "../../../public/icons/icon-144x144.png"; // Adjust based on your image location
 
 const styles = StyleSheet.create({
   page: {
@@ -75,6 +74,13 @@ type Borrowers = {
 };
 
 type PreApprovalPDFProps = {
+  agentName: string;
+  agentjobTitle: string;
+  agentnmls: string;
+  agentphone: string;
+  agentemail: string;
+  agentcompanyname: string;
+  agentprofile: string;
   borrowerName: string;
   borrowers: Borrowers[];
   date: string;
@@ -97,19 +103,23 @@ export const PreApprovalPDF = ({ data }: { data: PreApprovalPDFProps }) => (
     <Page size="A4" style={styles.page}>
       <View style={styles.row}>
         <Text>Date: {data.date}</Text>
-        <Image src={ntmrLogo.src} style={{ width: 100 }} />
+        {data.agentprofile && (
+          <Image src={data.agentprofile} style={{ width: 100 }} />
+        )}
       </View>
 
-      <Text>Borrower(s): {data.borrowers.join(", ")}</Text>
-      <Text>Address: {data.address}</Text>
+      <Text style={{ marginBottom: 5 }}>
+        Borrower(s): {data.borrowers.join(", ")}
+      </Text>
+      <Text style={{ marginBottom: 30 }}>Address: {data.address}</Text>
       <Text style={{ marginBottom: 10 }}>
         Dear {data.borrowerName || "Sir/Madam"},
       </Text>
 
       <Text style={styles.section}>
         Based on the information you provided to us and a preliminary review of
-        your credit history, income, and assets, NTMR Holdings, Inc. finds you
-        to be pre-approved for a mortgage loan, up to the terms and amounts
+        your credit history, income, and assets, <Text style={{ fontWeight: "bold" }}>{data.agentcompanyname}</Text> finds
+        you to be pre-approved for a mortgage loan, up to the terms and amounts
         listed as follows:
       </Text>
 
@@ -151,7 +161,7 @@ export const PreApprovalPDF = ({ data }: { data: PreApprovalPDFProps }) => (
         <View style={styles.tableRow}>
           <Text style={styles.cell}>Down Payment:</Text>
           <Text style={[styles.cell, styles.cellValueBold]}>
-            ${data.downPaymentAmount}             {data.downPaymentPercentage}%
+            ${data.downPaymentAmount} {data.downPaymentPercentage}%
           </Text>
           <Text style={styles.cell}>Property Type:</Text>
           <Text
@@ -181,11 +191,11 @@ export const PreApprovalPDF = ({ data }: { data: PreApprovalPDFProps }) => (
 
       <View style={styles.signature}>
         <Text>Sincerely,</Text>
-        <Text style={{ marginTop: 10 }}>John Doe</Text>
-        <Text>Branch Manager</Text>
-        <Text>NMLS: 1234567</Text>
-        <Text>Phone: 111.222.3333</Text>
-        <Text>Email: admin@loansnstuff.com</Text>
+        <Text style={{ marginTop: 10 }}>{data.agentName}</Text>
+        <Text>{data.agentjobTitle}</Text>
+        {data.agentnmls?.trim() && <Text>NMLS: {data.agentnmls}</Text>}
+        <Text>Phone: {data.agentphone}</Text>
+        <Text>Email: {data.agentemail}</Text>
       </View>
     </Page>
   </Document>

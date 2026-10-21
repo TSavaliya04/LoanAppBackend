@@ -9,8 +9,6 @@ import {
   Collapse,
   InputAdornment,
   MenuItem,
-  Button,
-  CircularProgress,
 } from "@mui/material";
 import {
   useFormContext,
@@ -20,420 +18,83 @@ import {
 } from "react-hook-form";
 import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSchema";
 import SVGs from "@/components/SVGs";
-import { useEffect, useState } from "react";
-import { usePreApprovalStore } from "@/store/usePreApprovalStore";
-import { NumericFormat } from "react-number-format";
-import { PreApprovalPDF } from "@/components/PDFViews/PreApprovalPDF";
-import { pdf } from "@react-pdf/renderer";
-import { saveAs } from "file-saver";
-import { FHAGFEPDF } from "@/components/PDFViews/FHAGFEPDF";
+import { useEffect, useRef, useState } from "react";
 import {
-  getFHAGFEReport,
-  getpreApprovalReport,
-} from "@/api/network/getAllPreApprovals";
+  usePreApprovalIndexStore,
+  usePreApprovalStore,
+} from "@/store/usePreApprovalStore";
+import { NumericFormat } from "react-number-format";
 
 type LoanProgramFormProps = {
+  index: number;
   expanded: boolean;
   onToggle: () => void;
   isCompleted?: boolean;
   isDisabled?: boolean;
-  // preApprovalData: {
-  //   data?: {
-  //     borrowerIncomes?: any[];
-  //     // add other properties as needed
-  //   };
-  //   // add other properties as needed
-  // };
+  handleFieldChange: (index: number) => void;
 };
 
 export default function LoanProgramForm({
+  index,
   expanded,
   onToggle,
   isCompleted,
   isDisabled,
-}: // preApprovalData,
-LoanProgramFormProps) {
-  const preApprovalId = usePreApprovalStore((state) => state.preApprovalId);
-  // const borrowerIncomes = preApprovalData?.data?.borrowerIncomes || [];
-
+  handleFieldChange,
+}: LoanProgramFormProps) {
   const {
     control,
     setValue,
-    formState: { errors, isDirty },
+    formState: { errors, dirtyFields },
   } = useFormContext<CombinedPreApprovalFormData>();
+
+  // const renderCount = useRef(0);
+  const [frontEndRatio, setFrontEndRatio] = useState(0);
+  const [backEndRatio, setBackEndRatio] = useState(0);
+  const loanProgramFrontEndRatio = useWatch({
+    control,
+    name: `scenarios.${index}.loanProgram.frontEndRatio`,
+  });
+  const loanProgramBackEndRatio = useWatch({
+    control,
+    name: `scenarios.${index}.loanProgram.backEndRatio`,
+  });
+  useEffect(() => {
+    setFrontEndRatio(loanProgramFrontEndRatio);
+    setBackEndRatio(loanProgramBackEndRatio);
+  }, [loanProgramFrontEndRatio, loanProgramBackEndRatio]);
 
   const { fields } = useFieldArray({
     control,
-    name: "loanProgram.borrowers",
+    name: `scenarios.${index}.loanProgram.borrowers`,
   });
-  const frontEndRatio = usePreApprovalStore((state) => state.frontEndRatio);
-  const monthlyIncome = usePreApprovalStore((state) => state.monthlyIncome);
+  // const frontEndRatio = usePreApprovalIndexStore(
+  //   (state) => state.ratios[index]?.frontEndRatio ?? 0
+  // );
+  const monthlyIncome = usePreApprovalIndexStore(
+    (state) => state.ratios[index]?.monthlyIncome ?? 0,
+  );
   const frontEndRatiocolor = frontEndRatio <= 45 ? "#00CF1F" : "#F44336";
 
-  const backEndRatio = usePreApprovalStore((state) => state.backEndRatio);
+  // const backEndRatio = usePreApprovalIndexStore(
+  //   (state) => state.ratios[index]?.backEndRatio ?? 0
+  // );
   const backEndRatiocolor = backEndRatio <= 45 ? "#00CF1F" : "#F44336";
 
-  const borrowerIncome = useWatch({
-    control,
-    name: "borrowersIncomeData.borrowerIncome",
-  });
-  const associationFee =
+  // const borrowerIncome = useWatch({
+  //   control,
+  //   name: `scenarios.${index}.borrowersIncomeData.borrowerIncome`,
+  // });
+  // const associationFee =
+  //   useWatch({
+  //     control,
+  //     name: `scenarios.${index}.purchaseInfo.associationFee`,
+  //   }) ?? 0;
+  const loanProgram =
     useWatch({
       control,
-      name: "purchaseInfo.associationFee",
-    }) ?? 0;
-  const loanProgram =
-    useWatch({ control, name: "borrowerInfo.loanProgram" }) ?? "1";
-  const price = useWatch({ control, name: "purchaseInfo.purchasePrice" }) ?? 0;
-  const downPaymentPercentage =
-    useWatch({ control, name: "purchaseInfo.downPayment" }) ?? 0;
-  const upmipRate = useWatch({ control, name: "loanProgram.upmipRate" }) ?? 0;
-  const mmi = useWatch({ control, name: "loanProgram.mmi" }) ?? 0;
-  const annualMIPRate =
-    useWatch({ control, name: "loanProgram.annualMIPRate" }) ?? 0;
-  const clearingCart =
-    useWatch({ control, name: "loanProgram.clearingCart" }) ?? 0;
-  const propertyTax =
-    useWatch({ control, name: "loanProgram.propertyTax" }) ?? 0;
-  const interestRate =
-    useWatch({ control, name: "purchaseInfo.annualInterestRate" }) ?? 0;
-  const term = useWatch({ control, name: "loanProgram.term" }) ?? 0;
-  const monthlyPropertyTax =
-    useWatch({ control, name: "loanProgram.monthlyPropertyTax" }) ?? 0;
-  const hazardInsurance =
-    useWatch({ control, name: "loanProgram.hazardInsurance" }) ?? 0;
-  const principalAndInterest =
-    useWatch({ control, name: "loanProgram.principalAndInterest" }) ?? 0;
-  // const mortgageInsurance =
-  //   useWatch({ control, name: "loanProgram.mortgageInsurance" }) ?? 0;
-
-  useEffect(() => {
-    const downPaymentAmount = price * (downPaymentPercentage / 100);
-    const baseLoanAmount = price - downPaymentAmount;
-    let calculatedAnnualMIPRate = 0;
-
-    const ltv = (baseLoanAmount / price) * 100; // in percentage
-
-    if (loanProgram === "3") {
-      if (baseLoanAmount <= 726200) {
-        if (ltv <= 90) {
-          calculatedAnnualMIPRate = 0.5; // 50 bps
-        } else if (ltv > 90 && ltv <= 95) {
-          calculatedAnnualMIPRate = 0.55; // 55 bps
-        } else if (ltv > 95) {
-          calculatedAnnualMIPRate = 0.55; // 55 bps
-        }
-      } else {
-        if (ltv <= 90) {
-          calculatedAnnualMIPRate = 0.7; // 70 bps
-        } else if (ltv > 90 && ltv <= 95) {
-          calculatedAnnualMIPRate = 0.7; // 70 bps
-        } else if (ltv > 95) {
-          calculatedAnnualMIPRate = 0.75; // 75 bps
-        }
-      }
-    }
-
-    // If you want to override form state field as well
-    if (calculatedAnnualMIPRate !== annualMIPRate) {
-      setValue("loanProgram.annualMIPRate", calculatedAnnualMIPRate);
-    }
-    const upmipAmount = baseLoanAmount * (upmipRate / 100);
-    const finalLoanAmount = baseLoanAmount + upmipAmount;
-
-    const totalNeededToClear = downPaymentAmount + clearingCart + propertyTax;
-
-    const mortgageInsurance = (baseLoanAmount * (annualMIPRate / 100)) / 12;
-
-    const calmmi = (baseLoanAmount * (annualMIPRate / 100)) / 12;
-
-    const P = finalLoanAmount;
-    const r = interestRate / 100 / 12;
-    const n = term * 12;
-
-    const monthlyPI =
-      r === 0
-        ? P / n
-        : (P * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
-
-    const monthlyTotal =
-      monthlyPI + monthlyPropertyTax + hazardInsurance + mortgageInsurance;
-
-    const calcPrincipalAndInterest = isNaN(monthlyPI)
-      ? 0
-      : +monthlyPI.toFixed(2);
-    const calMortgageInsurance = isNaN(mortgageInsurance)
-      ? 0
-      : +mortgageInsurance.toFixed(2);
-
-    const monthlyHousingExpenses =
-      calcPrincipalAndInterest +
-      monthlyPropertyTax +
-      calMortgageInsurance +
-      associationFee;
-
-    const calculatedFrontEndRatio =
-      monthlyIncome > 0
-        ? parseFloat(
-            ((monthlyHousingExpenses / monthlyIncome) * 100).toFixed(2)
-          )
-        : 0;
-
-    // Update the store
-    usePreApprovalStore.setState({
-      frontEndRatio: !isFinite(calculatedFrontEndRatio)
-        ? 0
-        : calculatedFrontEndRatio,
-    });
-
-    let calculatedBackEndRatio = 0;
-    let totalIncome = 0;
-    let totalPayment = 0;
-
-    borrowerIncome?.forEach((borrower) => {
-      totalIncome += Number(borrower.monthlyIncome) || 0;
-      borrower?.debts?.forEach((debt) => {
-        totalPayment += Number(debt.monthlyPayment) || 0;
-      });
-    });
-
-    calculatedBackEndRatio = Number(
-      (((monthlyHousingExpenses + totalPayment) / totalIncome) * 100).toFixed(2)
-    );
-
-    usePreApprovalStore.setState({
-      backEndRatio: !isFinite(calculatedBackEndRatio)
-        ? 0
-        : calculatedBackEndRatio,
-    });
-
-    setValue("loanProgram.frontEndRatio", calculatedFrontEndRatio);
-    setValue("loanProgram.backEndRatio", calculatedBackEndRatio);
-    setValue(
-      "loanProgram.downPaymentAmount",
-      isNaN(downPaymentAmount) ? 0 : +downPaymentAmount.toFixed(2)
-    );
-    setValue(
-      "loanProgram.baseLoanAmount",
-      isNaN(baseLoanAmount) ? 0 : +baseLoanAmount.toFixed(2)
-    );
-    setValue(
-      "loanProgram.upmipAmount",
-      isNaN(upmipAmount) ? 0 : +upmipAmount.toFixed(2)
-    );
-    setValue(
-      "loanProgram.finalLoanAmount",
-      isNaN(finalLoanAmount) ? 0 : +finalLoanAmount.toFixed(2)
-    );
-    setValue("loanProgram.mmi", isNaN(calmmi) ? 0 : +calmmi.toFixed(2));
-    setValue(
-      "loanProgram.totalNeededToClear",
-      isNaN(totalNeededToClear) ? 0 : +totalNeededToClear
-    );
-    setValue(
-      "loanProgram.principalAndInterest",
-      isNaN(monthlyPI) ? 0 : +monthlyPI.toFixed(0)
-    );
-    setValue(
-      "loanProgram.mortgageInsurance",
-      isNaN(mortgageInsurance) ? 0 : +mortgageInsurance.toFixed(0)
-    );
-    setValue(
-      "loanProgram.monthlyTotal",
-      isNaN(monthlyTotal) ? 0 : +monthlyTotal.toFixed(0)
-    );
-  }, [
-    borrowerIncome,
-    backEndRatio,
-    loanProgram,
-    price,
-    downPaymentPercentage,
-    upmipRate,
-    clearingCart,
-    propertyTax,
-    interestRate,
-    term,
-    mmi,
-    annualMIPRate,
-    monthlyPropertyTax,
-    principalAndInterest,
-    associationFee,
-    monthlyIncome,
-    hazardInsurance,
-    setValue,
-  ]);
-
-  const loanProgramNames = {
-    "1": "Non QM",
-    "2": "Conventional",
-    "3": "FHA",
-  };
-
-  const propertyTypes = {
-    "1": "SFR",
-    "2": "2 Units",
-    "3": "3 Units",
-    "4": "4 Units",
-    "5": "Condo/Townhome",
-  };
-
-  const occupancyStatuses = {
-    "1": "Owner Occupied",
-    "2": "2nd Home",
-    "3": "Investment",
-  };
-
-  const [preApprovalloading, setPreApprovalloading] = useState(false);
-  const [FHAGFEloading, setFHAGFELoading] = useState(false);
-
-  const generatePreApproval = async (preApprovalId: string) => {
-    setPreApprovalloading(true);
-
-    try {
-      const response = await getpreApprovalReport(preApprovalId);
-      const preApprovalReportData = response.data.data;
-      console.log(preApprovalReportData);
-
-      const mockData = {
-        borrowerName: preApprovalReportData.borrowerName,
-        borrowers: preApprovalReportData.borrowers,
-        date: formatDate(preApprovalReportData.date),
-        downPaymentAmount: formatAmount(
-          preApprovalReportData.downPaymentAmount
-        ),
-        downPaymentPercentage: preApprovalReportData.downPaymentPercentage,
-        firstMortgageAmount: formatAmount(
-          preApprovalReportData.firstMortgageAmount
-        ),
-        lendingCompany: preApprovalReportData.lendingCompany,
-        loanProgram:
-          loanProgramNames[
-            preApprovalReportData.loanProgram as keyof typeof loanProgramNames
-          ] || "",
-        propertyType:
-          propertyTypes[
-            preApprovalReportData.propertyType as keyof typeof propertyTypes
-          ] || "",
-        purchasePrice: formatAmount(preApprovalReportData.purchasePrice),
-        occupancyStatus:
-          occupancyStatuses[
-            preApprovalReportData.occupancyStatus as keyof typeof occupancyStatuses
-          ] || "",
-        address: "",
-        loanUse: "Real Estate Purchase",
-        firstMortgage: "",
-        secondMortgage: "",
-        unitCount: "",
-        ppp: "",
-      };
-
-      const blob = await pdf(<PreApprovalPDF data={mockData} />).toBlob();
-      saveAs(blob, "pre-approval-letter.pdf");
-    } catch (err) {
-      console.error("PDF generation failed", err);
-    } finally {
-      setPreApprovalloading(false);
-    }
-  };
-
-  const generateFHAGFE = async (preApprovalId: string) => {
-    setFHAGFELoading(true);
-
-    try {
-      const response = await getFHAGFEReport(preApprovalId);
-      const FHAGFEReportData = response.data.data;
-      console.log(FHAGFEReportData);
-
-      const FHAGFEPDFData = {
-        borrower: FHAGFEReportData.borrowerName,
-        propertyAddress: "",
-        date: formatDate(FHAGFEReportData.date),
-        loanType:
-          loanProgramNames[
-            FHAGFEReportData.loanProgram as keyof typeof loanProgramNames
-          ] || "",
-        salesPrice: formatAmount(FHAGFEReportData.salePrice),
-        downPayment: formatAmount(FHAGFEReportData.downPaymentAmount),
-        subFinancing: formatAmount(FHAGFEReportData.subFinancing),
-        otherFinanced: formatAmount(FHAGFEReportData.otherFinancedItems),
-        upfrontMIP: FHAGFEReportData.upfrontMipPercent,
-        loanAmount: formatAmount(FHAGFEReportData.totalLoanAmount),
-        interestRate: FHAGFEReportData.interestRate,
-        loanTerm: FHAGFEReportData.loanTerm,
-        monthlyTaxes: formatAmount(FHAGFEReportData.propertyTax),
-        piLoanAmount: formatAmount(FHAGFEReportData.piLoanAmount),
-        hazardInsurance: formatAmount(FHAGFEReportData.hazardInsurancePremium),
-        mortgageInsurance: formatAmount(FHAGFEReportData.mortgageInsurance),
-        loanOriginationFees: formatAmount(FHAGFEReportData.loanOriginationFees),
-        discountFee: formatAmount(FHAGFEReportData.discountFee),
-        CoverageRate: formatAmount(FHAGFEReportData.CoverageRate),
-        TotalMonthlyPayment: formatAmount(FHAGFEReportData.TotalMonthlyPayment),
-        appraisalFee: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.appraisalFee
-        ),
-        prepaidInterest: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.prepaidInterest
-        ),
-        hazInsReserve: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.hazInsReserve
-        ),
-        escrowFee: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.escrowFee
-        ),
-        titleInsurance: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.titleInsurance
-        ),
-        estClosingCost: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.estClosingCost
-        ),
-        estPrepaidItemReserves: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.estPrepaidItemReserves
-        ),
-        totalEstSettlementCharges: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.totalEstSettlementCharges
-        ),
-        totalEstFundToClose: formatAmount(
-          FHAGFEReportData.estimatedClosingCost.totalEstFundToClose
-        ),
-        hoaDues: formatAmount(FHAGFEReportData.estimatedClosingCost.hoaDues),
-        prepaidInterestDays:
-          FHAGFEReportData.estimatedClosingCost.prepaidInterestDays,
-        lockRequested: true,
-        lockRate: FHAGFEReportData.interestRate,
-        lockExpiration: formatDate(FHAGFEReportData.expirationDate),
-      };
-      const blob = await pdf(<FHAGFEPDF data={FHAGFEPDFData} />).toBlob();
-      saveAs(blob, "FHAGFE-report.pdf");
-    } catch (err) {
-      console.error("PDF generation failed", err);
-    } finally {
-      setPreApprovalloading(false);
-    }
-
-    // Simulate async action
-    setTimeout(() => {
-      setFHAGFELoading(false);
-    }, 2000);
-  };
-
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-
-    // Get month, day, and year
-    const month = date.getMonth() + 1; // Months are 0-based
-    const day = date.getDate();
-    const year = date.getFullYear() % 100; // Last two digits
-
-    return `${month}/${day}/${year}`;
-  };
-
-  function formatAmount(amount: number) {
-    if (isNaN(amount)) return "0.00";
-    return Number(amount).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
+      name: `scenarios.${index}.purchaseInfo.loanProgram`,
+    }) ?? "1";
 
   return (
     <Box
@@ -469,8 +130,8 @@ LoanProgramFormProps) {
                   backgroundColor: isCompleted
                     ? "#1F9A00"
                     : isDisabled
-                    ? "gray"
-                    : "#7444F5",
+                      ? "gray"
+                      : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -535,20 +196,32 @@ LoanProgramFormProps) {
                 )}
               /> */}
               <Controller
-                name="borrowerInfo.loanProgram"
+                name={`scenarios.${index}.purchaseInfo.loanProgram`}
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : String(e.target.value);
+                      field.onChange(value);
+                      handleFieldChange(index);
+                    }}
                     fullWidth
                     select
                     label="Loan Program *"
-                    error={!!errors.borrowerInfo?.loanProgram}
-                    helperText={errors.borrowerInfo?.loanProgram?.message}
+                    error={
+                      !!errors.scenarios?.[index]?.purchaseInfo?.loanProgram
+                    }
+                    helperText={
+                      errors.scenarios?.[index]?.purchaseInfo?.loanProgram
+                        ?.message
+                    }
                   >
                     <MenuItem value="1">Non QM</MenuItem>
                     <MenuItem value="2">Conventional</MenuItem>
                     <MenuItem value="3">FHA</MenuItem>
+                    <MenuItem value="4">VA</MenuItem>
                   </TextField>
                 )}
               />
@@ -600,7 +273,7 @@ LoanProgramFormProps) {
 
                       {/* Hidden Front Ratio Input */}
                       <Controller
-                        name="loanProgram.frontEndRatio"
+                        name={`scenarios.${index}.loanProgram.frontEndRatio`}
                         control={control}
                         render={({ field }) => (
                           <input type="hidden" {...field} />
@@ -642,7 +315,7 @@ LoanProgramFormProps) {
 
                       {/* Hidden Back Ratio Input */}
                       <Controller
-                        name="loanProgram.backEndRatio"
+                        name={`scenarios.${index}.loanProgram.backEndRatio`}
                         control={control}
                         render={({ field }) => (
                           <input type="hidden" {...field} />
@@ -662,932 +335,154 @@ LoanProgramFormProps) {
                 p: 2,
               }}
             >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Price
-                </Typography>
-                <Controller
-                  name="purchaseInfo.purchasePrice"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      onValueChange={(values) =>
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? ""
-                            : values.floatValue
-                        )
-                      }
-                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.purchaseInfo?.purchasePrice}
-                      helperText={errors.purchaseInfo?.purchasePrice?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                          "& fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Annual Interest Rate
-                </Typography>
-                <Controller
-                  name="purchaseInfo.annualInterestRate"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === "" ? "" : Number(e.target.value)
-                        )
-                      }
-                      value={field.value ?? ""}
-                      fullWidth
-                      type="number"
-                      inputMode="numeric"
-                      placeholder="0"
-                      size="medium"
-                      error={!!errors.purchaseInfo?.annualInterestRate}
-                      helperText={
-                        errors.purchaseInfo?.annualInterestRate?.message
-                      }
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                          "& fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              %
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-            </Grid>
-
-            <Grid
-              size={{ xs: 12 }}
-              sx={{
-                borderRadius: 3,
-                backgroundColor: "#fff",
-                p: 2,
-              }}
-            >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Base Loan Amount
-                </Typography>
-                <Controller
-                  name="loanProgram.baseLoanAmount"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) => {
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? undefined
-                            : values.floatValue
-                        );
-                      }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.baseLoanAmount}
-                      helperText={errors.loanProgram?.baseLoanAmount?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  UPMIP
-                </Typography>
-
-                <Box display="flex" gap={1} alignItems="center">
-                  {/* Percentage Field */}
-                  <Controller
-                    name="loanProgram.upmipRate"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
-                        value={field.value ?? ""}
-                        type="number"
-                        inputMode="numeric"
-                        placeholder="0"
-                        size="small"
-                        error={!!errors.loanProgram?.upmipRate}
-                        helperText={errors.loanProgram?.upmipRate?.message}
-                        sx={{
-                          maxWidth: 76,
-                          borderRadius: 2,
-                          "& .MuiOutlinedInput-root": {
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Price
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.purchaseInfo.purchasePrice`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          onValueChange={(values) => {
+                            const value =
+                              values.floatValue === undefined
+                                ? ""
+                                : values.floatValue;
+                            field.onChange(value);
+                            handleFieldChange(index);
+                          }}
+                          inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.purchaseInfo?.purchasePrice
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.purchaseInfo?.purchasePrice
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
                             borderRadius: 2,
-                            paddingRight: "8.5px",
-                            "& fieldset": {
-                              borderColor: "#F6F6F6",
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                              "& fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
                             },
-                            "&:hover fieldset": {
-                              borderColor: "#F6F6F6",
-                            },
-                            "&.Mui-focused fieldset": {
-                              borderColor: "#F6F6F6",
-                            },
-                            "& input::placeholder": {
-                              color: "#9e9e9e",
-                              opacity: 1,
-                            },
-                            "& input": {
-                              padding: "8.5px 0 8.5px 8.5px", // adjust as needed
-                            },
-                          },
-                        }}
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment
-                              position="end"
-                              sx={{ marginLeft: 0 }}
-                            >
-                              <span
-                                style={{ fontWeight: "bold", color: "black" }}
-                              >
-                                %
-                              </span>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
-
-                  {/* Dollar Amount Field */}
-                  <Controller
-                    name="loanProgram.upmipAmount"
-                    control={control}
-                    render={({ field }) => (
-                      <NumericFormat
-                        customInput={TextField}
-                        fullWidth
-                        value={field.value ?? ""}
-                        placeholder="0"
-                        disabled
-                        onValueChange={(values) => {
-                          field.onChange(
-                            values.floatValue === undefined
-                              ? undefined
-                              : values.floatValue
-                          );
-                        }}
-                        thousandSeparator=","
-                        allowNegative={false}
-                        error={!!errors.loanProgram?.upmipAmount}
-                        helperText={errors.loanProgram?.upmipAmount?.message}
-                        sx={{
-                          maxWidth: 120,
-                          borderRadius: 2,
-                          "& .MuiOutlinedInput-root": {
-                            backgroundColor: "#f7f7f7",
-                            "& fieldset": {
-                              border: "none",
-                            },
-                            "& input::placeholder": {
-                              color: "#9e9e9e",
-                              opacity: 1,
-                            },
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <span
-                                style={{ fontWeight: "bold", color: "black" }}
-                              >
-                                $
-                              </span>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
-                </Box>
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Annual MIP Rate
-                </Typography>
-                <Controller
-                  name="loanProgram.annualMIPRate"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === "" ? "" : Number(e.target.value)
-                        )
-                      }
-                      value={field.value ?? ""}
-                      fullWidth
-                      disabled={loanProgram === "3"}
-                      type="number"
-                      inputMode="numeric"
-                      placeholder="0"
-                      size="medium"
-                      error={!!errors.loanProgram?.annualMIPRate}
-                      helperText={errors.loanProgram?.annualMIPRate?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                          backgroundColor:
-                            loanProgram === "3" ? "#f7f7f7" : "#fff", // ✅ match your other disabled fields
-                          "& fieldset": {
-                            border:
-                              loanProgram === "3"
-                                ? "none"
-                                : "1px solid #F6F6F6", // ✅ border removed if disabled
-                          },
-                          "&:hover fieldset": {
-                            borderColor:
-                              loanProgram === "3" ? "none" : "#F6F6F6",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor:
-                              loanProgram === "3" ? "none" : "#F6F6F6",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              %
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Final Loan Amount
-                </Typography>
-                <Controller
-                  name="loanProgram.finalLoanAmount"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) => {
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? undefined
-                            : values.floatValue
-                        );
-                      }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.finalLoanAmount}
-                      helperText={errors.loanProgram?.finalLoanAmount?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  MMI
-                </Typography>
-                <Controller
-                  name="loanProgram.mmi"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) => {
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? undefined
-                            : values.floatValue
-                        );
-                      }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.mmi}
-                      helperText={errors.loanProgram?.mmi?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Term
-                </Typography>
-                <Controller
-                  name="loanProgram.term"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === "" ? "" : Number(e.target.value)
-                        )
-                      }
-                      value={field.value ?? ""}
-                      fullWidth
-                      type="number"
-                      inputMode="numeric"
-                      size="medium"
-                      error={!!errors.loanProgram?.term}
-                      helperText={errors.loanProgram?.term?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                          "& fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#F6F6F6",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-            </Grid>
-
-            <Grid
-              size={{ xs: 12 }}
-              sx={{
-                borderRadius: 3,
-                backgroundColor: "#fff",
-                p: 2,
-              }}
-            >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Down Payment
-                </Typography>
-
-                <Box display="flex" gap={1} alignItems="center">
-                  {/* Percentage Field */}
-                  <Controller
-                    name="purchaseInfo.downPayment"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
-                        value={field.value ?? ""}
-                        type="number"
-                        inputMode="numeric"
-                        placeholder="0"
-                        size="small"
-                        error={!!errors.purchaseInfo?.downPayment}
-                        helperText={errors.purchaseInfo?.downPayment?.message}
-                        sx={{
-                          maxWidth: 76,
-                          borderRadius: 2,
-                          "& .MuiOutlinedInput-root": {
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Annual Interest Rate
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.purchaseInfo.annualInterestRate`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          onChange={(e) => {
+                            const value =
+                              e.target.value === "" ? "" : Number(e.target.value);
+                            field.onChange(value);
+                            handleFieldChange(index);
+                          }}
+                          value={field.value ?? ""}
+                          fullWidth
+                          type="number"
+                          inputMode="numeric"
+                          placeholder="0"
+                          size="medium"
+                          error={
+                            !!errors.scenarios?.[index]?.purchaseInfo
+                              ?.annualInterestRate
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.purchaseInfo
+                              ?.annualInterestRate?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
                             borderRadius: 2,
-                            paddingRight: "8.5px",
-                            "& fieldset": {
-                              borderColor: "#F6F6F6",
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                              "& fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
                             },
-                            "&:hover fieldset": {
-                              borderColor: "#F6F6F6",
-                            },
-                            "&.Mui-focused fieldset": {
-                              borderColor: "#F6F6F6",
-                            },
-                            "& input::placeholder": {
-                              color: "#9e9e9e",
-                              opacity: 1,
-                            },
-                            "& input": {
-                              padding: "8.5px 0 8.5px 8.5px", // adjust as needed
-                            },
-                          },
-                        }}
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment
-                              position="end"
-                              sx={{ marginLeft: 0 }}
-                            >
-                              <span
-                                style={{ fontWeight: "bold", color: "black" }}
-                              >
-                                %
-                              </span>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
-
-                  {/* Amount Field */}
-                  <Controller
-                    name="loanProgram.downPaymentAmount"
-                    control={control}
-                    render={({ field }) => (
-                      <NumericFormat
-                        customInput={TextField}
-                        fullWidth
-                        value={field.value ?? ""}
-                        placeholder="0"
-                        disabled
-                        onValueChange={(values) => {
-                          field.onChange(
-                            values.floatValue === undefined
-                              ? undefined
-                              : values.floatValue
-                          );
-                        }}
-                        thousandSeparator=","
-                        allowNegative={false}
-                        error={!!errors.loanProgram?.downPaymentAmount}
-                        helperText={
-                          errors.loanProgram?.downPaymentAmount?.message
-                        }
-                        sx={{
-                          maxWidth: 120,
-                          borderRadius: 2,
-                          "& .MuiOutlinedInput-root": {
-                            backgroundColor: "#f7f7f7",
-                            "& fieldset": {
-                              border: "none",
-                            },
-                            "& input::placeholder": {
-                              color: "#9e9e9e",
-                              opacity: 1,
-                            },
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <span
-                                style={{ fontWeight: "bold", color: "black" }}
-                              >
-                                $
-                              </span>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
-                </Box>
-              </Box>
-
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Closing Costs
-                </Typography>
-                <Controller
-                  name="loanProgram.clearingCart"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) =>
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? ""
-                            : values.floatValue
-                        )
-                      }
-                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.clearingCart}
-                      helperText={errors.loanProgram?.clearingCart?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
+                          }}
+                          inputProps={{
+                            step: 0.01
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  %
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Property Tax
-                </Typography>
-                <Controller
-                  name="loanProgram.propertyTax"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) =>
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? ""
-                            : values.floatValue
-                        )
-                      }
-                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.propertyTax}
-                      helperText={errors.loanProgram?.propertyTax?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Total Needed to Clear
-                </Typography>
-                <Controller
-                  name="loanProgram.totalNeededToClear"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) => {
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? undefined
-                            : values.floatValue
-                        );
-                      }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.totalNeededToClear}
-                      helperText={
-                        errors.loanProgram?.totalNeededToClear?.message
-                      }
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
+                  </Box>
+                </Grid>
+              </Grid>
             </Grid>
 
             <Grid
@@ -1598,29 +493,1039 @@ LoanProgramFormProps) {
                 p: 2,
               }}
             >
-              {fields.map((field, index) => (
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Base Loan Amount
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.loanProgram.baseLoanAmount`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue,
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.loanProgram?.baseLoanAmount
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.loanProgram?.baseLoanAmount
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      UPMIP
+                    </Typography>
+
+                    <Box display="flex" gap={1} alignItems="center">
+                      {/* Percentage Field */}
+                      <Controller
+                        name={`scenarios.${index}.lenderFees.upfrontMipPercentage`}
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            onChange={(e) => {
+                              const value =
+                                e.target.value === "" ? "" : Number(e.target.value);
+                              field.onChange(value);
+                              handleFieldChange(index);
+                            }}
+                            disabled={loanProgram === "3"}
+                            value={field.value ?? ""}
+                            type="number"
+                            inputMode="numeric"
+                            placeholder="0"
+                            size="small"
+                            error={
+                              !!errors.scenarios?.[index]?.lenderFees
+                                ?.upfrontMipPercentage
+                            }
+                            helperText={
+                              errors.scenarios?.[index]?.lenderFees
+                                ?.upfrontMipPercentage?.message
+                            }
+                            sx={{
+                              maxWidth: {
+                                xs: 76,   // mobile
+                                sm: 85,  // tablet
+                              },
+                              borderRadius: 2,
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                paddingRight: "8.5px",
+                                "& fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "&:hover fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "&.Mui-focused fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "& input::placeholder": {
+                                  color: "#9e9e9e",
+                                  opacity: 1,
+                                },
+                                "& input": {
+                                  padding: "8.5px 0 8.5px 8.5px", // adjust as needed
+                                },
+                              },
+                            }}
+                            inputProps={{
+                              step: 0.01
+                            }}
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment
+                                  position="end"
+                                  sx={{ marginLeft: 0 }}
+                                >
+                                  <span
+                                    style={{ fontWeight: "bold", color: "black" }}
+                                  >
+                                    %
+                                  </span>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+
+                      {/* Dollar Amount Field */}
+                      <Controller
+                        name={`scenarios.${index}.lenderFees.upfrontMip`}
+                        control={control}
+                        render={({ field }) => (
+                          <NumericFormat
+                            customInput={TextField}
+                            fullWidth
+                            value={field.value ?? ""}
+                            placeholder="0"
+                            disabled
+                            onValueChange={(values) => {
+                              field.onChange(
+                                values.floatValue === undefined
+                                  ? undefined
+                                  : values.floatValue,
+                              );
+                            }}
+                            thousandSeparator=","
+                            allowNegative={false}
+                            error={
+                              !!errors.scenarios?.[index]?.lenderFees?.upfrontMip
+                            }
+                            helperText={
+                              errors.scenarios?.[index]?.lenderFees?.upfrontMip
+                                ?.message
+                            }
+                            sx={{
+                              maxWidth: 120,
+                              borderRadius: 2,
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#f7f7f7",
+                                "& fieldset": {
+                                  border: "none",
+                                },
+                                "& input::placeholder": {
+                                  color: "#9e9e9e",
+                                  opacity: 1,
+                                },
+                              },
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <span
+                                    style={{ fontWeight: "bold", color: "black" }}
+                                  >
+                                    $
+                                  </span>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      MIP Rate
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.purchaseInfo.mipFundingFee`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          onChange={(e) => {
+                            const value =
+                              e.target.value === "" ? "" : Number(e.target.value);
+                            field.onChange(value);
+                            handleFieldChange(index);
+                          }}
+                          value={field.value ?? ""}
+                          fullWidth
+                          disabled={loanProgram === "3"}
+                          type="number"
+                          inputMode="numeric"
+                          placeholder="0"
+                          size="medium"
+                          error={
+                            !!errors.scenarios?.[index]?.purchaseInfo?.mipFundingFee
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.purchaseInfo?.mipFundingFee
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                              backgroundColor:
+                                loanProgram === "3" ? "#f7f7f7" : "#fff", // ✅ match your other disabled fields
+                              "& fieldset": {
+                                border:
+                                  loanProgram === "3"
+                                    ? "none"
+                                    : "1px solid #F6F6F6", // ✅ border removed if disabled
+                              },
+                              "&:hover fieldset": {
+                                borderColor:
+                                  loanProgram === "3" ? "none" : "#F6F6F6",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor:
+                                  loanProgram === "3" ? "none" : "#F6F6F6",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          inputProps={{
+                            step: 0.01
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  %
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Final Loan Amount
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.loanProgram.finalLoanAmount`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue,
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.loanProgram
+                              ?.finalLoanAmount
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.loanProgram?.finalLoanAmount
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      MMI
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.purchaseInfo.miPercent`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue,
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={!!errors.scenarios?.[index]?.purchaseInfo?.miPercent}
+                          helperText={
+                            errors.scenarios?.[index]?.purchaseInfo?.miPercent?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Term
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.loanProgram.term`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          onChange={(e) => {
+                            const value =
+                              e.target.value === "" ? "" : Number(e.target.value);
+                            field.onChange(value);
+                            handleFieldChange(index);
+                          }}
+                          value={field.value ?? ""}
+                          fullWidth
+                          type="number"
+                          inputMode="numeric"
+                          size="medium"
+                          error={!!errors.scenarios?.[index]?.loanProgram?.term}
+                          helperText={
+                            errors.scenarios?.[index]?.loanProgram?.term?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                              "& fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+            </Grid>
+
+            <Grid
+              size={{ xs: 12 }}
+              sx={{
+                borderRadius: 3,
+                backgroundColor: "#fff",
+                p: 2,
+              }}
+            >
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Down Payment
+                    </Typography>
+
+                    <Box display="flex" gap={1} alignItems="center">
+                      {/* Percentage Field */}
+                      <Controller
+                        name={`scenarios.${index}.purchaseInfo.downPayment`}
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            onChange={(e) => {
+                              const value =
+                                e.target.value === "" ? "" : Number(e.target.value);
+                              field.onChange(value);
+                              handleFieldChange(index);
+                            }}
+                            value={field.value ?? ""}
+                            type="number"
+                            inputMode="numeric"
+                            placeholder="0"
+                            size="small"
+                            error={
+                              !!errors.scenarios?.[index]?.purchaseInfo?.downPayment
+                            }
+                            helperText={
+                              errors.scenarios?.[index]?.purchaseInfo?.downPayment
+                                ?.message
+                            }
+                            sx={{
+                              maxWidth: {
+                                xs: 76,   // mobile
+                                sm: 85,  // tablet
+                              },
+                              borderRadius: 2,
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                paddingRight: "8.5px",
+                                "& fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "&:hover fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "&.Mui-focused fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "& input::placeholder": {
+                                  color: "#9e9e9e",
+                                  opacity: 1,
+                                },
+                                "& input": {
+                                  padding: "8.5px 0 8.5px 8.5px", // adjust as needed
+                                },
+                              },
+                            }}
+                            inputProps={{
+                              step: 0.01
+                            }}
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment
+                                  position="end"
+                                  sx={{ marginLeft: 0 }}
+                                >
+                                  <span
+                                    style={{ fontWeight: "bold", color: "black" }}
+                                  >
+                                    %
+                                  </span>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+
+                      {/* Amount Field */}
+                      <Controller
+                        name={`scenarios.${index}.loanProgram.downPaymentAmount`}
+                        control={control}
+                        render={({ field }) => (
+                          <NumericFormat
+                            customInput={TextField}
+                            fullWidth
+                            value={field.value ?? ""}
+                            placeholder="0"
+                            disabled
+                            onValueChange={(values) => {
+                              field.onChange(
+                                values.floatValue === undefined
+                                  ? undefined
+                                  : values.floatValue,
+                              );
+                            }}
+                            thousandSeparator=","
+                            allowNegative={false}
+                            error={
+                              !!errors.scenarios?.[index]?.loanProgram
+                                ?.downPaymentAmount
+                            }
+                            helperText={
+                              errors.scenarios?.[index]?.loanProgram
+                                ?.downPaymentAmount?.message
+                            }
+                            sx={{
+                              maxWidth: 120,
+                              borderRadius: 2,
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#f7f7f7",
+                                "& fieldset": {
+                                  border: "none",
+                                },
+                                "& input::placeholder": {
+                                  color: "#9e9e9e",
+                                  opacity: 1,
+                                },
+                              },
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <span
+                                    style={{ fontWeight: "bold", color: "black" }}
+                                  >
+                                    $
+                                  </span>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Closing Costs
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.loanProgram.clearingCart`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) =>
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? ""
+                                : values.floatValue,
+                            )
+                          }
+                          inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.loanProgram?.clearingCart
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.loanProgram?.clearingCart
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Property Tax
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.prepaidItems.propertyTaxAmount`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) =>
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? ""
+                                : values.floatValue,
+                            )
+                          }
+                          inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.prepaidItems?.propertyTaxAmount
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.prepaidItems?.propertyTaxAmount
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Total Needed to Clear
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.loanProgram.totalNeededToClear`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue,
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.loanProgram
+                              ?.totalNeededToClear
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.loanProgram
+                              ?.totalNeededToClear?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+            </Grid>
+
+            <Grid
+              size={{ xs: 12 }}
+              sx={{
+                borderRadius: 3,
+                backgroundColor: "#fff",
+                p: 2,
+              }}
+            >
+              {fields.map((field, borrowerIncomeIndex) => (
                 <Box
                   key={field.id}
-                  sx={{ borderBottom: "2px solid #f0f0f0", mb: 2, pb: 2 }}
                 >
                   <Typography fontWeight={600} color="primary">
-                    Borrower {index + 1}
+                    Borrower {borrowerIncomeIndex + 1}
                   </Typography>
 
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    sx={{
-                      paddingLeft: 0.5,
-                      py: 1.5,
-                    }}
-                  >
-                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                      Monthly Income
-                    </Typography>
-                    <Controller
-                      name={`loanProgram.borrowers.${index}.monthlyIncome`}
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
+                        <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                          Monthly Income
+                        </Typography>
+                        <Controller
+                          name={`scenarios.${index}.loanProgram.borrowers.${borrowerIncomeIndex}.monthlyIncome`}
+                          control={control}
+                          render={({ field }) => (
+                            <NumericFormat
+                              customInput={TextField}
+                              fullWidth
+                              value={field.value ?? ""}
+                              placeholder="0"
+                              disabled
+                              onValueChange={(values) => {
+                                field.onChange(
+                                  values.floatValue === undefined
+                                    ? undefined
+                                    : values.floatValue,
+                                );
+                              }}
+                              thousandSeparator=","
+                              allowNegative={false}
+                              error={
+                                !!errors.scenarios?.[index]?.loanProgram
+                                  ?.borrowers?.[borrowerIncomeIndex]?.monthlyIncome
+                              }
+                              helperText={
+                                errors.scenarios?.[index]?.loanProgram?.borrowers?.[
+                                  borrowerIncomeIndex
+                                ]?.monthlyIncome?.message
+                              }
+                              sx={{
+                                maxWidth: 120,
+                                borderRadius: 2,
+                                "& .MuiOutlinedInput-root": {
+                                  backgroundColor: "#f7f7f7",
+                                  "& fieldset": {
+                                    border: "none",
+                                  },
+                                  "& input::placeholder": {
+                                    color: "#9e9e9e",
+                                    opacity: 1,
+                                  },
+                                },
+                              }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <span
+                                      style={{ fontWeight: "bold", color: "black" }}
+                                    >
+                                      $
+                                    </span>
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          )}
+                        />
+                      </Box>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
+                        <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                          Debts
+                        </Typography>
+                        <Controller
+                          name={`scenarios.${index}.loanProgram.borrowers.${borrowerIncomeIndex}.debts`}
+                          control={control}
+                          render={({ field }) => (
+                            <NumericFormat
+                              customInput={TextField}
+                              fullWidth
+                              value={field.value ?? ""}
+                              placeholder="0"
+                              disabled
+                              onValueChange={(values) => {
+                                field.onChange(
+                                  values.floatValue === undefined
+                                    ? undefined
+                                    : values.floatValue,
+                                );
+                              }}
+                              thousandSeparator=","
+                              allowNegative={false}
+                              error={
+                                !!errors.scenarios?.[index]?.loanProgram
+                                  ?.borrowers?.[borrowerIncomeIndex]?.debts
+                              }
+                              helperText={
+                                errors.scenarios?.[index]?.loanProgram?.borrowers?.[
+                                  borrowerIncomeIndex
+                                ]?.debts?.message
+                              }
+                              sx={{
+                                maxWidth: 120,
+                                borderRadius: 2,
+                                "& .MuiOutlinedInput-root": {
+                                  backgroundColor: "#f7f7f7",
+                                  "& fieldset": {
+                                    border: "none",
+                                  },
+                                  "& input::placeholder": {
+                                    color: "#9e9e9e",
+                                    opacity: 1,
+                                  },
+                                },
+                              }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <span
+                                      style={{ fontWeight: "bold", color: "black" }}
+                                    >
+                                      $
+                                    </span>
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          )}
+                        />
+                      </Box>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
+                        <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                          FICO Score
+                        </Typography>
+                        <Controller
+                          name={`scenarios.${index}.loanProgram.borrowers.${borrowerIncomeIndex}.ficoScore`}
+                          control={control}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e.target.value === "" ? "" : e.target.value);
+                                handleFieldChange(index);
+                              }}
+                              value={field.value ?? ""}
+                              disabled
+                              fullWidth
+                              type="text"
+                              inputMode="numeric"
+                              error={
+                                !!errors.scenarios?.[index]?.loanProgram
+                                  ?.borrowers?.[borrowerIncomeIndex]?.ficoScore
+                              }
+                              helperText={
+                                errors.scenarios?.[index]?.loanProgram?.borrowers?.[
+                                  borrowerIncomeIndex
+                                ]?.ficoScore?.message
+                              }
+                              sx={{
+                                maxWidth: 120,
+                                borderRadius: 2,
+                                "& .MuiOutlinedInput-root": {
+                                  backgroundColor: "#f7f7f7",
+                                  "& fieldset": {
+                                    border: "none",
+                                  },
+                                  "& input::placeholder": {
+                                    color: "#9e9e9e",
+                                    opacity: 1,
+                                  },
+                                },
+                              }}
+                            />
+                          )}
+                        />
+                        {/* <Controller
+                      name={`scenarios.${index}.loanProgram.borrowers.${borrowerIncomeIndex}.ficoScore`}
                       control={control}
                       render={({ field }) => (
                         <NumericFormat
@@ -1633,18 +1538,19 @@ LoanProgramFormProps) {
                             field.onChange(
                               values.floatValue === undefined
                                 ? undefined
-                                : values.floatValue
+                                : values.floatValue,
                             );
                           }}
                           thousandSeparator=","
                           allowNegative={false}
                           error={
-                            !!errors.loanProgram?.borrowers?.[index]
-                              ?.monthlyIncome
+                            !!errors.scenarios?.[index]?.loanProgram
+                              ?.borrowers?.[borrowerIncomeIndex]?.ficoScore
                           }
                           helperText={
-                            errors.loanProgram?.borrowers?.[index]
-                              ?.monthlyIncome?.message
+                            errors.scenarios?.[index]?.loanProgram?.borrowers?.[
+                              borrowerIncomeIndex
+                            ]?.ficoScore?.message
                           }
                           sx={{
                             maxWidth: 120,
@@ -1660,146 +1566,12 @@ LoanProgramFormProps) {
                               },
                             },
                           }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <span
-                                  style={{ fontWeight: "bold", color: "black" }}
-                                >
-                                  $
-                                </span>
-                              </InputAdornment>
-                            ),
-                          }}
                         />
                       )}
-                    />
-                  </Box>
-
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    sx={{
-                      paddingLeft: 0.5,
-                      py: 1.5,
-                    }}
-                  >
-                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                      Debts
-                    </Typography>
-                    <Controller
-                      name={`loanProgram.borrowers.${index}.debts`}
-                      control={control}
-                      render={({ field }) => (
-                        <NumericFormat
-                          customInput={TextField}
-                          fullWidth
-                          value={field.value ?? ""}
-                          placeholder="0"
-                          disabled
-                          onValueChange={(values) => {
-                            field.onChange(
-                              values.floatValue === undefined
-                                ? undefined
-                                : values.floatValue
-                            );
-                          }}
-                          thousandSeparator=","
-                          allowNegative={false}
-                          error={
-                            !!errors.loanProgram?.borrowers?.[index]?.debts
-                          }
-                          helperText={
-                            errors.loanProgram?.borrowers?.[index]?.debts
-                              ?.message
-                          }
-                          sx={{
-                            maxWidth: 120,
-                            borderRadius: 2,
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#f7f7f7",
-                              "& fieldset": {
-                                border: "none",
-                              },
-                              "& input::placeholder": {
-                                color: "#9e9e9e",
-                                opacity: 1,
-                              },
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <span
-                                  style={{ fontWeight: "bold", color: "black" }}
-                                >
-                                  $
-                                </span>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      )}
-                    />
-                  </Box>
-
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    sx={{
-                      paddingLeft: 0.5,
-                      py: 1.5,
-                    }}
-                  >
-                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                      FICO Score
-                    </Typography>
-                    <Controller
-                      name={`loanProgram.borrowers.${index}.ficoScore`}
-                      control={control}
-                      render={({ field }) => (
-                        <NumericFormat
-                          customInput={TextField}
-                          fullWidth
-                          value={field.value ?? ""}
-                          placeholder="0"
-                          disabled
-                          onValueChange={(values) => {
-                            field.onChange(
-                              values.floatValue === undefined
-                                ? undefined
-                                : values.floatValue
-                            );
-                          }}
-                          thousandSeparator=","
-                          allowNegative={false}
-                          error={
-                            !!errors.loanProgram?.borrowers?.[index]?.ficoScore
-                          }
-                          helperText={
-                            errors.loanProgram?.borrowers?.[index]?.ficoScore
-                              ?.message
-                          }
-                          sx={{
-                            maxWidth: 120,
-                            borderRadius: 2,
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#f7f7f7",
-                              "& fieldset": {
-                                border: "none",
-                              },
-                              "& input::placeholder": {
-                                color: "#9e9e9e",
-                                opacity: 1,
-                              },
-                            },
-                          }}
-                        />
-                      )}
-                    />
-                  </Box>
+                    /> */}
+                      </Box>
+                    </Grid>
+                  </Grid>
                 </Box>
               ))}
             </Grid>
@@ -1812,400 +1584,490 @@ LoanProgramFormProps) {
                 p: 2,
               }}
             >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Principal & Interest
-                </Typography>
-                <Controller
-                  name="loanProgram.principalAndInterest"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) => {
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? undefined
-                            : values.floatValue
-                        );
-                      }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.principalAndInterest}
-                      helperText={
-                        errors.loanProgram?.principalAndInterest?.message
-                      }
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Property Tax
-                </Typography>
-                <Controller
-                  name="loanProgram.monthlyPropertyTax"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) =>
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? ""
-                            : values.floatValue
-                        )
-                      }
-                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.monthlyPropertyTax}
-                      helperText={
-                        errors.loanProgram?.monthlyPropertyTax?.message
-                      }
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Haz Insurance
-                </Typography>
-                <Controller
-                  name="loanProgram.hazardInsurance"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) =>
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? ""
-                            : values.floatValue
-                        )
-                      }
-                      inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.hazardInsurance}
-                      helperText={errors.loanProgram?.hazardInsurance?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Mortgage Insurance
-                </Typography>
-                <Controller
-                  name="loanProgram.mortgageInsurance"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) => {
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? undefined
-                            : values.floatValue
-                        );
-                      }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.mortgageInsurance}
-                      helperText={
-                        errors.loanProgram?.mortgageInsurance?.message
-                      }
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{
-                  borderBottom: "1px solid #f0f0f0",
-                  paddingLeft: 0.5,
-                  py: 1.5,
-                }}
-              >
-                <Typography fontWeight={600} sx={{ fontSize: 14 }}>
-                  Monthly Total
-                </Typography>
-                <Controller
-                  name="loanProgram.monthlyTotal"
-                  control={control}
-                  render={({ field }) => (
-                    <NumericFormat
-                      customInput={TextField}
-                      fullWidth
-                      value={field.value ?? ""}
-                      placeholder="0"
-                      disabled
-                      onValueChange={(values) => {
-                        field.onChange(
-                          values.floatValue === undefined
-                            ? undefined
-                            : values.floatValue
-                        );
-                      }}
-                      thousandSeparator=","
-                      allowNegative={false}
-                      error={!!errors.loanProgram?.monthlyTotal}
-                      helperText={errors.loanProgram?.monthlyTotal?.message}
-                      sx={{
-                        maxWidth: 120,
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-root": {
-                          backgroundColor: "#f7f7f7",
-                          "& fieldset": {
-                            border: "none",
-                          },
-                          "& input::placeholder": {
-                            color: "#9e9e9e",
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <span
-                              style={{ fontWeight: "bold", color: "black" }}
-                            >
-                              $
-                            </span>
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-around",
-                  gap: "1rem",
-                }}
-              >
-                <Button
-                  onClick={() => generatePreApproval(preApprovalId)}
-                  disabled={preApprovalloading || isDirty}
-                  variant="outlined"
-                  sx={{
-                    width: "165px",
-                    borderRadius: "999px",
-                    borderColor: "#ff453b",
-                    color: "#ff453b",
-                    fontWeight: "bold",
-                    px: 3,
-                    py: 1.2,
-                    "&:hover": {
-                      backgroundColor: "#ffe6e6",
-                      borderColor: "#ff453b",
-                    },
-                  }}
-                >
-                  {preApprovalloading ? (
-                    <CircularProgress size={20} sx={{ color: "#ff453b" }} />
-                  ) : (
-                    <Typography
-                      fontWeight={600}
-                      color={isDirty ? "rgba(0, 0, 0, 0.26)" : "#ff453b"}
-                      sx={{
-                        whiteSpace: "nowrap", // Keeps the text on a single line
-                        overflow: "hidden", // Hides overflowed text
-                        textOverflow: "ellipsis", // Adds "..." if text overflows
-                      }}
-                    >
-                      PRE APPROVAL
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Principal & Interest
                     </Typography>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => generateFHAGFE(preApprovalId)}
-                  disabled={FHAGFEloading || isDirty}
-                  variant="outlined"
-                  sx={{
-                    width: "117px",
-                    borderRadius: "999px",
-                    borderColor: "#ff453b",
-                    color: "#ff453b",
-                    fontWeight: "bold",
-                    px: 3,
-                    py: 1.2,
-                    "&:hover": {
-                      backgroundColor: "#ffe6e6",
-                      borderColor: "#ff453b",
-                    },
-                  }}
-                >
-                  {FHAGFEloading ? (
-                    <CircularProgress size={20} sx={{ color: "#ff453b" }} />
-                  ) : (
-                    <Typography fontWeight={600} color={isDirty ? "rgba(0, 0, 0, 0.26)" : "#ff453b"}>
-                      FHA/GFE
+                    <Controller
+                      name={`scenarios.${index}.loanProgram.principalAndInterest`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue,
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.loanProgram
+                              ?.principalAndInterest
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.loanProgram
+                              ?.principalAndInterest?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Property Tax
                     </Typography>
-                  )}
-                </Button>
-              </Box>
+                    <Box display="flex" gap={1} alignItems="center">
+                      {/* Percentage Field */}
+                      <Controller
+                        name={`scenarios.${index}.purchaseInfo.monthlyPropertyTaxPercentage`}
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            onChange={(e) => {
+                              const value =
+                                e.target.value === "" ? "" : Number(e.target.value);
+                              field.onChange(value);
+                              handleFieldChange(index);
+                            }}
+                            value={field.value ?? ""}
+                            type="number"
+                            inputMode="numeric"
+                            placeholder="0"
+                            size="small"
+                            error={
+                              !!errors.scenarios?.[index]?.purchaseInfo
+                                ?.monthlyPropertyTaxPercentage
+                            }
+                            helperText={
+                              errors.scenarios?.[index]?.purchaseInfo
+                                ?.monthlyPropertyTaxPercentage?.message
+                            }
+                            sx={{
+                              maxWidth: {
+                                xs: 76,   // mobile
+                                sm: 85,  // tablet
+                              },
+                              borderRadius: 2,
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                paddingRight: "8.5px",
+                                "& fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "&:hover fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "&.Mui-focused fieldset": {
+                                  borderColor: "#F6F6F6",
+                                },
+                                "& input::placeholder": {
+                                  color: "#9e9e9e",
+                                  opacity: 1,
+                                },
+                                "& input": {
+                                  padding: "8.5px 0 8.5px 8.5px", // adjust as needed
+                                },
+                              },
+                            }}
+                            inputProps={{
+                              step: 0.01
+                            }}
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment
+                                  position="end"
+                                  sx={{ marginLeft: 0 }}
+                                >
+                                  <span
+                                    style={{ fontWeight: "bold", color: "black" }}
+                                  >
+                                    %
+                                  </span>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+                      <Controller
+                        name={`scenarios.${index}.purchaseInfo.monthlyPropertyTax`}
+                        control={control}
+                        render={({ field }) => (
+                          <NumericFormat
+                            customInput={TextField}
+                            fullWidth
+                            value={field.value ?? ""}
+                            placeholder="0"
+                            disabled
+                            onValueChange={(values) =>
+                              field.onChange(
+                                values.floatValue === undefined
+                                  ? ""
+                                  : values.floatValue,
+                              )
+                            }
+                            inputProps={{
+                              inputMode: "decimal",
+                              pattern: "[0-9.,]*",
+                            }}
+                            thousandSeparator=","
+                            allowNegative={false}
+                            error={
+                              !!errors.scenarios?.[index]?.purchaseInfo
+                                ?.monthlyPropertyTax
+                            }
+                            helperText={
+                              errors.scenarios?.[index]?.purchaseInfo
+                                ?.monthlyPropertyTax?.message
+                            }
+                            sx={{
+                              maxWidth: 120,
+                              borderRadius: 2,
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#f7f7f7",
+                                "& fieldset": {
+                                  border: "none",
+                                },
+                                "& input::placeholder": {
+                                  color: "#9e9e9e",
+                                  opacity: 1,
+                                },
+                              },
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <span
+                                    style={{ fontWeight: "bold", color: "black" }}
+                                  >
+                                    $
+                                  </span>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Haz Insurance
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.purchaseInfo.hazardInsurance`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) =>
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? ""
+                                : values.floatValue,
+                            )
+                          }
+                          inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.purchaseInfo
+                              ?.hazardInsurance
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.purchaseInfo?.hazardInsurance
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Mortgage Insurance
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.purchaseInfo.miPercent`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) =>
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? ""
+                                : values.floatValue,
+                            )
+                          }
+                          inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.purchaseInfo?.miPercent
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.purchaseInfo?.miPercent
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      HOA Dues
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.purchaseInfo.associationFee`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          onValueChange={(values) => {
+                            const value =
+                              values.floatValue === undefined
+                                ? ""
+                                : values.floatValue;
+                            field.onChange(value);
+                            handleFieldChange(index);
+                          }}
+                          inputProps={{ inputMode: "decimal", pattern: "[0-9.,]*" }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.purchaseInfo
+                              ?.associationFee
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.purchaseInfo?.associationFee
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                              "& fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "#F6F6F6",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Typography fontWeight={600} sx={{ fontSize: 14 }}>
+                      Monthly Total
+                    </Typography>
+                    <Controller
+                      name={`scenarios.${index}.loanProgram.monthlyTotal`}
+                      control={control}
+                      render={({ field }) => (
+                        <NumericFormat
+                          customInput={TextField}
+                          fullWidth
+                          value={field.value ?? ""}
+                          placeholder="0"
+                          disabled
+                          onValueChange={(values) => {
+                            field.onChange(
+                              values.floatValue === undefined
+                                ? undefined
+                                : values.floatValue,
+                            );
+                          }}
+                          thousandSeparator=","
+                          allowNegative={false}
+                          error={
+                            !!errors.scenarios?.[index]?.loanProgram?.monthlyTotal
+                          }
+                          helperText={
+                            errors.scenarios?.[index]?.loanProgram?.monthlyTotal
+                              ?.message
+                          }
+                          sx={{
+                            maxWidth: 120,
+                            borderRadius: 2,
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#f7f7f7",
+                              "& fieldset": {
+                                border: "none",
+                              },
+                              "& input::placeholder": {
+                                color: "#9e9e9e",
+                                opacity: 1,
+                              },
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <span
+                                  style={{ fontWeight: "bold", color: "black" }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
         </Box>

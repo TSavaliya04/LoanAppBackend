@@ -5,6 +5,12 @@ export const SVGLIST = {
   EditIcon: "Edit_icon",
   CheckMarkIcon: "Check_Mark_icon",
   RightArrowIcon: "Right_arrow_icon",
+  CompanyEditIcon: "Company_edit_icon",
+  ProfileRightArrowIcon: "Profile_Right_arrow_icon",
+  ProfileEditIcon: "Profile_Edit_icon",
+  ChangePassIcon: "Change_Pass_icon",
+  NotificationIcon: "Notification_icon",
+  LogoutIcon: "Logout_icon",
   ResetIcon: "Reset_icon",
   BorrowerInfoIcon: "Borrower_info_icon",
   PurchaseInfoIcon: "Purchase_info_icon",
@@ -14,6 +20,7 @@ export const SVGLIST = {
   BorrowersIncomeDataIcon: "Borrowers_income_data_icon",
   DeptBreakdownIcon: "Dept_breakdown_icon",
   LoanProgramIcon: "Loan_Program_icon",
+  BulbIcon: "Bulb_icon",
 } as const;
 
 export type SVGLIST = (typeof SVGLIST)[keyof typeof SVGLIST];
@@ -113,6 +120,196 @@ const SVGs = ({ name }: Props) => {
             />
           </clipPath>
         </defs>
+      </svg>
+    );
+  }
+  if (name == SVGLIST.CompanyEditIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="13"
+        height="13"
+        viewBox="0 0 13 13"
+        fill="none"
+      >
+        <path
+          d="M7.08775 2.57978L3.25642 6.63511C3.11175 6.78911 2.97175 7.09244 2.94375 7.30244L2.77109 8.81444C2.71042 9.36044 3.10242 9.73378 3.64375 9.64044L5.14642 9.38378C5.35642 9.34644 5.65042 9.19244 5.79508 9.03378L9.62642 4.97844C10.2891 4.27844 10.5878 3.48044 9.55642 2.50511C8.52975 1.53911 7.75042 1.87978 7.08775 2.57978Z"
+          stroke="white"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M6.44861 3.25684C6.64928 4.54484 7.69461 5.5295 8.99194 5.66017"
+          stroke="white"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M2.30005 11.167H10.7"
+          stroke="white"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (name == SVGLIST.ProfileRightArrowIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+      >
+        <path
+          d="M7.42499 16.6004L12.8583 11.1671C13.5 10.5254 13.5 9.47539 12.8583 8.83372L7.42499 3.40039"
+          stroke="#292D32"
+          strokeWidth="1.5"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (name == SVGLIST.ProfileEditIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path
+          d="M8.83958 2.39982L3.36624 8.19315C3.15958 8.41315 2.95958 8.84649 2.91958 9.14649L2.67291 11.3065C2.58624 12.0865 3.14624 12.6198 3.91958 12.4865L6.06624 12.1198C6.36624 12.0665 6.78624 11.8465 6.99291 11.6198L12.4662 5.82649C13.4129 4.82649 13.8396 3.68649 12.3662 2.29315C10.8996 0.913152 9.78624 1.39982 8.83958 2.39982Z"
+          stroke="#1E1E1E"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M7.9267 3.36621C8.21336 5.20621 9.7067 6.61288 11.56 6.79954"
+          stroke="#1E1E1E"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M2 14.667H14"
+          stroke="#1E1E1E"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (name == SVGLIST.ChangePassIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path
+          d="M4 6.66634V5.33301C4 3.12634 4.66667 1.33301 8 1.33301C11.3333 1.33301 12 3.12634 12 5.33301V6.66634"
+          stroke="#1E1E1E"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M11.333 14.666H4.66634C1.99967 14.666 1.33301 13.9993 1.33301 11.3327V9.99935C1.33301 7.33268 1.99967 6.66602 4.66634 6.66602H11.333C13.9997 6.66602 14.6663 7.33268 14.6663 9.99935V11.3327C14.6663 13.9993 13.9997 14.666 11.333 14.666Z"
+          stroke="#1E1E1E"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10.6646 10.6673H10.6706"
+          stroke="#1E1E1E"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M7.99666 10.6673H8.00265"
+          stroke="#1E1E1E"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M5.32967 10.6663H5.33566"
+          stroke="#1E1E1E"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (name == SVGLIST.NotificationIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path
+          d="M8 4.29297V6.51297"
+          stroke="#1E1E1E"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+        />
+        <path
+          d="M8.01333 1.33301C5.55999 1.33301 3.57333 3.31967 3.57333 5.77301V7.17301C3.57333 7.62634 3.38666 8.30634 3.15333 8.69301L2.30666 10.1063C1.78666 10.9797 2.14666 11.953 3.10666 12.273C6.29333 13.333 9.73999 13.333 12.9267 12.273C13.8267 11.973 14.2133 10.9197 13.7267 10.1063L12.88 8.69301C12.6467 8.30634 12.46 7.61967 12.46 7.17301V5.77301C12.4533 3.33301 10.4533 1.33301 8.01333 1.33301Z"
+          stroke="#1E1E1E"
+          strokeMiterlimit="10"
+          strokeLinecap="round"
+        />
+        <path
+          d="M10.2203 12.5469C10.2203 13.7669 9.22027 14.7669 8.00027 14.7669C7.39361 14.7669 6.83361 14.5135 6.43361 14.1135C6.03361 13.7135 5.78027 13.1535 5.78027 12.5469"
+          stroke="#1E1E1E"
+          strokeMiterlimit="10"
+        />
+      </svg>
+    );
+  }
+  if (name == SVGLIST.LogoutIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path
+          d="M5.93359 5.04016C6.14026 2.64016 7.37359 1.66016 10.0736 1.66016H10.1603C13.1403 1.66016 14.3336 2.85349 14.3336 5.83349V10.1802C14.3336 13.1602 13.1403 14.3535 10.1603 14.3535H10.0736C7.39359 14.3535 6.16026 13.3868 5.94026 11.0268"
+          stroke="#1E1E1E"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M9.99975 8H2.41309"
+          stroke="#1E1E1E"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M3.90033 5.7666L1.66699 7.99994L3.90033 10.2333"
+          stroke="#1E1E1E"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     );
   }
@@ -495,6 +692,24 @@ const SVGs = ({ name }: Props) => {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+      </svg>
+    );
+  }
+
+  if (name == SVGLIST.BulbIcon) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={20}
+        height={20}
+        viewBox="0 0 24 24"
+        fill="none"
+      >
+        <path
+          d="M12 2C8.13 2 5 5.13 5 9c0 2.62 1.41 4.91 3.5 6.19V17c0 .55.45 1 1 1h5c.55 0 1-.45 1-1v-1.81C17.59 13.91 19 11.62 19 9c0-3.87-3.13-7-7-7zm2 14h-4v-1h4v1zm-4 2h4v1h-4v-1z"
+          fill="#d97706"
+        />
+        <circle cx="12" cy="9" r="3" fill="#fbbf24" opacity="0.5" />
       </svg>
     );
   }

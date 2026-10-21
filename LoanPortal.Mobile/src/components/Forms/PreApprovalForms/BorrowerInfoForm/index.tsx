@@ -12,70 +12,57 @@ import {
 import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { CombinedPreApprovalFormData } from "@/api/models/combinedPreApprovalSchema";
 import SVGs from "@/components/SVGs";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { usePreApprovalStore } from "@/store/usePreApprovalStore";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 type BorrowerInfoFormProps = {
+  index: number;
   expanded: boolean;
   onToggle: () => void;
   isCompleted?: boolean;
   isDisabled?: boolean;
+  handleFieldChange: (index: number) => void;
 };
 
 export default function BorrowerInfoForm({
+  index,
   expanded,
   onToggle,
   isCompleted,
   isDisabled,
+  handleFieldChange,
 }: BorrowerInfoFormProps) {
   const {
     control,
-    getValues,
     setValue,
+    getValues,
     formState: { errors },
   } = useFormContext<CombinedPreApprovalFormData>();
 
-  const ficoScore = useWatch({ control, name: "borrowerInfo.ficoScore" }) ?? "";
+  const [dateOfBirth, setDateOfBirth] = React.useState<Dayjs | null>(dayjs(getValues(`scenarios.${index}.borrowerInfo.dateOfBirth`)));
+  // const borrowerNameStore = usePreApprovalStore((state) => state.borrowerName);
+  // const ficoScoreStore = usePreApprovalStore((state) => state.ficoScore);
+
+  // const ficoScore = useWatch({ control, name: `scenarios.${index}.borrowerInfo.ficoScore` }) ?? "";
   // const borrowerName =
-  //   useWatch({ control, name: "borrowerInfo.borrowerName" }) ?? "";
-  const loanProgram =
-    useWatch({ control, name: "borrowerInfo.loanProgram" }) ?? "1";
-  const MIPFundingFee =
-    useWatch({ control, name: "purchaseInfo.mipFundingFee" }) ?? 0;
+  //   useWatch({ control, name: `scenarios.${index}.borrowerInfo.borrowerName` }) ?? "";
 
-  useEffect(() => {
-    let calculatedMIPFundingFee = 0;
-
-    if (loanProgram === "3") {
-      calculatedMIPFundingFee = 1.75;
-    }
-
-    if (calculatedMIPFundingFee !== MIPFundingFee) {
-      setValue("purchaseInfo.mipFundingFee", calculatedMIPFundingFee);
-    }
-    // setValue("loanProgram.loanProgram", loanProgram);
-  }, [loanProgram, setValue]);
-
-  useEffect(() => {
-    if (ficoScore) {
-      const firstBorrowerficoScore = getValues(
-        "borrowersIncomeData.borrowerIncome.0.ficoScore"
-      );
-      if (firstBorrowerficoScore && firstBorrowerficoScore == undefined) {
-        console.log("Updating borrower name in income data");
-        setValue("borrowersIncomeData.borrowerIncome.0.ficoScore", ficoScore);
-      }
-    }
-  }, [ficoScore, setValue]);
   // useEffect(() => {
-  //   const firstBorrowerName = getValues(
-  //     "borrowersIncomeData.borrowerIncome.0.borrowerName"
-  //   );
-  //   console.log("firstBorrowerName =>", firstBorrowerName);
-  //   console.log("Borrower Name =>", borrowerName);
-  //   if (firstBorrowerName && firstBorrowerName == "") {
-  //     console.log("Updating borrower name in income data");
+  //   if (ficoScoreStore == null) {
   //     setValue(
-  //       "borrowersIncomeData.borrowerIncome.0.borrowerName",
+  //       `scenarios.${index}.borrowersIncomeData.borrowerIncome.0.ficoScore`,
+  //       ficoScore === "" ? undefined : ficoScore
+  //     );
+  //   }
+  // }, [ficoScore, setValue]);
+  // useEffect(() => {
+  //   if (borrowerNameStore == "") {
+  //     setValue(
+  //       `scenarios.${index}.borrowersIncomeData.borrowerIncome.0.borrowerName`,
   //       borrowerName.trim()
   //     );
   //   }
@@ -129,8 +116,8 @@ export default function BorrowerInfoForm({
                   backgroundColor: isCompleted
                     ? "#1F9A00"
                     : isDisabled
-                    ? "gray"
-                    : "#7444F5",
+                      ? "gray"
+                      : "#7444F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -151,7 +138,7 @@ export default function BorrowerInfoForm({
                 Borrower info
               </Typography>
             </Box>
-            {isCompleted && (
+            {isCompleted ? (
               <IconButton
                 size="small"
                 sx={{ color: "black" }}
@@ -159,7 +146,15 @@ export default function BorrowerInfoForm({
               >
                 <SVGs name="Edit_icon" />
               </IconButton>
-            )}
+            ) : !isDisabled ? (
+              <IconButton
+                size="small"
+                sx={{ color: "black" }}
+                onClick={onToggle}
+              >
+                <SVGs name="Edit_icon" />
+              </IconButton>
+            ) : null}
           </Box>
         )}
       </Box>
@@ -168,57 +163,64 @@ export default function BorrowerInfoForm({
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="borrowerInfo.borrowerName"
+                name={`scenarios.${index}.borrowerInfo.borrowerName`}
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : e.target.value;
+                      field.onChange(value);
+                      handleFieldChange(index);
+                    }}
                     fullWidth
                     label="Borrower's Name *"
-                    error={!!errors.borrowerInfo?.borrowerName}
-                    helperText={errors.borrowerInfo?.borrowerName?.message}
+                    error={!!errors.scenarios?.[index]?.borrowerInfo?.borrowerName}
+                    helperText={errors.scenarios?.[index]?.borrowerInfo?.borrowerName?.message}
                   />
                 )}
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="borrowerInfo.coBorrowerName"
+                name={`scenarios.${index}.borrowerInfo.coBorrowerName`}
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
                     label="Co-Borrower's Name"
-                    error={!!errors.borrowerInfo?.coBorrowerName}
-                    helperText={errors.borrowerInfo?.coBorrowerName?.message}
+                    error={!!errors.scenarios?.[index]?.borrowerInfo?.coBorrowerName}
+                    helperText={errors.scenarios?.[index]?.borrowerInfo?.coBorrowerName?.message}
                   />
                 )}
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            {/* <Grid size={{ xs: 12 }}>
               <Controller
-                name="borrowerInfo.ficoScore"
+                name={`scenarios.${index}.borrowerInfo.ficoScore`}
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : Number(e.target.value);
+                      field.onChange(value);
+                      handleFieldChange(index);
+                    }}
                     value={field.value ?? ""}
                     fullWidth
                     label="FICO Score"
                     type="number"
                     inputMode="numeric"
-                    error={!!errors.borrowerInfo?.ficoScore}
-                    helperText={errors.borrowerInfo?.ficoScore?.message}
+                    error={!!errors.scenarios?.[index]?.borrowerInfo?.ficoScore}
+                    helperText={errors.scenarios?.[index]?.borrowerInfo?.ficoScore?.message}
                   />
                 )}
               />
@@ -226,7 +228,7 @@ export default function BorrowerInfoForm({
 
             <Grid size={{ xs: 12 }}>
               <Controller
-                name="borrowerInfo.coBorrowerFicoScore"
+                name={`scenarios.${index}.borrowerInfo.coBorrowerFicoScore`}
                 control={control}
                 render={({ field }) => (
                   <TextField
@@ -241,18 +243,18 @@ export default function BorrowerInfoForm({
                     type="number"
                     inputMode="numeric"
                     label="CoBorrower's FICO Score"
-                    error={!!errors.borrowerInfo?.coBorrowerFicoScore}
+                    error={!!errors.scenarios?.[index]?.borrowerInfo?.coBorrowerFicoScore}
                     helperText={
-                      errors.borrowerInfo?.coBorrowerFicoScore?.message
+                      errors.scenarios?.[index]?.borrowerInfo?.coBorrowerFicoScore?.message
                     }
                   />
                 )}
               />
-            </Grid>
+            </Grid> */}
 
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="borrowerInfo.borrowerCellNumber"
+                name={`scenarios.${index}.borrowerInfo.borrowerCellNumber`}
                 control={control}
                 render={({ field }) => {
                   const rawValue = field.value || ""; // value in state: only digits
@@ -272,9 +274,9 @@ export default function BorrowerInfoForm({
                       }}
                       type="tel"
                       inputMode="numeric"
-                      error={!!errors.borrowerInfo?.borrowerCellNumber}
+                      error={!!errors.scenarios?.[index]?.borrowerInfo?.borrowerCellNumber}
                       helperText={
-                        errors.borrowerInfo?.borrowerCellNumber?.message
+                        errors.scenarios?.[index]?.borrowerInfo?.borrowerCellNumber?.message
                       }
                       inputProps={{ maxLength: 14 }} // formatted version length
                     />
@@ -283,9 +285,9 @@ export default function BorrowerInfoForm({
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="borrowerInfo.coBorrowerCellNumber"
+                name={`scenarios.${index}.borrowerInfo.coBorrowerCellNumber`}
                 control={control}
                 render={({ field }) => {
                   const rawValue = field.value || ""; // value in state: only digits
@@ -305,9 +307,9 @@ export default function BorrowerInfoForm({
                       }}
                       type="tel"
                       inputMode="numeric"
-                      error={!!errors.borrowerInfo?.coBorrowerCellNumber}
+                      error={!!errors.scenarios?.[index]?.borrowerInfo?.coBorrowerCellNumber}
                       helperText={
-                        errors.borrowerInfo?.coBorrowerCellNumber?.message
+                        errors.scenarios?.[index]?.borrowerInfo?.coBorrowerCellNumber?.message
                       }
                       inputProps={{ maxLength: 14 }} // formatted version length
                     />
@@ -316,82 +318,118 @@ export default function BorrowerInfoForm({
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="borrowerInfo.borrowerEmail"
+                name={`scenarios.${index}.borrowerInfo.borrowerEmail`}
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
                     label="Borrower's Email"
-                    error={!!errors.borrowerInfo?.borrowerEmail}
-                    helperText={errors.borrowerInfo?.borrowerEmail?.message}
+                    error={!!errors.scenarios?.[index]?.borrowerInfo?.borrowerEmail}
+                    helperText={errors.scenarios?.[index]?.borrowerInfo?.borrowerEmail?.message}
                   />
                 )}
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            {/* Date of Birth */}
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="borrowerInfo.loanProgram"
+                name={`scenarios.${index}.borrowerInfo.dateOfBirth`}
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    select
-                    label="Loan Program *"
-                    error={!!errors.borrowerInfo?.loanProgram}
-                    helperText={errors.borrowerInfo?.loanProgram?.message}
-                  >
-                    <MenuItem value="1">Non QM</MenuItem>
-                    <MenuItem value="2">Conventional</MenuItem>
-                    <MenuItem value="3">FHA</MenuItem>
-                  </TextField>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Date of Birth"
+                      value={field.value ? dayjs(field.value) : null}
+                      onChange={(date) => {
+                        setDateOfBirth(date);
+                        field.onChange(date ? date.toDate() : undefined);
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error: !!errors.scenarios?.[index]?.borrowerInfo?.dateOfBirth,
+                          helperText: errors.scenarios?.[index]?.borrowerInfo?.dateOfBirth?.message,
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
                 )}
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            {/* Current Address */}
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="borrowerInfo.propertyType"
+                name={`scenarios.${index}.borrowerInfo.currentAddress`}
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    select
-                    label="Property Type *"
-                    error={!!errors.borrowerInfo?.propertyType}
-                    helperText={errors.borrowerInfo?.propertyType?.message}
-                  >
-                    <MenuItem value="1">SFR</MenuItem>
-                    <MenuItem value="2">2 Units</MenuItem>
-                    <MenuItem value="3">3 Units</MenuItem>
-                    <MenuItem value="4">4 Units</MenuItem>
-                    <MenuItem value="5">Condo/Townhome</MenuItem>
-                  </TextField>
+                    label="Current Address"
+                    error={!!errors.scenarios?.[index]?.borrowerInfo?.currentAddress}
+                    helperText={errors.scenarios?.[index]?.borrowerInfo?.currentAddress?.message}
+                  />
                 )}
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            {/* SSN */}
+            <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="borrowerInfo.occupancyStatus"
+                name={`scenarios.${index}.borrowerInfo.ssn`}
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
+                    onChange={(e) => {
+                      const value = e.target.value === "" ? undefined : e.target.value;
+                      field.onChange(value);
+                      handleFieldChange(index);
+                    }}
+                    value={field.value ?? ""}
                     fullWidth
+                    label="SSN"
+                    type="number"
+                    inputMode="numeric"
+                    error={!!errors.scenarios?.[index]?.borrowerInfo?.ssn}
+                    helperText={errors.scenarios?.[index]?.borrowerInfo?.ssn?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Marital Status */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
+                name={`scenarios.${index}.borrowerInfo.maritalStatus`}
+                control={control}
+                defaultValue={null}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
                     select
-                    label="Occupancy Status *"
-                    error={!!errors.borrowerInfo?.occupancyStatus}
-                    helperText={errors.borrowerInfo?.occupancyStatus?.message}
+                    fullWidth
+                    label="Marital Status"
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      field.onChange(val === "" ? null : Number(val));
+                      handleFieldChange(index);
+                    }}
+                    error={!!errors.scenarios?.[index]?.borrowerInfo?.maritalStatus}
+                    helperText={errors.scenarios?.[index]?.borrowerInfo?.maritalStatus?.message}
                   >
-                    <MenuItem value="1">Owner Occupied</MenuItem>
-                    <MenuItem value="2">2nd Home</MenuItem>
-                    <MenuItem value="3">Investment</MenuItem>
+                    <MenuItem value="">N/A</MenuItem>
+                    <MenuItem value={0}>Single</MenuItem>
+                    <MenuItem value={1}>Married</MenuItem>
+                    <MenuItem value={2}>Divorced</MenuItem>
+                    <MenuItem value={3}>Widowed</MenuItem>
+                    <MenuItem value={4}>Separated</MenuItem>
                   </TextField>
                 )}
               />

@@ -21,6 +21,9 @@ namespace LoanPortal.Core.Interfaces
         /// <summary>Notifies the LO when a borrower is created using their link.</summary>
         Task NotifyBorrowerCreatedViaLinkAsync(UserEntity borrower, UserEntity loanOfficer, bool sendPush = true);
 
+        /// <summary>Notifies the importing user once all files in an XML import job are terminal.</summary>
+        Task NotifyXmlImportCompletedAsync(ImportJobDocument job, UserEntity user, bool sendPush = true);
+
         // ── Read / management (called by NotificationsController) ──────────
 
         Task<List<NotificationDocument>> GetNotificationsAsync(Guid userId, int pageSize, int pageNumber, bool? isRead = null);

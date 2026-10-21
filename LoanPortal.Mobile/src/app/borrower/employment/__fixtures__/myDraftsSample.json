@@ -1,0 +1,72 @@
+{
+  "data": [
+    {
+      "draftId": "447bc268-65fe-4401-97a2-c52e310faa05",
+      "loanOfficerId": "e05bc937-0026-4030-b7f4-a1507b2405f9",
+      "loanOfficerName": "Tushar Savaliya",
+      "lastCompletedStep": 2,
+      "isSubmitted": false,
+      "updatedAt": "2026-09-25T09:50:16.956Z",
+      "draftData": {
+        "id": "447bc268-65fe-4401-97a2-c52e310faa05",
+        "loanOfficerId": "e05bc937-0026-4030-b7f4-a1507b2405f9",
+        "borrowerId": "a1edaf73-d345-4282-919b-09470b4ef815",
+        "preApprovalId": "00000000-0000-0000-0000-000000000000",
+        "lastCompletedStep": 2,
+        "isSubmitted": false,
+        "personalInfo": {
+          "firstName": "",
+          "lastName": "",
+          "dateOfBirth": "2026-09-25T09:49:45.824Z",
+          "last4SSN": "",
+          "loanType": 0
+        },
+        "employmentCategory": 1,
+        "currentEmployers": [
+          {
+            "employerName": "",
+            "jobTitle": "",
+            "employmentType": 1,
+            "isCurrentlyWorking": true,
+            "startDate": "2026-09-25T09:49:45.824Z",
+            "endDate": "2026-09-25T09:49:45.824Z",
+            "workPhone": "",
+            "phoneExtension": "",
+            "employerAddress": "",
+            "isPrimaryIncome": true
+          }
+        ],
+        "incomeDetails": {
+          "isSalary": true,
+          "basePay": 0,
+          "basePayFrequency": 1,
+          "hourlyRate": 0,
+          "hoursPerWeek": 0,
+          "bonusPay": 0,
+          "bonusFrequency": 1,
+          "overtimePay": 0,
+          "overtimeFrequency": 1,
+          "commissionPay": 0,
+          "commissionFrequency": 1,
+          "otherPay": 0,
+          "otherFrequency": 1
+        },
+        "additionalInfo": {
+          "isSeasonalIncome": false,
+          "isForeignIncome": false,
+          "isFamilyMemberEmployee": false,
+          "additionalComments": ""
+        },
+        "selfEmployment": null,
+        "militaryService": null,
+        "previousEmployers": [],
+        "createdAt": "2026-09-25T08:40:42.06Z",
+        "updatedAt": "2026-09-25T09:50:16.956Z"
+      }
+    }
+  ],
+  "success": true,
+  "message": "Request successful.",
+  "error": null,
+  "statusCode": 200
+}

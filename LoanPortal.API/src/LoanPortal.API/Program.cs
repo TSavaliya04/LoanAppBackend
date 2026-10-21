@@ -1,6 +1,8 @@
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using LoanPortal.API.Middleware;
+using LoanPortal.API.Hubs;
+using LoanPortal.API.Services;
 using LoanPortal.API.Models;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Helper;
@@ -40,6 +42,16 @@ builder
             ValidateAudience = true,
             ValidAudience = "notification-test-f7410",
             ValidateLifetime = true,
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrWhiteSpace(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs/import-progress"))
+                    context.Token = accessToken;
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -96,6 +108,7 @@ builder.Services.AddAuthorization(options =>
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient();
 builder.Services.AddSwaggerGen();
@@ -146,6 +159,15 @@ builder.Services.AddSingleton<IIncomeCalculationRepository, IncomeCalculationRep
 builder.Services.AddSingleton<IIncomeCalculationService, IncomeCalculationService>();
 builder.Services.AddScoped<ICountyLoanLimitService, CountyLoanLimitService>();
 
+// XML import feature
+builder.Services.AddSingleton<IImportQueue, ImportQueue>();
+builder.Services.AddScoped<IImportJobRepository, ImportJobRepository>();
+builder.Services.AddScoped<IXmlImportService, XmlImportService>();
+builder.Services.AddScoped<AriveXmlParser>();
+builder.Services.AddScoped<MismoToDtoMapper>();
+builder.Services.AddSingleton<IImportProgressNotifier, SignalRImportProgressNotifier>();
+builder.Services.AddHostedService<XmlImportBackgroundService>();
+
 // Borrower Link Feature
 builder.Services.AddSingleton<ILOEmploymentLinkRepository, LOEmploymentLinkRepository>();
 builder.Services.AddSingleton<IBorrowerEmploymentRepository, BorrowerEmploymentRepository>();
@@ -161,6 +183,7 @@ builder.Services.AddScoped<INotificationEventHandler, QuoteUpdatedHandler>();
 builder.Services.AddScoped<INotificationEventHandler, QuoteStatusChangedHandler>();
 builder.Services.AddScoped<INotificationEventHandler, BorrowerSubmittedEmploymentHandler>();
 builder.Services.AddScoped<INotificationEventHandler, BorrowerCreatedViaLinkHandler>();
+builder.Services.AddScoped<INotificationEventHandler, XmlImportCompletedHandler>();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -288,4 +311,5 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ImportProgressHub>("/hubs/import-progress");
 app.Run();

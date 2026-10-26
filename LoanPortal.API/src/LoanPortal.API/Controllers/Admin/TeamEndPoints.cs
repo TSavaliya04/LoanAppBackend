@@ -11,7 +11,8 @@ namespace LoanPortal.API.Controllers.Admin
     /// <summary>
     /// All team management endpoints.
     /// Access: CompanyAdmin and above (policy: CompanyAdminOrAbove).
-    /// CompanyId is always resolved from the logged-in user's token — never from the request body.
+    /// Company admins are restricted to the company in their token. SuperAdmins must provide
+    /// CompanyId in the team-list request payload.
     /// </summary>
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "CompanyAdminOrAbove")]
     public class TeamEndPoints : EndpointBase
@@ -123,18 +124,25 @@ namespace LoanPortal.API.Controllers.Admin
             }
         }
 
-        /// <summary>Returns a paginated list of teams belonging to the logged-in admin's company.</summary>
+        /// <summary>
+        /// Returns a paginated list of teams. SuperAdmins must provide
+        /// <c>params.companyId</c>; other admins are limited to their token company.
+        /// </summary>
         [HttpPost("admin/team/GetByCompany")]
         public async Task<IActionResult> GetTeamsByCompany([FromBody] DefaultRequestWrapper request)
         {
             try
             {
                 var result = await _teamService.GetTeamsByCompany(request.Params);
-                return Ok(SuccessResponse(result));
+                return Ok(SuccessResponse(result));s
             }
             catch (UnauthorizedAccessException ex)
             {
                 return StatusCode(403, ErrorResponse<PagedTeamsDTO>(403, ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ErrorResponse<PagedTeamsDTO>(400, ex.Message));
             }
             catch (Exception ex)
             {

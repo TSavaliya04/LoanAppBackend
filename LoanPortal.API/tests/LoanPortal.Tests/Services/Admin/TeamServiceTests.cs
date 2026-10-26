@@ -1,6 +1,7 @@
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Interfaces;
 using LoanPortal.Core.Repositories;
+using LoanPortal.Shared.Enum;
 using LoanPortal.Infrastructure.Services;
 using Moq;
 using System;
@@ -46,6 +47,33 @@ namespace LoanPortal.Tests.Services.Admin
 
             Assert.NotNull(result);
             Assert.Equal(request.Name, result.Name);
+        }
+
+        [Fact]
+        public async Task GetTeamsByCompany_SuperAdmin_UsesCompanyIdFromRequest()
+        {
+            var requestedCompanyId = Guid.NewGuid();
+            var request = new DefaultRequest { CompanyId = requestedCompanyId };
+            _mockLoginUserDetails.Setup(x => x.Role).Returns(UserRole.SuperAdmin);
+            _mockRepo
+                .Setup(x => x.GetTeamsWithFiltersAsync(request, requestedCompanyId))
+                .ReturnsAsync((new List<TeamEntity>(), 0));
+            _mockCompanyRepo
+                .Setup(x => x.GetCompanyByIdAsync(requestedCompanyId))
+                .ReturnsAsync(new CompanyEntity { Id = requestedCompanyId });
+
+            await _service.GetTeamsByCompany(request);
+
+            _mockRepo.Verify(x => x.GetTeamsWithFiltersAsync(request, requestedCompanyId), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetTeamsByCompany_SuperAdminWithoutCompanyId_ThrowsArgumentException()
+        {
+            _mockLoginUserDetails.Setup(x => x.Role).Returns(UserRole.SuperAdmin);
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => _service.GetTeamsByCompany(new DefaultRequest()));
         }
     }
 }

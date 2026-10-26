@@ -19,7 +19,10 @@ namespace LoanPortal.Core.Interfaces
         /// <summary>Returns a single team by Id. Validates the team belongs to the admin's company.</summary>
         Task<TeamDTO> GetTeamById(Guid teamId);
 
-        /// <summary>Returns a paginated list of teams for the logged-in admin's company.</summary>
+        /// <summary>
+        /// Returns a paginated list of teams. SuperAdmins select a company with
+        /// <see cref="DefaultRequest.CompanyId"/>; other admins are restricted to their token company.
+        /// </summary>
         Task<PagedTeamsDTO> GetTeamsByCompany(DefaultRequest request);
 
         /// <summary>Returns team details plus its paginated member list.</summary>

@@ -134,7 +134,7 @@ namespace LoanPortal.API.Controllers.Admin
             try
             {
                 var result = await _teamService.GetTeamsByCompany(request.Params);
-                return Ok(SuccessResponse(result));s
+                return Ok(SuccessResponse(result));
             }
             catch (UnauthorizedAccessException ex)
             {

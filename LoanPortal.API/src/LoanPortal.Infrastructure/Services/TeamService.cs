@@ -29,13 +29,27 @@ namespace LoanPortal.Infrastructure.Services
         /// <summary>
         /// Returns the CompanyId the caller is authorised to operate on.
         /// CompanyAdmin → always their own company.
-        /// SuperAdmin → not permitted to manage teams (enforce at policy level in controller).
+        /// SuperAdmin → no company is associated with their token; they must supply a company
+        /// when listing teams.
         /// </summary>
         private Guid GetCallerCompanyId()
         {
             if (_loginUserDetails.CompanyId == null)
                 throw new UnauthorizedAccessException("You are not associated with any company.");
             return _loginUserDetails.CompanyId.Value;
+        }
+
+        private Guid GetCompanyIdForTeamListing(DefaultRequest request)
+        {
+            if (_loginUserDetails.Role == UserRole.SuperAdmin)
+            {
+                if (!request.CompanyId.HasValue)
+                    throw new ArgumentException("CompanyId is required when listing teams as a SuperAdmin.");
+
+                return request.CompanyId.Value;
+            }
+
+            return GetCallerCompanyId();
         }
 
         private void EnsureTeamBelongsToCaller(TeamEntity team)
@@ -144,7 +158,7 @@ namespace LoanPortal.Infrastructure.Services
 
         public async Task<PagedTeamsDTO> GetTeamsByCompany(DefaultRequest request)
         {
-            var companyId = GetCallerCompanyId();
+            var companyId = GetCompanyIdForTeamListing(request);
             var (teams, totalCount) = await _teamRepository.GetTeamsWithFiltersAsync(request, companyId);
 
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);

@@ -402,7 +402,7 @@ namespace LoanPortal.Core.Services
                     var team = await _teamRepository.GetTeamByIdAsync(user.TeamId.Value);
                     if (team != null)
                     {
-                        userDto.CompanyName = team.Name;
+                        userDto.TeamName = team.Name;
                     }
                 }
 

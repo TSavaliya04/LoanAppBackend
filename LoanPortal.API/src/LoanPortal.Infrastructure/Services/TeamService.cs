@@ -29,8 +29,6 @@ namespace LoanPortal.Infrastructure.Services
         /// <summary>
         /// Returns the CompanyId the caller is authorised to operate on.
         /// CompanyAdmin → always their own company.
-        /// SuperAdmin → no company is associated with their token; they must supply a company
-        /// when listing teams.
         /// </summary>
         private Guid GetCallerCompanyId()
         {
@@ -39,9 +37,24 @@ namespace LoanPortal.Infrastructure.Services
             return _loginUserDetails.CompanyId.Value;
         }
 
+        private bool IsSuperAdmin => _loginUserDetails.Role == UserRole.SuperAdmin;
+
+        private Guid GetCompanyIdForTeamCreation(CreateTeamRequest request)
+        {
+            if (IsSuperAdmin)
+            {
+                if (!request.CompanyId.HasValue)
+                    throw new ArgumentException("CompanyId is required when creating a team as a SuperAdmin.");
+
+                return request.CompanyId.Value;
+            }
+
+            return GetCallerCompanyId();
+        }
+
         private Guid GetCompanyIdForTeamListing(DefaultRequest request)
         {
-            if (_loginUserDetails.Role == UserRole.SuperAdmin)
+            if (IsSuperAdmin)
             {
                 if (!request.CompanyId.HasValue)
                     throw new ArgumentException("CompanyId is required when listing teams as a SuperAdmin.");
@@ -54,6 +67,9 @@ namespace LoanPortal.Infrastructure.Services
 
         private void EnsureTeamBelongsToCaller(TeamEntity team)
         {
+            if (IsSuperAdmin)
+                return;
+
             var companyId = GetCallerCompanyId();
             if (team.CompanyId != companyId)
                 throw new UnauthorizedAccessException("You do not have access to this team.");
@@ -80,7 +96,7 @@ namespace LoanPortal.Infrastructure.Services
 
         public async Task<TeamDTO> CreateTeam(CreateTeamRequest request)
         {
-            var companyId = GetCallerCompanyId();
+            var companyId = GetCompanyIdForTeamCreation(request);
 
             // Validate company exists
             var company = await _companyRepository.GetCompanyByIdAsync(companyId)
@@ -221,13 +237,10 @@ namespace LoanPortal.Infrastructure.Services
 
         public async Task<bool> AssignUserToTeam(AssignUserToTeamRequest request)
         {
-            var callerCompanyId = GetCallerCompanyId();
-
             var team = await _teamRepository.GetTeamByIdAsync(request.TeamId)
                 ?? throw new KeyNotFoundException($"Team '{request.TeamId}' not found.");
 
-            if (team.CompanyId != callerCompanyId)
-                throw new UnauthorizedAccessException("You do not have access to this team.");
+            EnsureTeamBelongsToCaller(team);
 
             var user = await _userRepository.GetUserById(request.UserId)
                 ?? throw new KeyNotFoundException($"User '{request.UserId}' not found.");
@@ -243,13 +256,11 @@ namespace LoanPortal.Infrastructure.Services
 
         public async Task<bool> RemoveUserFromTeam(Guid userId)
         {
-            var callerCompanyId = GetCallerCompanyId();
-
             var user = await _userRepository.GetUserById(userId)
                 ?? throw new KeyNotFoundException($"User '{userId}' not found.");
 
             // Enforce company boundary — admin can only manage users in their own company
-            if (user.CompanyId != callerCompanyId)
+            if (!IsSuperAdmin && user.CompanyId != GetCallerCompanyId())
                 throw new UnauthorizedAccessException("You do not have access to this user.");
 
             await _userRepository.UpdateUserTeamAsync(userId, null);

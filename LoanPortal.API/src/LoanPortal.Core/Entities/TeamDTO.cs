@@ -48,7 +48,8 @@ namespace LoanPortal.Core.Entities
     {
         public string Name { get; set; }
         public string? Description { get; set; }
-        // CompanyId is resolved from the logged-in CompanyAdmin's token; not accepted from request body.
+        // Required for SuperAdmins; ignored for other admins, whose token company is used.
+        public Guid? CompanyId { get; set; }
     }
 
     public class UpdateTeamRequest

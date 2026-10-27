@@ -27,6 +27,7 @@ namespace LoanPortal.Core.Services
         private readonly ILoginUserDetails _loginUserDetails;
         private readonly ICompanyRepository _companyRepository;
         private readonly INotificationService _notificationService;
+        private readonly ITeamRepository _teamRepository;
 
         public UserService(
             IUserHelper userHelper,
@@ -37,6 +38,7 @@ namespace LoanPortal.Core.Services
             IFirebaseAuthService firebaseAuthService,
             ILoginUserDetails loginUserDetails,
             ICompanyRepository companyRepository,
+            ITeamRepository teamRepository,
             INotificationService notificationService)
         {
             _userHelper = userHelper;
@@ -47,6 +49,7 @@ namespace LoanPortal.Core.Services
             _firebaseAuthService = firebaseAuthService;
             _loginUserDetails = loginUserDetails; 
             _companyRepository = companyRepository;
+            _teamRepository = teamRepository;
             _notificationService = notificationService;
         }
 
@@ -311,6 +314,7 @@ namespace LoanPortal.Core.Services
                     JobTitle = request.JobTitle ?? existingUser.JobTitle,
                     NMLS = request.NMLS ?? existingUser.NMLS,
                     CompanyId = request.CompanyId ?? existingUser.CompanyId,
+                    TeamId = request.TeamId ?? existingUser.TeamId,
                     UpdatedAt = DateTime.UtcNow
                 };
 
@@ -390,6 +394,15 @@ namespace LoanPortal.Core.Services
                     if (company != null)
                     {
                         userDto.CompanyName = company.Name;
+                    }
+                }
+
+                if (user.TeamId.HasValue)
+                {
+                    var team = await _teamRepository.GetTeamByIdAsync(user.TeamId.Value);
+                    if (team != null)
+                    {
+                        userDto.CompanyName = team.Name;
                     }
                 }
 

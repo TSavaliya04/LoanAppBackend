@@ -100,6 +100,7 @@ namespace LoanPortal.Core.Helper
                 Profile = entity.Profile,
                 NMLS = entity.NMLS,
                 CompanyId = entity.CompanyId,
+                TeamId = entity.TeamId,
                 LastLoginDate = entity.LastLoginDate,
                 LastActivityDate = entity.LastActivityDate,
                 Role = entity.Role,

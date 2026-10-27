@@ -4,10 +4,13 @@ namespace LoanPortal.Core.Interfaces
 {
     public interface ITeamService
     {
-        /// <summary>Creates a new team. CompanyId is resolved from the logged-in CompanyAdmin's token.</summary>
+        /// <summary>
+        /// Creates a new team. SuperAdmins must provide <see cref="CreateTeamRequest.CompanyId"/>;
+        /// other admins use the company in their token.
+        /// </summary>
         Task<TeamDTO> CreateTeam(CreateTeamRequest request);
 
-        /// <summary>Updates team name, description, or active status. Only within the admin's company.</summary>
+        /// <summary>Updates team name, description, or active status.</summary>
         Task<TeamDTO> UpdateTeam(UpdateTeamRequest request);
 
         /// <summary>
@@ -16,7 +19,7 @@ namespace LoanPortal.Core.Interfaces
         /// </summary>
         Task<bool> DeleteTeam(Guid teamId);
 
-        /// <summary>Returns a single team by Id. Validates the team belongs to the admin's company.</summary>
+        /// <summary>Returns a single team by Id.</summary>
         Task<TeamDTO> GetTeamById(Guid teamId);
 
         /// <summary>

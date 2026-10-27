@@ -11,8 +11,8 @@ namespace LoanPortal.API.Controllers.Admin
     /// <summary>
     /// All team management endpoints.
     /// Access: CompanyAdmin and above (policy: CompanyAdminOrAbove).
-    /// Company admins are restricted to the company in their token. SuperAdmins must provide
-    /// CompanyId in the team-list request payload.
+    /// Company admins are restricted to the company in their token. SuperAdmins may manage
+    /// teams across all companies and supply CompanyId when creating or listing teams.
     /// </summary>
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "CompanyAdminOrAbove")]
     public class TeamEndPoints : EndpointBase
@@ -24,7 +24,7 @@ namespace LoanPortal.API.Controllers.Admin
             _teamService = teamService;
         }
 
-        /// <summary>Creates a new team for the logged-in company admin's company.</summary>
+        /// <summary>Creates a new team. SuperAdmins must provide <c>companyId</c>.</summary>
         [HttpPost("admin/team/Create")]
         public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
         {
@@ -40,6 +40,10 @@ namespace LoanPortal.API.Controllers.Admin
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ErrorResponse<TeamDTO>(404, ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ErrorResponse<TeamDTO>(400, ex.Message));
             }
             catch (Exception ex)
             {
@@ -134,7 +138,7 @@ namespace LoanPortal.API.Controllers.Admin
             try
             {
                 var result = await _teamService.GetTeamsByCompany(request.Params);
-                return Ok(SuccessResponse(result));s
+                return Ok(SuccessResponse(result));
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -175,7 +179,7 @@ namespace LoanPortal.API.Controllers.Admin
 
         /// <summary>
         /// Assigns a user to a team.
-        /// Both the user and the team must belong to the same company as the logged-in admin.
+        /// Both the user and the team must belong to the same company.
         /// Any previous team assignment for the user is overwritten (one team per user).
         /// </summary>
         [HttpPut("admin/team/AssignUser")]

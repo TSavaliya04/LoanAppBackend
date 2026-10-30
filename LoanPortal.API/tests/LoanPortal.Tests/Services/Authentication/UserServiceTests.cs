@@ -11,6 +11,7 @@ using LoanPortal.Shared;
 using LoanPortal.Shared.Constants;
 using LoanPortal.Shared.Enum;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
@@ -42,6 +43,7 @@ namespace LoanPortal.Tests.Services
             _mockLoginUserDetails = new Mock<ILoginUserDetails>();
             _mockCompanyRepository = new Mock<ICompanyRepository>();
             var _mockNotificationService = new Mock<INotificationService>();
+            var _mockTeamRepository = new Mock<ITeamRepository>();
 
             _userService = new UserService(
                 _mockUserHelper.Object,
@@ -52,7 +54,9 @@ namespace LoanPortal.Tests.Services
                 _mockFirebaseAuthService.Object,
                 _mockLoginUserDetails.Object,
                 _mockCompanyRepository.Object,
-                _mockNotificationService.Object
+                _mockTeamRepository.Object,
+                _mockNotificationService.Object,
+                NullLogger<UserService>.Instance
             );
 
             // Initialize IUserHelper

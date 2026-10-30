@@ -6,6 +6,7 @@ using LoanPortal.Core.Repositories;
 using LoanPortal.Shared;
 using LoanPortal.Shared.Constants;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using System.ComponentModel.DataAnnotations;
@@ -28,6 +29,7 @@ namespace LoanPortal.Core.Services
         private readonly ICompanyRepository _companyRepository;
         private readonly INotificationService _notificationService;
         private readonly ITeamRepository _teamRepository;
+        private readonly ILogger<UserService> _logger;
 
         public UserService(
             IUserHelper userHelper,
@@ -39,7 +41,8 @@ namespace LoanPortal.Core.Services
             ILoginUserDetails loginUserDetails,
             ICompanyRepository companyRepository,
             ITeamRepository teamRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            ILogger<UserService> logger)
         {
             _userHelper = userHelper;
             _config = config;
@@ -51,6 +54,7 @@ namespace LoanPortal.Core.Services
             _companyRepository = companyRepository;
             _teamRepository = teamRepository;
             _notificationService = notificationService;
+            _logger = logger;
         }
 
         public async Task<UserDTO> SignUp(CreateUserRequest user)
@@ -612,7 +616,8 @@ namespace LoanPortal.Core.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Issue in email sent : " + ex.Message);
+                _logger.LogError(ex, "Failed to send password reset email to {Email}.", email);
+                _logger.LogError("Exception -> {Message}", ex.Message);
                 throw;
             }
         }

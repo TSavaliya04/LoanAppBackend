@@ -180,21 +180,27 @@ namespace LoanPortal.Core.Helper
 
         public async Task ResetPassword(string email,string link)
         {
-            UserEmailOptions options = new UserEmailOptions
-            {
-                ToEmails = new List<string>() { email },
-                PlaceHolders = new List<KeyValuePair<string, string>>()
+            try{
+                UserEmailOptions options = new UserEmailOptions
                 {
-                    new KeyValuePair<string, string>("{{EMAIL}}", email),
-                    new KeyValuePair<string, string>("{{link}}",link),
-                    new KeyValuePair<string, string>("{{APP_NAME}}","Loans N Stuff"),
-                },
-            };
-            options.Subject = UpdatePlaceHolders("Reset your password for {{APP_NAME}}", options.PlaceHolders);
-            var body = "<p>Hello,</p>\r\n<p>Follow this link to reset your {{APP_NAME}} password for your {{EMAIL}} account.</p>\r\n<p><a href='{{link}}'>{{link}}</a></p>\r\n<p>If you didn’t ask to reset your password, you can ignore this email.</p>\r\n<p>Thanks,</p>\r\n<p>Your {{APP_NAME}} team</p>";
-            options.Body = UpdatePlaceHolders(body, options.PlaceHolders);
+                    ToEmails = new List<string>() { email },
+                    PlaceHolders = new List<KeyValuePair<string, string>>()
+                    {
+                        new KeyValuePair<string, string>("{{EMAIL}}", email),
+                        new KeyValuePair<string, string>("{{link}}",link),
+                        new KeyValuePair<string, string>("{{APP_NAME}}","Loans N Stuff"),
+                    },
+                };
+                options.Subject = UpdatePlaceHolders("Reset your password for {{APP_NAME}}", options.PlaceHolders);
+                var body = "<p>Hello,</p>\r\n<p>Follow this link to reset your {{APP_NAME}} password for your {{EMAIL}} account.</p>\r\n<p><a href='{{link}}'>{{link}}</a></p>\r\n<p>If you didn’t ask to reset your password, you can ignore this email.</p>\r\n<p>Thanks,</p>\r\n<p>Your {{APP_NAME}} team</p>";
+                options.Body = UpdatePlaceHolders(body, options.PlaceHolders);
 
-            await SendEmail(options);
+                await SendEmail(options);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Exception in UserHelper.ResetPassword -> " + ex.Message);
+            }
         }
 
         public async Task SendDemoRequestMail(RequestDemoRequest request)

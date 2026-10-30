@@ -612,6 +612,7 @@ namespace LoanPortal.Core.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Issue in email sent : " + ex.Message);
                 throw;
             }
         }

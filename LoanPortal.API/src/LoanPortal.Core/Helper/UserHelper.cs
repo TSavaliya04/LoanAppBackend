@@ -174,6 +174,7 @@ namespace LoanPortal.Core.Helper
             }
             catch (Exception ex)
             {
+                throw new Exception(ex.Message);
                 Console.WriteLine(ex.Message);
             }
         }

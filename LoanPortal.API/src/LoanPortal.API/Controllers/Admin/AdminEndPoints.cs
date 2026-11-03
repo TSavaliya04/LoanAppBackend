@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Interfaces;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using static LoanPortal.API.Helper.ResponseHelper;
+using System.ComponentModel.DataAnnotations;
 
 namespace LoanPortal.API.Controllers.Admin
 {
@@ -14,12 +17,14 @@ namespace LoanPortal.API.Controllers.Admin
         private readonly IAdminService _adminService;
         private readonly ILoginUserDetails _loginUserDetails;
         private readonly IUserService _userService;
+        private readonly ILogger<AdminEndPoints> _logger;
 
-        public AdminEndPoints(IAdminService adminService, ILoginUserDetails loginUserDetails, IUserService userService)
+        public AdminEndPoints(IAdminService adminService, ILoginUserDetails loginUserDetails, IUserService userService, ILogger<AdminEndPoints>? logger = null)
         {
             _adminService = adminService;
             _loginUserDetails = loginUserDetails;
             _userService = userService;
+            _logger = logger ?? NullLogger<AdminEndPoints>.Instance;
         }
 
         [HttpPost("admin/GetUsers")]
@@ -108,6 +113,31 @@ namespace LoanPortal.API.Controllers.Admin
             catch (Exception ex)
             {
                 return StatusCode(500, ErrorResponse<UserDTO>(500, ex.Message));
+            }
+        }
+
+        [HttpPost("admin/user/{userId}/temporary-password")]
+        public async Task<IActionResult> GenerateTemporaryPassword(Guid userId)
+        {
+            try
+            {
+                var result = await _userService.GenerateTemporaryPassword(userId);
+                return Ok(SuccessResponse(result, message: "Temporary password generated successfully."));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ErrorResponse<GenerateTemporaryPasswordResponse>(400, ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ErrorResponse<GenerateTemporaryPasswordResponse>(403, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Unexpected error while generating a temporary password for user {TargetUserId} by actor {ActorUserId}.",
+                    userId, _loginUserDetails.UserID);
+                return StatusCode(500, ErrorResponse<GenerateTemporaryPasswordResponse>(500, "Unable to generate a temporary password. Please try again."));
             }
         }
 

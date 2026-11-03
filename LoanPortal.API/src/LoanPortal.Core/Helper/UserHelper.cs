@@ -104,6 +104,8 @@ namespace LoanPortal.Core.Helper
                 LastLoginDate = entity.LastLoginDate,
                 LastActivityDate = entity.LastActivityDate,
                 Role = entity.Role,
+                MustChangePassword = entity.PasswordChangeRequired,
+                TemporaryPasswordExpiresAtUtc = entity.TemporaryPasswordExpiresAtUtc
             };
         }
 
@@ -174,6 +176,7 @@ namespace LoanPortal.Core.Helper
             }
             catch (Exception ex)
             {
+                throw new Exception(ex.Message);
                 Console.WriteLine(ex.Message);
             }
         }

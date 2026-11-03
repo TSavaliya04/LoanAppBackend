@@ -21,5 +21,7 @@ namespace LoanPortal.Core.Interfaces
         Task<GetNewTokenResponse> GetNewToken(string refreshToken);
         Task RequestDemo(RequestDemoRequest request);
         Task UpdateFcmTokenAsync(Guid userId, string fcmToken);
+        Task<GenerateTemporaryPasswordResponse> GenerateTemporaryPassword(Guid userId);
+        Task ChangeTemporaryPassword(Guid userId, ChangeTemporaryPasswordRequest request);
     }
 }

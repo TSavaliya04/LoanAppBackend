@@ -569,5 +569,16 @@ namespace LoanPortal.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task UpdateTemporaryPasswordStateAsync(Guid userId, bool passwordChangeRequired, DateTime? expiresAtUtc)
+        {
+            var filter = Builders<UserEntity>.Filter.Eq(u => u.Id, userId);
+            var update = Builders<UserEntity>.Update
+                .Set(u => u.PasswordChangeRequired, passwordChangeRequired)
+                .Set(u => u.TemporaryPasswordExpiresAtUtc, expiresAtUtc)
+                .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+            await _collection.UpdateOneAsync(filter, update);
+        }
     }
 }

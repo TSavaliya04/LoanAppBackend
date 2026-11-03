@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+using Azure.Core;
 using LoanPortal.Core.Entities;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -22,13 +22,14 @@ namespace LoanPortal.API.Helper
             };
         }
 
-        public static ApiResponse<T> ErrorResponse<T>(int statusCode = 400, string error = null, string message = null)
+        public static ApiResponse<T> ErrorResponse<T>(int statusCode = 400, string error = null, string message = null, string errorCode = null)
         {
             return new ApiResponse<T>
             {
                 Success = false,
                 Message = message ?? "Request Failed.",
                 Error = error,
+                ErrorCode = errorCode,
                 StatusCode = statusCode
             };
         }

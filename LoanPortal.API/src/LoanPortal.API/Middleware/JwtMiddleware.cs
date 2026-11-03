@@ -1,5 +1,6 @@
 using FirebaseAdmin.Auth;
 using LoanPortal.Core.Interfaces;
+using LoanPortal.Core.Repositories;
 using System.Net;
 
 namespace LoanPortal.API.Middleware;
@@ -15,7 +16,7 @@ public class JwtMiddleware
     // ILoginUserDetails is injected here (per-request) rather than in the constructor,
     // because middleware is instantiated once (effectively singleton) by ASP.NET Core.
     // Injecting a Scoped service via InvokeAsync ensures each request gets its own instance.
-    public async Task InvokeAsync(HttpContext context, ILoginUserDetails _userDetailService)
+    public async Task InvokeAsync(HttpContext context, ILoginUserDetails _userDetailService, IUserRepository userRepository)
     {
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
@@ -36,12 +37,59 @@ public class JwtMiddleware
         {
             try
             {
-                FirebaseToken decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(token);
+                FirebaseToken decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(token, true);
+
+                var tokenUser = await userRepository.GetUserByFirebaseId(decodedToken.Uid);
+
+                // Validation endpoints must stay reachable so the client can discover
+                // that a password change is required (or that the temporary password expired).
+                var isTokenValidationPath =
+                    context.Request.Path.StartsWithSegments("/user/ValidateUserToken") ||
+                    context.Request.Path.StartsWithSegments("/user/ValidateAdminToken") ||
+                    context.Request.Path.StartsWithSegments("/borrower/ValidateBorrowerToken");
+                var isChangeTemporaryPasswordPath =
+                    context.Request.Path.StartsWithSegments("/user/ChangeTemporaryPassword");
+
+                if (!isTokenValidationPath && tokenUser?.PasswordChangeRequired == true)
+                {
+                    var temporaryPasswordExpired =
+                        !tokenUser.TemporaryPasswordExpiresAtUtc.HasValue ||
+                        tokenUser.TemporaryPasswordExpiresAtUtc.Value <= DateTime.UtcNow;
+
+                    if (temporaryPasswordExpired)
+                    {
+                        context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                        await context.Response.WriteAsJsonAsync(
+                            LoanPortal.API.Helper.ResponseHelper.ErrorResponse<object>(
+                                403,
+                                "Your temporary password has expired. Please contact an administrator for a new temporary password.",
+                                errorCode: LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException.ErrorCode));
+                        return;
+                    }
+
+                    if (!isChangeTemporaryPasswordPath)
+                    {
+                        context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                        await context.Response.WriteAsJsonAsync(
+                            LoanPortal.API.Helper.ResponseHelper.ErrorResponse<object>(
+                                403,
+                                "Password change is required before accessing this resource.",
+                                errorCode: "PASSWORD_CHANGE_REQUIRED"));
+                        return;
+                    }
+                }
 
                 object userID;
-                if (decodedToken.Claims.TryGetValue("UserId", out userID))
+                if (decodedToken.Claims.TryGetValue("UserId", out userID) &&
+                    Guid.TryParse(userID?.ToString(), out var parsedUserId))
                 {
-                    _userDetailService.UserID = new Guid(userID.ToString());
+                    _userDetailService.UserID = parsedUserId;
+                }
+                else if (tokenUser != null)
+                {
+                    // Tokens issued before custom claims are applied may not contain UserId.
+                    // Fall back to the verified Firebase user's persisted record.
+                    _userDetailService.UserID = tokenUser.Id;
                 }
 
                 object userName;

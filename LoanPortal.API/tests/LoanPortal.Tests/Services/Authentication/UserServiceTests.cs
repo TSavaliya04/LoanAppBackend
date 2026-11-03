@@ -41,6 +41,7 @@ namespace LoanPortal.Tests.Services
             _mockFirebaseAuthService = new Mock<IFirebaseAuthService>();
             _mockLoginUserDetails = new Mock<ILoginUserDetails>();
             _mockCompanyRepository = new Mock<ICompanyRepository>();
+            var _mockTeamRepository = new Mock<ITeamRepository>();
             var _mockNotificationService = new Mock<INotificationService>();
 
             _userService = new UserService(
@@ -52,6 +53,7 @@ namespace LoanPortal.Tests.Services
                 _mockFirebaseAuthService.Object,
                 _mockLoginUserDetails.Object,
                 _mockCompanyRepository.Object,
+                _mockTeamRepository.Object,
                 _mockNotificationService.Object
             );
 

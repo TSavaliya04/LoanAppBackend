@@ -6,11 +6,14 @@ using LoanPortal.Core.Repositories;
 using LoanPortal.Shared;
 using LoanPortal.Shared.Constants;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -28,6 +31,7 @@ namespace LoanPortal.Core.Services
         private readonly ICompanyRepository _companyRepository;
         private readonly INotificationService _notificationService;
         private readonly ITeamRepository _teamRepository;
+        private readonly ILogger<UserService> _logger;
 
         public UserService(
             IUserHelper userHelper,
@@ -39,7 +43,8 @@ namespace LoanPortal.Core.Services
             ILoginUserDetails loginUserDetails,
             ICompanyRepository companyRepository,
             ITeamRepository teamRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            ILogger<UserService>? logger = null)
         {
             _userHelper = userHelper;
             _config = config;
@@ -51,6 +56,7 @@ namespace LoanPortal.Core.Services
             _companyRepository = companyRepository;
             _teamRepository = teamRepository;
             _notificationService = notificationService;
+            _logger = logger ?? NullLogger<UserService>.Instance;
         }
 
         public async Task<UserDTO> SignUp(CreateUserRequest user)
@@ -315,6 +321,8 @@ namespace LoanPortal.Core.Services
                     NMLS = request.NMLS ?? existingUser.NMLS,
                     CompanyId = request.CompanyId ?? existingUser.CompanyId,
                     TeamId = request.TeamId ?? existingUser.TeamId,
+                    PasswordChangeRequired = existingUser.PasswordChangeRequired,
+                    TemporaryPasswordExpiresAtUtc = existingUser.TemporaryPasswordExpiresAtUtc,
                     UpdatedAt = DateTime.UtcNow
                 };
 
@@ -418,7 +426,7 @@ namespace LoanPortal.Core.Services
         {
             try
             {
-                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token);
+                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token, true);
                 UserRecord userRecord = await _firebaseAuthService.GetUserAsync(uid);
 
                 var user = new UserEntity();
@@ -436,6 +444,8 @@ namespace LoanPortal.Core.Services
                 {
                     throw new ValidationException($"User with email {user.Email} not found.");
                 }
+
+                EnsureTemporaryPasswordIsNotExpired(user);
 
                 if (user.Role == Shared.Enum.UserRole.SuperAdmin || user.Role == Shared.Enum.UserRole.CompanyAdmin)
                 {
@@ -476,7 +486,7 @@ namespace LoanPortal.Core.Services
         {
             try
             {
-                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token);
+                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token, true);
                 UserRecord userRecord = await _firebaseAuthService.GetUserAsync(uid);
 
                 var user = new UserEntity();
@@ -537,7 +547,7 @@ namespace LoanPortal.Core.Services
         {
             try
             {
-                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token);
+                string uid = await _firebaseAuthService.VerifyIdTokenAsync(token, true);
                 UserRecord userRecord = await _firebaseAuthService.GetUserAsync(uid);
 
                 var user = new UserEntity();
@@ -555,6 +565,8 @@ namespace LoanPortal.Core.Services
                 {
                     throw new ValidationException($"User with email {user.Email} not found.");
                 }
+
+                EnsureTemporaryPasswordIsNotExpired(user);
 
                 if (user.Role == Shared.Enum.UserRole.User)
                 {
@@ -614,6 +626,164 @@ namespace LoanPortal.Core.Services
             {
                 throw;
             }
+        }
+
+        public async Task<GenerateTemporaryPasswordResponse> GenerateTemporaryPassword(Guid userId)
+        {
+            if (_loginUserDetails.Role != Shared.Enum.UserRole.CompanyAdmin &&
+                _loginUserDetails.Role != Shared.Enum.UserRole.SuperAdmin)
+            {
+                throw new UnauthorizedAccessException("Only administrators can generate temporary passwords.");
+            }
+
+            var targetUser = await _userRepository.GetUserById(userId);
+            if (targetUser == null || targetUser.Id == Guid.Empty)
+                throw new ValidationException("User not found.");
+
+            if (!targetUser.IsActive)
+                throw new ValidationException("A temporary password cannot be generated for an inactive user.");
+
+            if (targetUser.Role == Shared.Enum.UserRole.SuperAdmin)
+                throw new UnauthorizedAccessException("Temporary passwords cannot be generated for SuperAdmin accounts.");
+
+            if (_loginUserDetails.Role == Shared.Enum.UserRole.CompanyAdmin)
+            {
+                if (targetUser.Role != Shared.Enum.UserRole.User ||
+                    !targetUser.CompanyId.HasValue || targetUser.CompanyId != _loginUserDetails.CompanyId)
+                {
+                    throw new UnauthorizedAccessException("You can only generate temporary passwords for users in your company.");
+                }
+            }
+            else if (targetUser.Role != Shared.Enum.UserRole.User && targetUser.Role != Shared.Enum.UserRole.CompanyAdmin)
+            {
+                throw new UnauthorizedAccessException("Temporary passwords can only be generated for standard or company-admin accounts.");
+            }
+
+            if (string.IsNullOrWhiteSpace(targetUser.FirebaseId))
+                throw new ValidationException("The user does not have a linked Firebase account.");
+
+            var temporaryPassword = GenerateSecurePassword();
+            var expiresAtUtc = DateTime.UtcNow.AddHours(1);
+
+            try
+            {
+                await _firebaseAuthService.UpdateUserAsync(targetUser.FirebaseId, new UserRecordArgs
+                {
+                    Uid = targetUser.FirebaseId,
+                    Password = temporaryPassword
+                });
+                await _userRepository.UpdateTemporaryPasswordStateAsync(targetUser.Id, true, expiresAtUtc);
+                await _firebaseAuthService.RevokeRefreshTokensAsync(targetUser.FirebaseId);
+            }
+            catch (FirebaseAuthException ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to generate a temporary password for user {TargetUserId} by actor {ActorUserId} at {TimestampUtc:o}.",
+                    targetUser.Id, _loginUserDetails.UserID, DateTime.UtcNow);
+                throw new ValidationException("Unable to generate a temporary password for this user. Please try again.");
+            }
+
+            _logger.LogInformation(
+                "Temporary password generated for user {TargetUserId} ({TargetEmail}) by actor {ActorUserId} at {TimestampUtc:o}.",
+                targetUser.Id, targetUser.Email, _loginUserDetails.UserID, DateTime.UtcNow);
+
+            return new GenerateTemporaryPasswordResponse
+            {
+                TemporaryPassword = temporaryPassword,
+                ExpiresAtUtc = expiresAtUtc
+            };
+        }
+
+        public async Task ChangeTemporaryPassword(Guid userId, ChangeTemporaryPasswordRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.NewPassword))
+                throw new ValidationException("A new password is required.");
+
+            ValidatePassword(request.NewPassword);
+
+            var user = await _userRepository.GetUserById(userId);
+            if (user == null || user.Id == Guid.Empty)
+                throw new ValidationException("User not found.");
+
+            if (!user.IsActive)
+                throw new ValidationException("Account is not active.");
+
+            if (!user.PasswordChangeRequired)
+                throw new ValidationException("There is no temporary password change in progress for this user.");
+
+            if (!user.TemporaryPasswordExpiresAtUtc.HasValue || user.TemporaryPasswordExpiresAtUtc.Value <= DateTime.UtcNow)
+                throw new LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException();
+
+            if (string.IsNullOrWhiteSpace(user.FirebaseId))
+                throw new ValidationException("The user does not have a linked Firebase account.");
+
+            try
+            {
+                await _firebaseAuthService.UpdateUserAsync(user.FirebaseId, new UserRecordArgs
+                {
+                    Uid = user.FirebaseId,
+                    Password = request.NewPassword
+                });
+                await _userRepository.UpdateTemporaryPasswordStateAsync(user.Id, false, null);
+                await _firebaseAuthService.RevokeRefreshTokensAsync(user.FirebaseId);
+            }
+            catch (FirebaseAuthException ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to complete the temporary password change for user {TargetUserId} at {TimestampUtc:o}.",
+                    user.Id, DateTime.UtcNow);
+                throw new ValidationException("Unable to change the password. Please try again.");
+            }
+
+            _logger.LogInformation(
+                "Temporary password completed for user {TargetUserId} at {TimestampUtc:o}.",
+                user.Id, DateTime.UtcNow);
+        }
+
+        private static void EnsureTemporaryPasswordIsNotExpired(UserEntity user)
+        {
+            if (!user.PasswordChangeRequired)
+                return;
+
+            if (!user.TemporaryPasswordExpiresAtUtc.HasValue || user.TemporaryPasswordExpiresAtUtc.Value <= DateTime.UtcNow)
+                throw new LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException();
+        }
+
+        private static void ValidatePassword(string password)
+        {
+            if (password.Length < 6 || !password.Any(char.IsLetter) || !password.Any(char.IsDigit) ||
+                !password.Any(ch => !char.IsLetterOrDigit(ch)))
+            {
+                throw new ValidationException("Password must be at least 6 characters long, include letters, numbers, and one special character.");
+            }
+        }
+
+        private static string GenerateSecurePassword()
+        {
+            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const string lower = "abcdefghijkmnopqrstuvwxyz";
+            const string digits = "23456789";
+            const string special = "!@#$%*-_";
+            const string all = upper + lower + digits + special;
+
+            var characters = new[]
+            {
+                upper[RandomNumberGenerator.GetInt32(upper.Length)],
+                lower[RandomNumberGenerator.GetInt32(lower.Length)],
+                digits[RandomNumberGenerator.GetInt32(digits.Length)],
+                special[RandomNumberGenerator.GetInt32(special.Length)]
+            }.ToList();
+
+            while (characters.Count < 16)
+                characters.Add(all[RandomNumberGenerator.GetInt32(all.Length)]);
+
+            for (var index = characters.Count - 1; index > 0; index--)
+            {
+                var swapIndex = RandomNumberGenerator.GetInt32(index + 1);
+                (characters[index], characters[swapIndex]) = (characters[swapIndex], characters[index]);
+            }
+
+            return new string(characters.ToArray());
         }
 
         public async Task<GetNewTokenResponse> GetNewToken(string refreshToken)

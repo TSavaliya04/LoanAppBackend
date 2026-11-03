@@ -30,9 +30,14 @@ namespace LoanPortal.Infrastructure.Services
             return newUser.Uid;
         }
 
-        public async Task<string> VerifyIdTokenAsync(string idToken)
+        public Task<string> VerifyIdTokenAsync(string idToken)
         {
-            FirebaseToken token = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(idToken);
+            return VerifyIdTokenAsync(idToken, false);
+        }
+
+        public async Task<string> VerifyIdTokenAsync(string idToken, bool checkRevoked)
+        {
+            FirebaseToken token = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(idToken, checkRevoked);
             return token.Uid;
         }
 
@@ -92,6 +97,11 @@ namespace LoanPortal.Infrastructure.Services
         {
             await FirebaseAuth.DefaultInstance.UpdateUserAsync(args);
         }
+
+        public async Task RevokeRefreshTokensAsync(string uid)
+        {
+            await FirebaseAuth.DefaultInstance.RevokeRefreshTokensAsync(uid);
+        }
     }
 
-} 
+}

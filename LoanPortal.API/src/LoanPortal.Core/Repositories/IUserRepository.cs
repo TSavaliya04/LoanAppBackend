@@ -37,5 +37,6 @@ namespace LoanPortal.Core.Repositories
 
         /// <summary>Saves or updates the FCM Web Push token for a user.</summary>
         Task UpdateFcmTokenAsync(Guid userId, string fcmToken);
+        Task UpdateTemporaryPasswordStateAsync(Guid userId, bool passwordChangeRequired, DateTime? expiresAtUtc);
     }
 }

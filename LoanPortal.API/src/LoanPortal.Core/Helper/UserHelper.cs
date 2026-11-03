@@ -104,6 +104,8 @@ namespace LoanPortal.Core.Helper
                 LastLoginDate = entity.LastLoginDate,
                 LastActivityDate = entity.LastActivityDate,
                 Role = entity.Role,
+                MustChangePassword = entity.PasswordChangeRequired,
+                TemporaryPasswordExpiresAtUtc = entity.TemporaryPasswordExpiresAtUtc
             };
         }
 

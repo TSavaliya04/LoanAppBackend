@@ -9,9 +9,11 @@ namespace LoanPortal.Core.Interfaces
         Task<string> CreateUserAsync(UserRecordArgs args);
         Task<UserRecord> GetUserAsync(string uid);
         Task<string> VerifyIdTokenAsync(string idToken);
+        Task<string> VerifyIdTokenAsync(string idToken, bool checkRevoked);
         Task SetCustomUserClaimsAsync(string uid, Dictionary<string, object> claims);
         Task<string> GeneratePasswordResetLinkAsync(string email);
         Task<(GetNewTokenResponse Response, string UserId)> GetNewTokenAsync(string refreshToken);
         Task UpdateUserAsync(string uid, UserRecordArgs args);
+        Task RevokeRefreshTokensAsync(string uid);
     }
-} 
+}

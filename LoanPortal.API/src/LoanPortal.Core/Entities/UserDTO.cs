@@ -52,6 +52,8 @@ namespace LoanPortal.Core.Entities
         public string? CompanyName { get; set; }
         public Guid? TeamId { get; set; }
         public string? TeamName { get; set; }
+        public bool MustChangePassword { get; set; }
+        public DateTime? TemporaryPasswordExpiresAtUtc { get; set; }
     }
 
     [BsonIgnoreExtraElements]
@@ -113,6 +115,12 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("fcmToken")]
         public string? FcmToken { get; set; }
+
+        [BsonElement("passwordChangeRequired")]
+        public bool PasswordChangeRequired { get; set; }
+
+        [BsonElement("temporaryPasswordExpiresAtUtc")]
+        public DateTime? TemporaryPasswordExpiresAtUtc { get; set; }
         
         //[BsonElement("loginHistory")]
         //public List<DateTime> LoginHistory { get; set; } = new List<DateTime>();

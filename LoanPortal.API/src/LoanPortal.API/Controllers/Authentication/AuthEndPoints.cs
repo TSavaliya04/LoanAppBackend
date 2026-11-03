@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LoanPortal.Core.Entities;
 using LoanPortal.Core.Interfaces;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using static LoanPortal.API.Helper.ResponseHelper;
 using System.ComponentModel.DataAnnotations;
 
@@ -14,10 +16,12 @@ namespace LoanPortal.API.Controllers.Authentication
     {
         private readonly IUserService _userService;
         private readonly ILoginUserDetails _loginUserDetails;
-        public AuthEndPoints(IUserService userService, ILoginUserDetails loginUserDetails)
+        private readonly ILogger<AuthEndPoints> _logger;
+        public AuthEndPoints(IUserService userService, ILoginUserDetails loginUserDetails, ILogger<AuthEndPoints>? logger = null)
         {
             _userService = userService;
             _loginUserDetails = loginUserDetails;
+            _logger = logger ?? NullLogger<AuthEndPoints>.Instance;
         }
 
         [AllowAnonymous]
@@ -109,6 +113,36 @@ namespace LoanPortal.API.Controllers.Authentication
             }
         }
 
+        [HttpPut("user/ChangeTemporaryPassword")]
+        public async Task<IActionResult> ChangeTemporaryPassword([FromBody] ChangeTemporaryPasswordRequest request)
+        {
+            try
+            {
+                if (_loginUserDetails.UserID == Guid.Empty)
+                    return Unauthorized(ErrorResponse<object>(401, "Authenticated user details are unavailable."));
+
+                await _userService.ChangeTemporaryPassword(_loginUserDetails.UserID, request);
+                return Ok(SuccessResponse(data: true, message: "Password changed successfully. Please sign in again."));
+            }
+            catch (LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException ex)
+            {
+                return StatusCode(400, ErrorResponse<object>(400, ex.Message, errorCode: LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException.ErrorCode));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ErrorResponse<object>(400, ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ErrorResponse<object>(403, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while changing the temporary password for user {UserId}.", _loginUserDetails.UserID);
+                return StatusCode(500, ErrorResponse<object>(500, "Unable to change the password. Please try again."));
+            }
+        }
+
         [AllowAnonymous]
         [HttpPost("user/ValidateUserToken")]
         public async Task<IActionResult> ValidateUserToken(string token)
@@ -117,6 +151,10 @@ namespace LoanPortal.API.Controllers.Authentication
             {
                 var result = await _userService.ValidateUserToken(token);
                 return Ok(SuccessResponse(result));
+            }
+            catch (LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException ex)
+            {
+                return StatusCode(400, ErrorResponse<UserDTO>(400, ex.Message, errorCode: LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException.ErrorCode));
             }
             catch (ValidationException ex)
             {
@@ -136,6 +174,10 @@ namespace LoanPortal.API.Controllers.Authentication
             {
                 var result = await _userService.ValidateAdminToken(token);
                 return Ok(SuccessResponse(result));
+            }
+            catch (LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException ex)
+            {
+                return StatusCode(400, ErrorResponse<UserDTO>(400, ex.Message, errorCode: LoanPortal.Core.Exceptions.TemporaryPasswordExpiredException.ErrorCode));
             }
             catch (ValidationException ex)
             {

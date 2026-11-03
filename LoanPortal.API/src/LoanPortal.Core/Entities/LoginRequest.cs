@@ -19,6 +19,18 @@ namespace LoanPortal.Core.Entities
         public string Token { get; set; }
     }
 
+    public class GenerateTemporaryPasswordResponse
+    {
+        public string TemporaryPassword { get; set; } = string.Empty;
+        public DateTime ExpiresAtUtc { get; set; }
+        public bool MustChangePassword { get; set; } = true;
+    }
+
+    public class ChangeTemporaryPasswordRequest
+    {
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
     public class FirebaseLoginResponse
     {
         public string IdToken { get; set; }

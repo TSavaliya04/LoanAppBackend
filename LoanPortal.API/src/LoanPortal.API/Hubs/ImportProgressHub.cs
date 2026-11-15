@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace LoanPortal.API.Hubs;
 
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+// [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class ImportProgressHub : Hub
 {
     private readonly IImportJobRepository _jobRepository;

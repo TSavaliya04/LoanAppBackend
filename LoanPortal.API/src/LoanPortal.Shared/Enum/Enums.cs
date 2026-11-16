@@ -27,7 +27,9 @@ namespace LoanPortal.Shared.Enum
         FHA = 3,
         VA = 4,
         HELOC = 5,
-        HELOAN = 6
+        HELOAN = 6,
+        FHAVOEOnlyPurchase = 7,
+        FHAVOEOnlyRefinance = 8
     }
 
     public enum ApplicationStatus

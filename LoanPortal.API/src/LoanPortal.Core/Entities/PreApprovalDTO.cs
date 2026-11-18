@@ -479,6 +479,9 @@ namespace LoanPortal.Core.Entities
         [BsonElement("monthlyPayment")]
         public decimal MonthlyPayment { get; set; }
 
+        [BsonElement("creditorName")]
+        public string CreditorName { get; set; }
+
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
 
@@ -532,6 +535,9 @@ namespace LoanPortal.Core.Entities
 
         [BsonElement("debtToBePaidOff")]
         public bool DebtToBePaidOff { get; set; }
+
+        [BsonElement("creditorName")]
+        public string CreditorName { get; set; }
 
         [BsonElement("createdAt")]
         public DateTime? CreatedAt { get; set; }
